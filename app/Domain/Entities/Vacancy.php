@@ -1,117 +1,350 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Domain\Entities;
 
+use App\Domain\Enums\EmploymentTypeEnum;
+use App\Domain\Enums\VacancyStatusEnum;
+use App\Domain\Enums\WorkplaceEnum;
+use App\Domain\Events\DomainEvent;
+use App\Domain\Events\VacancyClosedEvent;
+use App\Domain\Events\VacancyImportedEvent;
+use App\Domain\Events\VacancyMergedEvent;
+use App\Domain\Events\VacancyUpdatedEvent;
+use App\Domain\Exceptions\InvalidOperationException;
+use App\Domain\ValueObjects\ExternalUrls;
 use App\Domain\ValueObjects\Salary;
-use App\Domain\Enums\VacancyStatus;
 use DateTimeImmutable;
-use InvalidArgumentException;
+use Ramsey\Uuid\Uuid;
 
-/**
- * Vacancy domain entity / aggregate (also used as search root)
- *
- * Bounded Context: Vacancy Management (Vacancies Service)
- *
- * Notes & invariants:
- * - Vacancies are created/updated only by import processes from external portals
- *   (see docs/architecture-overview.md and docs/adr/adr-011-outbox-pattern.md).
- * - An imported vacancy is considered valid only if it contains a title,
- *   an employer and a publication date.
- * - Updates from portals create a new version of the vacancy and preserve
- *   change history. See docs/adr/adr-012-event-versioning.md for event versioning.
- *
- * Behavioural methods mutate domain state and bump `version` when appropriate.
- */
 final class Vacancy
 {
-    public readonly string $id;
-    public readonly string $employerId;
-    public string $title;
-    public string $description;
-    /** @var string[] */
-    public array $requirements = [];
-    public ?Salary $salary;
-    public VacancyStatus $status;
-    public ?string $country;
-    public ?string $city;
-    public DateTimeImmutable $createdAt;
-    public DateTimeImmutable $updatedAt;
-    public int $version = 1;
+    /** @var DomainEvent[] */
+    private array $events = [];
 
-    public function __construct(
+    /** @var VacancyRequirementAssignment[] */
+    private array $requirementAssignments = [];
+
+    /** @var VacancyJobAssignment[] */
+    private array $jobAssignments = [];
+
+    /** @var VacancySource[] */
+    private array $sources = [];
+
+    private function __construct(
+        private string $id,
+        private string $employerId,
+        private string $title,
+        private ?string $description,
+        private Salary $salary,
+        private VacancyStatusEnum $status,
+        private ?string $country,
+        private ?string $city,
+        private EmploymentTypeEnum $employmentType,
+        private WorkplaceEnum $workplace,
+        private DateTimeImmutable $postedAt,
+        private DateTimeImmutable $createdAt,
+        private DateTimeImmutable $updatedAt,
+        private ?DateTimeImmutable $closedAt,
+        private int $version,
+        private ExternalUrls $externalUrls,
+        private ?string $internalUrl = null
+    ) {
+    }
+
+    public static function create(
         string $id,
         string $employerId,
         string $title,
         string $description,
-        array $requirements,
-        ?Salary $salary,
-        VacancyStatus $status,
+        Salary $salary,
         ?string $country,
         ?string $city,
-        ?DateTimeImmutable $createdAt = null,
-        ?DateTimeImmutable $updatedAt = null,
-        int $version = 1
-    ) {
-        if ($title === '') {
-            throw new InvalidArgumentException('Vacancy must have a title');
+        EmploymentTypeEnum $employmentType,
+        WorkplaceEnum $workplace,
+        DateTimeImmutable $postedAt,
+        ExternalUrls $externalUrls,
+        ?string $internalUrl = null,
+        ?string $correlationId = null
+    ): self {
+        if (trim($title) === '') {
+            throw new InvalidOperationException('Vacancy title cannot be empty.');
         }
-        if ($employerId === '') {
-            throw new InvalidArgumentException('Vacancy must have an employer id');
-        }
+        $now = new DateTimeImmutable();
+        $vacancy = new self(
+            $id,
+            $employerId,
+            trim($title),
+            $description,
+            $salary,
+            VacancyStatusEnum::OPEN,
+            $country,
+            $city,
+            $employmentType,
+            $workplace,
+            $postedAt,
+            $now,
+            $now,
+            null,
+            1,
+            $externalUrls,
+            $internalUrl
+        );
+        $vacancy->recordEvent(
+            new VacancyImportedEvent(
+                $id,
+                $id,
+                $now,
+                $correlationId,
+                $vacancy->toArray()
+            )
+        );
+        return $vacancy;
+    }
 
-        $this->id = $id;
-        $this->employerId = $employerId;
-        $this->title = $title;
-        $this->description = $description;
-        $this->requirements = $requirements;
-        $this->salary = $salary;
-        $this->status = $status;
-        $this->country = $country;
-        $this->city = $city;
-        $this->createdAt = $createdAt ?? new DateTimeImmutable();
-        $this->updatedAt = $updatedAt ?? $this->createdAt;
-        $this->version = $version;
+    public function updateDetails(
+        ?string $title = null,
+        ?string $description = null,
+        ?Salary $salary = null,
+        ?string $country = null,
+        ?string $city = null,
+        ?EmploymentTypeEnum $employmentType = null,
+        ?WorkplaceEnum $workplace = null,
+        ?DateTimeImmutable $postedAt = null,
+        ?ExternalUrls $externalUrls = null,
+        ?string $internalUrl = null
+    ): void {
+        if ($title !== null && trim($title) === '') {
+            throw new InvalidOperationException('Vacancy title cannot be empty.');
+        }
+        $this->title = $title !== null ? trim($title) : $this->title;
+        $this->description = $description ?? $this->description;
+        $this->salary = $salary ?? $this->salary;
+        $this->country = $country ?? $this->country;
+        $this->city = $city ?? $this->city;
+        $this->employmentType = $employmentType ?? $this->employmentType;
+        $this->workplace = $workplace ?? $this->workplace;
+        $this->postedAt = $postedAt ?? $this->postedAt;
+        $this->externalUrls = $externalUrls ?? $this->externalUrls;
+        $this->internalUrl = $internalUrl ?? $this->internalUrl;
+
+        $this->updatedAt = new DateTimeImmutable();
+        $this->version++;
+        $this->recordEvent(
+            new VacancyUpdatedEvent(
+                $this->id,
+                $this->id,
+                $this->updatedAt,
+                null, // correlationId can be passed if needed
+                $this->toArray()
+            )
+        );
     }
 
     public function close(): void
     {
-        if ($this->status === VacancyStatus::CLOSED) {
+        if ($this->status === VacancyStatusEnum::CLOSED) {
             return;
         }
-        $this->status = VacancyStatus::CLOSED;
-        $this->newVersion();
-    }
-
-    public function updateDescription(string $description): void
-    {
-        if ($this->description === $description) {
-            return;
-        }
-        $this->description = $description;
-        $this->newVersion();
-    }
-
-    public function updateRequirements(array $requirements): void
-    {
-        if ($this->requirements === $requirements) {
-            return;
-        }
-        $this->requirements = $requirements;
-        $this->newVersion();
-    }
-
-    public function reopen(DateTimeImmutable $publishedAt): void
-    {
-        // Reopening increments version and sets status to open
-        $this->status = VacancyStatus::OPEN;
-        $this->createdAt = $publishedAt;
-        $this->newVersion();
-    }
-
-    private function newVersion(): void
-    {
+        $this->status = VacancyStatusEnum::CLOSED;
+        $this->closedAt = new DateTimeImmutable();
+        $this->updatedAt = $this->closedAt;
         $this->version++;
+        $this->recordEvent(
+            new VacancyClosedEvent(
+                $this->id,
+                $this->id,
+                $this->closedAt,
+                null
+            )
+        );
+    }
+
+    public function reopen(): void
+    {
+        if ($this->status === VacancyStatusEnum::OPEN) {
+            return;
+        }
+        $this->status = VacancyStatusEnum::OPEN;
+        $this->closedAt = null;
         $this->updatedAt = new DateTimeImmutable();
+        $this->version++;
+        // Reopen is an update
+        $this->recordEvent(
+            new VacancyUpdatedEvent(
+                $this->id,
+                $this->id,
+                $this->updatedAt,
+                null,
+                $this->toArray()
+            )
+        );
+    }
+
+    public function mergeFrom(Vacancy $other, array $mergedIds): void
+    {
+        // Take canonical fields from $other (the source of truth after merge)
+        $this->title = $other->title;
+        $this->description = $other->description;
+        $this->salary = $other->salary;
+        $this->country = $other->country;
+        $this->city = $other->city;
+        $this->employmentType = $other->employmentType;
+        $this->workplace = $other->workplace;
+        $this->externalUrls = $other->externalUrls;
+        $this->internalUrl = $other->internalUrl;
+        $this->updatedAt = new DateTimeImmutable();
+        $this->version++;
+        $this->recordEvent(
+            new VacancyMergedEvent(
+                $this->id,
+                $this->id,
+                $this->updatedAt,
+                null,
+                $mergedIds
+            )
+        );
+    }
+
+    public function addRequirement(string $requirementId): void
+    {
+        foreach ($this->requirementAssignments as $assignment) {
+            if ($assignment->getRequirementId() === $requirementId) {
+                throw new InvalidOperationException('Requirement already assigned.');
+            }
+        }
+        $assignment = new VacancyRequirementAssignment(
+            Uuid::uuid4()->toString(),
+            $this->id,
+            $requirementId,
+            new DateTimeImmutable(),
+        );
+        $this->requirementAssignments[] = $assignment;
+        $this->updatedAt = new DateTimeImmutable();
+        $this->version++;
+    }
+
+    public function removeRequirement(string $requirementId): void
+    {
+        foreach ($this->requirementAssignments as $key => $assignment) {
+            if ($assignment->getRequirementId() === $requirementId) {
+                unset($this->requirementAssignments[$key]);
+                $this->requirementAssignments = array_values($this->requirementAssignments);
+                $this->updatedAt = new DateTimeImmutable();
+                $this->version++;
+                return;
+            }
+        }
+        throw new InvalidOperationException('Requirement not assigned.');
+    }
+
+    public function assignToJob(string $jobId, ?int $relevanceScore = null): void
+    {
+        foreach ($this->jobAssignments as $assignment) {
+            if ($assignment->jobId() === $jobId && $assignment->isActive()) {
+                throw new InvalidOperationException('Vacancy already assigned to this job.');
+            }
+        }
+        $assignment = new VacancyJobAssignment(
+            Uuid::uuid4()->toString(),
+            $this->id,
+            $jobId,
+            new DateTimeImmutable(),
+            $relevanceScore
+        );
+        $this->jobAssignments[] = $assignment;
+        $this->updatedAt = new DateTimeImmutable();
+        $this->version++;
+    }
+
+    public function unassignFromJob(string $jobId): void
+    {
+        foreach ($this->jobAssignments as $assignment) {
+            if ($assignment->jobId() === $jobId && $assignment->isActive()) {
+                $assignment->deactivate();
+                $this->updatedAt = new DateTimeImmutable();
+                $this->version++;
+                return;
+            }
+        }
+        throw new InvalidOperationException('Vacancy is not assigned to this job.');
+    }
+
+    public function addSource(VacancySource $source): void
+    {
+        foreach ($this->sources as $existing) {
+            if ($existing->sourceKey() === $source->sourceKey()
+                && $existing->externalVacancyId() === $source->externalVacancyId()) {
+                $existing->updateLastSeenAt(new DateTimeImmutable());
+                $this->version++;
+                return;
+            }
+        }
+        $this->sources[] = $source;
+        $this->updatedAt = new DateTimeImmutable();
+        $this->version++;
+    }
+
+    public function id(): string
+    {
+        return $this->id;
+    }
+
+    public function employerId(): string
+    {
+        return $this->employerId;
+    }
+
+    public function status(): string
+    {
+        return $this->status->value;
+    }
+
+    public function version(): int
+    {
+        return $this->version;
+    }
+
+    public function toArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'employer_id' => $this->employerId,
+            'title' => $this->title,
+            'description' => $this->description,
+            'salary' => [
+                'min' => $this->salary->min(),
+                'max' => $this->salary->max(),
+                'currency' => $this->salary->currency(),
+            ],
+            'status' => $this->status->value,
+            'country' => $this->country,
+            'city' => $this->city,
+            'employment_type' => $this->employmentType->value,
+            'workplace' => $this->workplace->value,
+            'posted_at' => $this->postedAt->format(DATE_ATOM),
+            'created_at' => $this->createdAt->format(DATE_ATOM),
+            'updated_at' => $this->updatedAt->format(DATE_ATOM),
+            'closed_at' => $this->closedAt?->format(DATE_ATOM),
+            'version' => $this->version,
+            'external_urls' => $this->externalUrls->toArray(),
+            'internal_url' => $this->internalUrl,
+            'requirements' => array_map(fn($a) => $a->getRequirementId(), $this->requirementAssignments),
+            'jobs' => array_map(fn($a) => $a->jobId(), $this->jobAssignments),
+        ];
+    }
+
+    /** @return DomainEvent[] */
+    public function releaseEvents(): array
+    {
+        $events = $this->events;
+        $this->events = [];
+        return $events;
+    }
+
+    private function recordEvent(DomainEvent $event): void
+    {
+        $this->events[] = $event;
     }
 }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use App\Domain\Entities\Vacancy;
-use App\Domain\Enums\VacancyStatus;
+use App\Domain\Enums\VacancyStatusEnum;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
@@ -14,13 +14,13 @@ final class VacancyTest extends TestCase
     public function testCannotCreateWithoutTitle(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        new Vacancy('id', 'employer', '', 'desc', [], null, VacancyStatus::OPEN, null, null);
+        new Vacancy('id', 'employer', '', 'desc', [], null, VacancyStatusEnum::OPEN, null, null);
     }
 
     public function testCannotCreateWithoutEmployerId(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        new Vacancy('id', '', 'Title', 'desc', [], null, VacancyStatus::OPEN, null, null);
+        new Vacancy('id', '', 'Title', 'desc', [], null, VacancyStatusEnum::OPEN, null, null);
     }
 
     public function testVersionIncrementsOnChangesAndReopen(): void
@@ -32,7 +32,7 @@ final class VacancyTest extends TestCase
             'Desc',
             ['PHP'],
             null,
-            VacancyStatus::OPEN,
+            VacancyStatusEnum::OPEN,
             'RU',
             'Moscow'
         );
@@ -48,12 +48,12 @@ final class VacancyTest extends TestCase
         $verAfterReq = $vacancy->version;
 
         $vacancy->close();
-        $this->assertEquals(VacancyStatus::CLOSED, $vacancy->status);
+        $this->assertEquals(VacancyStatusEnum::CLOSED, $vacancy->status);
         $this->assertGreaterThan($verAfterReq, $vacancy->version);
 
         $publishAt = new DateTimeImmutable('+' . 1 . ' day');
         $vacancy->reopen($publishAt);
-        $this->assertEquals(VacancyStatus::OPEN, $vacancy->status);
+        $this->assertEquals(VacancyStatusEnum::OPEN, $vacancy->status);
         $this->assertEquals($publishAt->getTimestamp(), $vacancy->createdAt->getTimestamp());
     }
 }

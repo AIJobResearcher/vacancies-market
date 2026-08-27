@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Persistence;
 
 use App\Domain\Entities\Vacancy;
-use App\Domain\Enums\VacancyStatus;
+use App\Domain\Enums\VacancyStatusEnum;
 use App\Domain\Repositories\VacancyRepositoryInterface;
 use App\Domain\ValueObjects\Salary;
 use App\Infrastructure\Models\Vacancy as VacancyModel;
@@ -33,7 +35,7 @@ final class VacancyEloquentRepository implements VacancyRepositoryInterface
     public function findById(string $id): ?Vacancy
     {
         $model = VacancyModel::find($id);
-        if (!$model) {
+        if (! $model) {
             return null;
         }
 
@@ -67,7 +69,7 @@ final class VacancyEloquentRepository implements VacancyRepositoryInterface
             $model->description,
             $model->requirements ?? [],
             $salary,
-            VacancyStatus::from($model->status),
+            VacancyStatusEnum::from($model->status),
             $model->country,
             $model->city,
             $model->created_at,
@@ -76,4 +78,3 @@ final class VacancyEloquentRepository implements VacancyRepositoryInterface
         );
     }
 }
-

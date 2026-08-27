@@ -1,38 +1,58 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Domain\ValueObjects;
 
-use InvalidArgumentException;
+use App\Domain\Exceptions\InvalidOperationException;
 
 final class Salary
 {
-    /**
-     * Salary value object
-     *
-     * Use for vacancy salary range. Values are nullable when not provided by
-     * source portals. `toArray()` is used for persistence/serialization.
-     */
-    public ?int $min;
-    public ?int $max;
-    public string $currency;
+    private const array ALLOWED_CURRENCIES = ['USD'];
 
-    public function __construct(?int $min, ?int $max, string $currency = 'USD')
-    {
-        if ($min !== null && $max !== null && $min > $max) {
-            throw new InvalidArgumentException('Salary min must be <= max');
-        }
-        $this->min = $min;
-        $this->max = $max;
-        $this->currency = $currency;
+    public function __construct(
+        private int $minSalary,
+        private ?int $maxSalary,
+        private string $currency = 'USD'
+    ) {
+        $this->validate();
     }
 
-    public function toArray(): array
+    private function validate(): void
     {
-        return [
-            'min' => $this->min,
-            'max' => $this->max,
-            'currency' => $this->currency,
-        ];
+        if ($this->minSalary < 0) {
+            throw new InvalidOperationException('Minimum salary cannot be negative.');
+        }
+        if ($this->maxSalary !== null && $this->maxSalary < 0) {
+            throw new InvalidOperationException('Maximum salary cannot be negative.');
+        }
+        if ($this->maxSalary !== null && $this->maxSalary < $this->minSalary) {
+            throw new InvalidOperationException('Maximum salary must be >= minimum salary.');
+        }
+        if (!in_array($this->currency, self::ALLOWED_CURRENCIES, true)) {
+            throw new InvalidOperationException(sprintf('Currency "%s" not allowed.', $this->currency));
+        }
+    }
+
+    public function min(): int
+    {
+        return $this->minSalary;
+    }
+
+    public function max(): ?int
+    {
+        return $this->maxSalary;
+    }
+
+    public function currency(): string
+    {
+        return $this->currency;
+    }
+
+    public function equals(Salary $other): bool
+    {
+        return $this->minSalary === $other->minSalary
+            && $this->maxSalary === $other->maxSalary
+            && $this->currency === $other->currency;
     }
 }

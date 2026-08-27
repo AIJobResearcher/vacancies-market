@@ -1,89 +1,97 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Domain\Entities;
 
-use App\Domain\ValueObjects\Contacts;
+use App\Domain\Exceptions\InvalidOperationException;
 use DateTimeImmutable;
-use InvalidArgumentException;
 
 final class Interviewer
 {
-    /**
-     * Interviewer entity
-     *
-     * Business invariant: an interviewer always belongs to exactly one employer.
-     * Behaviour: assignToVacancy/unassignFromVacancy manage links to vacancies
-     * and update timestamps. Persistence is handled via repositories.
-     *
-     * See: docs/architecture-overview.md, docs/glossary.md
-     */
-    public readonly string $id;
-    public readonly string $employerId;
-    public string $fullName;
-    public ?string $position;
-    public ?string $email;
-    public ?string $portalId;
-    public ?string $profileUrl;
-    /** @var string[] */
-    private array $vacancyIds = [];
-    public Contacts $contacts;
-    public DateTimeImmutable $createdAt;
-    public DateTimeImmutable $updatedAt;
+    private function __construct(
+        private string $id,
+        private string $employerId,
+        private string $fullName,
+        private ?string $position,
+        private ?array $profileUrls,
+        private bool $isActive,
+        private DateTimeImmutable $createdAt,
+        private DateTimeImmutable $updatedAt,
+        private int $version,
+        private ?DateTimeImmutable $deletedAt = null
+    ) {
+    }
 
-    public function __construct(
+    public static function create(
         string $id,
         string $employerId,
         string $fullName,
-        ?string $position,
-        ?string $email,
-        Contacts $contacts,
-        ?string $portalId = null,
-        ?string $profileUrl = null,
-        ?DateTimeImmutable $createdAt = null,
-        ?DateTimeImmutable $updatedAt = null
-    ) {
-        if ($fullName === '') {
-            throw new InvalidArgumentException('Interviewer full name must not be empty');
+        ?string $position = null,
+        ?array $profileUrls = null,
+        ?string $correlationId = null
+    ): self {
+        if (trim($fullName) === '') {
+            throw new InvalidOperationException('Interviewer full name cannot be empty.');
         }
-        if ($employerId === '') {
-            throw new InvalidArgumentException('Interviewer must belong to an employer');
+        $now = new DateTimeImmutable();
+        return new self(
+            $id,
+            $employerId,
+            trim($fullName),
+            $position,
+            $profileUrls,
+            true,
+            $now,
+            $now,
+            1
+        );
+    }
+
+    public function assignToVacancy(Vacancy $vacancy): void
+    {
+        if ($vacancy->employerId() !== $this->employerId) {
+            throw new InvalidOperationException('Interviewer and vacancy belong to different employers.');
         }
-
-        $this->id = $id;
-        $this->employerId = $employerId;
-        $this->fullName = $fullName;
-        $this->position = $position;
-        $this->email = $email;
-        $this->contacts = $contacts;
-        $this->portalId = $portalId;
-        $this->profileUrl = $profileUrl;
-        $this->createdAt = $createdAt ?? new DateTimeImmutable();
-        $this->updatedAt = $updatedAt ?? $this->createdAt;
+        // Assignment is handled via InterviewerVacancyAssignment entity; no state change here.
     }
 
-    public function assignToVacancy(string $vacancyId): void
+    public function unassignFromVacancy(Vacancy $vacancy): void
     {
-        if (!in_array($vacancyId, $this->vacancyIds, true)) {
-            $this->vacancyIds[] = $vacancyId;
-            $this->touch();
+        // No state change.
+    }
+
+    public function updateProfile(?string $fullName = null, ?string $position = null, ?array $profileUrls = null): void
+    {
+        if ($fullName !== null && trim($fullName) === '') {
+            throw new InvalidOperationException('Full name cannot be empty.');
         }
-    }
-
-    public function unassignFromVacancy(string $vacancyId): void
-    {
-        $this->vacancyIds = array_values(array_filter($this->vacancyIds, fn($id) => $id !== $vacancyId));
-        $this->touch();
-    }
-
-    /** @return string[] */
-    public function vacancyIds(): array
-    {
-        return $this->vacancyIds;
-    }
-
-    private function touch(): void
-    {
+        $this->fullName = $fullName !== null ? trim($fullName) : $this->fullName;
+        $this->position = $position ?? $this->position;
+        $this->profileUrls = $profileUrls ?? $this->profileUrls;
         $this->updatedAt = new DateTimeImmutable();
+        $this->version++;
+    }
+
+    public function softDelete(): void
+    {
+        $this->isActive = false;
+        $this->deletedAt = new DateTimeImmutable();
+        $this->version++;
+    }
+
+    public function id(): string
+    {
+        return $this->id;
+    }
+
+    public function employerId(): string
+    {
+        return $this->employerId;
+    }
+
+    public function version(): int
+    {
+        return $this->version;
     }
 }

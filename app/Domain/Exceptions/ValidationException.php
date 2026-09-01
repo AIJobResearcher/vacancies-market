@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Domain\Exceptions;
 
-class InvalidOperationException extends DomainException
+abstract class ValidationException extends DomainException
 {
-
 }

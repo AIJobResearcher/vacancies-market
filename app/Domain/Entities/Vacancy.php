@@ -12,7 +12,13 @@ use App\Domain\Events\VacancyClosedEvent;
 use App\Domain\Events\VacancyImportedEvent;
 use App\Domain\Events\VacancyMergedEvent;
 use App\Domain\Events\VacancyUpdatedEvent;
-use App\Domain\Exceptions\InvalidOperationException;
+use App\Domain\Exceptions\StateConflictException\JobAlreadyAssignedException;
+use App\Domain\Exceptions\StateConflictException\JobNotAssignedException;
+use App\Domain\Exceptions\StateConflictException\RequirementAlreadyAssignedException;
+use App\Domain\Exceptions\StateConflictException\RequirementNotAssignedException;
+use App\Domain\Exceptions\StateConflictException\VacancyAlreadyClosedException;
+use App\Domain\Exceptions\StateConflictException\VacancyAlreadyOpenException;
+use App\Domain\Exceptions\ValidationException\VacancyTitleEmptyException;
 use App\Domain\ValueObjects\ExternalUrls;
 use App\Domain\ValueObjects\Salary;
 use DateTimeImmutable;
@@ -69,7 +75,7 @@ final class Vacancy
         ?string $correlationId = null
     ): self {
         if (trim($title) === '') {
-            throw new InvalidOperationException('Vacancy title cannot be empty.');
+            throw new VacancyTitleEmptyException();
         }
         $now = new DateTimeImmutable();
         $vacancy = new self(
@@ -116,7 +122,7 @@ final class Vacancy
         ?string $internalUrl = null
     ): void {
         if ($title !== null && trim($title) === '') {
-            throw new InvalidOperationException('Vacancy title cannot be empty.');
+            throw new VacancyTitleEmptyException();
         }
         $this->title = $title !== null ? trim($title) : $this->title;
         $this->description = $description ?? $this->description;
@@ -145,7 +151,7 @@ final class Vacancy
     public function close(): void
     {
         if ($this->status === VacancyStatusEnum::CLOSED) {
-            return;
+            throw new VacancyAlreadyClosedException($this->id);
         }
         $this->status = VacancyStatusEnum::CLOSED;
         $this->closedAt = new DateTimeImmutable();
@@ -164,13 +170,12 @@ final class Vacancy
     public function reopen(): void
     {
         if ($this->status === VacancyStatusEnum::OPEN) {
-            return;
+            throw new VacancyAlreadyOpenException($this->id);
         }
         $this->status = VacancyStatusEnum::OPEN;
         $this->closedAt = null;
         $this->updatedAt = new DateTimeImmutable();
         $this->version++;
-        // Reopen is an update
         $this->recordEvent(
             new VacancyUpdatedEvent(
                 $this->id,
@@ -211,7 +216,7 @@ final class Vacancy
     {
         foreach ($this->requirementAssignments as $assignment) {
             if ($assignment->getRequirementId() === $requirementId) {
-                throw new InvalidOperationException('Requirement already assigned.');
+                throw new RequirementAlreadyAssignedException($requirementId);
             }
         }
         $assignment = new VacancyRequirementAssignment(
@@ -236,14 +241,14 @@ final class Vacancy
                 return;
             }
         }
-        throw new InvalidOperationException('Requirement not assigned.');
+        throw new RequirementNotAssignedException($requirementId);
     }
 
     public function assignToJob(string $jobId, ?int $relevanceScore = null): void
     {
         foreach ($this->jobAssignments as $assignment) {
             if ($assignment->jobId() === $jobId && $assignment->isActive()) {
-                throw new InvalidOperationException('Vacancy already assigned to this job.');
+                throw new JobAlreadyAssignedException($jobId);
             }
         }
         $assignment = new VacancyJobAssignment(
@@ -268,7 +273,7 @@ final class Vacancy
                 return;
             }
         }
-        throw new InvalidOperationException('Vacancy is not assigned to this job.');
+        throw new JobNotAssignedException($jobId);
     }
 
     public function addSource(VacancySource $source): void

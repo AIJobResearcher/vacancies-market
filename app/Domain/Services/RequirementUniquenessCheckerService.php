@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Services;
 
-use App\Domain\Exceptions\InvalidOperationException;
+use App\Domain\Exceptions\ValidationException\RequirementAlreadyExistsException;
 use App\Domain\Repositories\RequirementRepositoryInterface;
 
 final readonly class RequirementUniquenessCheckerService
@@ -15,7 +15,7 @@ final readonly class RequirementUniquenessCheckerService
     {
         $existing = $this->repository->findByTitleCaseInsensitive($title);
         if ($existing !== null && ($excludeId === null || $existing->id() !== $excludeId)) {
-            throw new InvalidOperationException(sprintf('Requirement with title "%s" already exists.', $title));
+            throw new RequirementAlreadyExistsException($title);
         }
     }
 }

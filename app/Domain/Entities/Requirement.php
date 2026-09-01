@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Entities;
 
-use App\Domain\Exceptions\InvalidOperationException;
+use App\Domain\Exceptions\ValidationException\RequirementTitleEmptyException;
 use DateTimeImmutable;
 
 final class Requirement
@@ -26,7 +26,7 @@ final class Requirement
         ?string $category = null
     ): self {
         if (trim($title) === '') {
-            throw new InvalidOperationException('Requirement title cannot be empty.');
+            throw new RequirementTitleEmptyException();
         }
         $now = new DateTimeImmutable();
         return new self($id, trim($title), $description, $category, $now, $now);
@@ -35,7 +35,7 @@ final class Requirement
     public function update(?string $title = null, ?string $description = null, ?string $category = null): void
     {
         if ($title !== null && trim($title) === '') {
-            throw new InvalidOperationException('Requirement title cannot be empty.');
+            throw new RequirementTitleEmptyException();
         }
         $this->title = $title !== null ? trim($title) : $this->title;
         $this->description = $description ?? $this->description;

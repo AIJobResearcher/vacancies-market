@@ -10,7 +10,9 @@ use App\Domain\Entities\Vacancy;
 use App\Domain\Entities\VacancySource;
 use App\Domain\Enums\EmploymentTypeEnum;
 use App\Domain\Enums\WorkplaceEnum;
-use App\Domain\Exceptions\InvalidOperationException;
+use App\Domain\Exceptions\EntityNotFoundException\RequirementNotFoundException;
+use App\Domain\Exceptions\EntityNotFoundException\VacancyNotFoundException;
+use App\Domain\Exceptions\ValidationException\UnknownMutationTypeException;
 use App\Domain\Exceptions\VersionConflictException;
 use App\Domain\Repositories\EmployerRepositoryInterface;
 use App\Domain\Repositories\RequirementRepositoryInterface;
@@ -31,11 +33,7 @@ final readonly class CatalogueChangeApplierService
 
     public function apply(array $commandData): void
     {
-        $mutationType = $commandData['mutation_type'];
-        $aggregateId = $commandData['aggregate_id'] ?? null;
-        $expectedVersion = $commandData['expected_version'] ?? null;
-        $canonicalData = $commandData['canonical_data'] ?? [];
-        $sourceProvenance = $commandData['source_provenance'] ?? [];
+        $mutationType = $commandData['mutation_type'] ?? null;
 
         switch ($mutationType) {
             case 'create':
@@ -51,7 +49,7 @@ final readonly class CatalogueChangeApplierService
                 $this->applyClose($commandData);
                 break;
             default:
-                throw new InvalidOperationException('Unknown mutation type.');
+                throw new UnknownMutationTypeException($mutationType ?? 'null');
         }
     }
 
@@ -96,7 +94,7 @@ final readonly class CatalogueChangeApplierService
             } else {
                 $requirement = $this->requirementRepository->findById($reqId);
                 if ($requirement === null) {
-                    throw new InvalidOperationException('Requirement not found: ' . $reqId);
+                    throw new RequirementNotFoundException($reqId);
                 }
             }
             $requirementIds[] = $reqId;
@@ -149,10 +147,10 @@ final readonly class CatalogueChangeApplierService
     {
         $vacancy = $this->vacancyRepository->findById($data['aggregate_id']);
         if ($vacancy === null) {
-            throw new InvalidOperationException('Vacancy not found.');
+            throw new VacancyNotFoundException($data['aggregate_id']);
         }
         if ($vacancy->version() !== $data['expected_version']) {
-            throw new VersionConflictException('Version conflict.');
+            throw new VersionConflictException('Vacancy', $vacancy->id(), $data['expected_version'], $vacancy->version());
         }
 
         $canonicalData = $data['canonical_data'];
@@ -198,17 +196,17 @@ final readonly class CatalogueChangeApplierService
     {
         $targetVacancy = $this->vacancyRepository->findById($data['aggregate_id']);
         if ($targetVacancy === null) {
-            throw new InvalidOperationException('Target vacancy not found.');
+            throw new VacancyNotFoundException($data['aggregate_id']);
         }
         if ($targetVacancy->version() !== $data['expected_version']) {
-            throw new VersionConflictException('Version conflict.');
+            throw new VersionConflictException('Vacancy', $targetVacancy->id(), $data['expected_version'], $targetVacancy->version());
         }
 
         // Assume source vacancies are in $data['merge_ids']
         $mergedIds = $data['merge_ids'];
         $primarySource = $this->vacancyRepository->findById($mergedIds[0] ?? null);
         if ($primarySource === null) {
-            throw new InvalidOperationException('Primary source vacancy not found.');
+            throw new VacancyNotFoundException($mergedIds[0] ?? 'null');
         }
 
         // Merge data: take from primary source or combine? For simplicity, take from primary source.
@@ -232,10 +230,10 @@ final readonly class CatalogueChangeApplierService
     {
         $vacancy = $this->vacancyRepository->findById($data['aggregate_id']);
         if ($vacancy === null) {
-            throw new InvalidOperationException('Vacancy not found.');
+            throw new VacancyNotFoundException($data['aggregate_id']);
         }
         if ($vacancy->version() !== $data['expected_version']) {
-            throw new VersionConflictException('Version conflict.');
+            throw new VersionConflictException('Vacancy', $vacancy->id(), $data['expected_version'], $vacancy->version());
         }
         $vacancy->close();
         $this->vacancyRepository->save($vacancy);

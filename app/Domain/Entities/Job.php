@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Domain\Entities;
 
-use App\Domain\Exceptions\InvalidOperationException;
+use App\Domain\Exceptions\StateConflictException\RequirementAlreadyAssignedException;
+use App\Domain\Exceptions\StateConflictException\RequirementNotAssignedException;
+use App\Domain\Exceptions\ValidationException\JobTitleEmptyException;
 use DateTimeImmutable;
 
 final class Job
@@ -36,7 +38,7 @@ final class Job
         ?string $correlationId = null
     ): self {
         if (trim($title) === '') {
-            throw new InvalidOperationException('Job title cannot be empty.');
+            throw new JobTitleEmptyException();
         }
         $now = new DateTimeImmutable();
         return new self(
@@ -55,7 +57,7 @@ final class Job
     public function addRequirement(string $requirementId): void
     {
         if (in_array($requirementId, $this->requirementIds, true)) {
-            throw new InvalidOperationException('Requirement already assigned to this job.');
+            throw new RequirementAlreadyAssignedException($requirementId);
         }
         $this->requirementIds[] = $requirementId;
         $this->updatedAt = new DateTimeImmutable();
@@ -66,7 +68,7 @@ final class Job
     {
         $index = array_search($requirementId, $this->requirementIds, true);
         if ($index === false) {
-            throw new InvalidOperationException('Requirement not assigned to this job.');
+            throw new RequirementNotAssignedException($requirementId);
         }
         unset($this->requirementIds[$index]);
         $this->requirementIds = array_values($this->requirementIds);
@@ -76,7 +78,6 @@ final class Job
 
     public function softDelete(): void
     {
-        // Application layer must check that no active Vacancy references this Job.
         $this->deletedAt = new DateTimeImmutable();
         $this->version++;
     }

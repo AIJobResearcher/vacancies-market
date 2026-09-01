@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain\Entities;
 
-use App\Domain\Exceptions\InvalidOperationException;
+use App\Domain\Exceptions\OwnershipException\InterviewerVacancyEmployerMismatchException;
+use App\Domain\Exceptions\ValidationException\InterviewerFullNameEmptyException;
 use DateTimeImmutable;
 
 final class Interviewer
@@ -32,7 +33,7 @@ final class Interviewer
         ?string $correlationId = null
     ): self {
         if (trim($fullName) === '') {
-            throw new InvalidOperationException('Interviewer full name cannot be empty.');
+            throw new InterviewerFullNameEmptyException();
         }
         $now = new DateTimeImmutable();
         return new self(
@@ -51,7 +52,7 @@ final class Interviewer
     public function assignToVacancy(Vacancy $vacancy): void
     {
         if ($vacancy->employerId() !== $this->employerId) {
-            throw new InvalidOperationException('Interviewer and vacancy belong to different employers.');
+            throw new InterviewerVacancyEmployerMismatchException();
         }
         // Assignment is handled via InterviewerVacancyAssignment entity; no state change here.
     }
@@ -64,7 +65,7 @@ final class Interviewer
     public function updateProfile(?string $fullName = null, ?string $position = null, ?array $profileUrls = null): void
     {
         if ($fullName !== null && trim($fullName) === '') {
-            throw new InvalidOperationException('Full name cannot be empty.');
+            throw new InterviewerFullNameEmptyException();
         }
         $this->fullName = $fullName !== null ? trim($fullName) : $this->fullName;
         $this->position = $position ?? $this->position;

@@ -6,7 +6,11 @@ namespace App\Domain\Entities;
 
 use App\Domain\Events\DomainEvent;
 use App\Domain\Events\EmployerImportedEvent;
-use App\Domain\Exceptions\InvalidOperationException;
+use App\Domain\Exceptions\OwnershipException\InterviewerBelongsToDifferentEmployerException;
+use App\Domain\Exceptions\OwnershipException\VacancyBelongsToDifferentEmployerException;
+use App\Domain\Exceptions\StateConflictException\EmployerInactiveException;
+use App\Domain\Exceptions\StateConflictException\VacancyNotClosedException;
+use App\Domain\Exceptions\ValidationException\EmployerTitleEmptyException;
 use DateTimeImmutable;
 
 final class Employer
@@ -39,7 +43,7 @@ final class Employer
         ?string $correlationId = null
     ): self {
         if (trim($title) === '') {
-            throw new InvalidOperationException('Employer title cannot be empty.');
+            throw new EmployerTitleEmptyException();
         }
         $now = new DateTimeImmutable();
         $employer = new self(
@@ -74,7 +78,7 @@ final class Employer
         ?string $logoUrl = null
     ): void {
         if ($title !== null && trim($title) === '') {
-            throw new InvalidOperationException('Employer title cannot be empty.');
+            throw new EmployerTitleEmptyException();
         }
         $this->title = $title !== null ? trim($title) : $this->title;
         $this->description = $description ?? $this->description;
@@ -89,10 +93,10 @@ final class Employer
     public function addVacancy(Vacancy $vacancy): void
     {
         if (!$this->isActive) {
-            throw new InvalidOperationException('Cannot add vacancy to inactive employer.');
+            throw new EmployerInactiveException($this->id);
         }
         if ($vacancy->employerId() !== $this->id) {
-            throw new InvalidOperationException('Vacancy belongs to a different employer.');
+            throw new VacancyBelongsToDifferentEmployerException($vacancy->id(), $this->id);
         }
         // In real implementation, the vacancy is saved separately; no collection stored here.
     }
@@ -100,14 +104,14 @@ final class Employer
     public function removeVacancy(Vacancy $vacancy): void
     {
         if ($vacancy->status() !== 'closed') {
-            throw new InvalidOperationException('Only closed vacancies can be removed.');
+            throw new VacancyNotClosedException($vacancy->id());
         }
     }
 
     public function addInterviewer(Interviewer $interviewer): void
     {
         if ($interviewer->employerId() !== $this->id) {
-            throw new InvalidOperationException('Interviewer belongs to a different employer.');
+            throw new InterviewerBelongsToDifferentEmployerException($interviewer->id(), $this->id);
         }
     }
 

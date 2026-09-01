@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain\Entities;
 
-use App\Domain\Exceptions\InvalidOperationException;
+use App\Domain\Exceptions\StateConflictException\AssignmentAlreadyInactiveException;
+use App\Domain\Exceptions\ValidationException\RelevanceScoreOutOfRangeException;
 use DateTimeImmutable;
 
 final class VacancyJobAssignment
@@ -20,7 +21,7 @@ final class VacancyJobAssignment
         private int $version = 1,
     ) {
         if ($this->relevanceScore !== null && ($this->relevanceScore < 1 || $this->relevanceScore > 100)) {
-            throw new InvalidOperationException('Relevance score must be between 1 and 100.');
+            throw new RelevanceScoreOutOfRangeException($this->relevanceScore);
         }
     }
 
@@ -31,7 +32,7 @@ final class VacancyJobAssignment
     public function deactivate(): void
     {
         if ($this->unassignedAt !== null) {
-            throw new InvalidOperationException('Assignment is already inactive.');
+            throw new AssignmentAlreadyInactiveException($this->unassignedAt->format(DATE_ATOM));
         }
         $this->unassignedAt = new DateTimeImmutable();
         $this->version++;

@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Domain\ValueObjects;
 
-use App\Domain\Exceptions\InvalidOperationException;
+use App\Domain\Exceptions\ValidationException\SalaryCurrencyNotAllowedException;
+use App\Domain\Exceptions\ValidationException\SalaryMaxLessThanMinException;
+use App\Domain\Exceptions\ValidationException\SalaryMaxNegativeException;
+use App\Domain\Exceptions\ValidationException\SalaryMinNegativeException;
 
 final class Salary
 {
@@ -21,16 +24,16 @@ final class Salary
     private function validate(): void
     {
         if ($this->minSalary < 0) {
-            throw new InvalidOperationException('Minimum salary cannot be negative.');
+            throw new SalaryMinNegativeException($this->minSalary);
         }
         if ($this->maxSalary !== null && $this->maxSalary < 0) {
-            throw new InvalidOperationException('Maximum salary cannot be negative.');
+            throw new SalaryMaxNegativeException($this->maxSalary);
         }
         if ($this->maxSalary !== null && $this->maxSalary < $this->minSalary) {
-            throw new InvalidOperationException('Maximum salary must be >= minimum salary.');
+            throw new SalaryMaxLessThanMinException($this->minSalary, $this->maxSalary);
         }
         if (!in_array($this->currency, self::ALLOWED_CURRENCIES, true)) {
-            throw new InvalidOperationException(sprintf('Currency "%s" not allowed.', $this->currency));
+            throw new SalaryCurrencyNotAllowedException($this->currency);
         }
     }
 

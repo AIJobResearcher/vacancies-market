@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace App\Domain\ValueObjects;
 
-use App\Domain\Exceptions\InvalidOperationException;
+use App\Domain\Exceptions\ValidationException\ExternalUrlInvalidException;
+use App\Domain\Exceptions\ValidationException\ExternalUrlsEmptyException;
 
-class ExternalUrls
+final class ExternalUrls
 {
     /** @var string[] */
     private array $urls;
@@ -20,11 +21,11 @@ class ExternalUrls
     {
         $urls = array_values(array_unique($urls));
         if (empty($urls)) {
-            throw new InvalidOperationException('At least one external URL is required.');
+            throw new ExternalUrlsEmptyException();
         }
         foreach ($urls as $url) {
             if (!is_string($url) || filter_var($url, FILTER_VALIDATE_URL) === false) {
-                throw new InvalidOperationException('Invalid external URL.');
+                throw new ExternalUrlInvalidException($url);
             }
         }
         $this->urls = $urls;

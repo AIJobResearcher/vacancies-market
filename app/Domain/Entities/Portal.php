@@ -3,8 +3,9 @@ declare(strict_types=1);
 
 namespace App\Domain\Entities;
 
+use App\Domain\Exceptions\ValidationException\PortalBaseUrlEmptyException;
+use App\Domain\Exceptions\ValidationException\PortalNameEmptyException;
 use DateTimeImmutable;
-use InvalidArgumentException;
 
 final class Portal
 {
@@ -39,10 +40,10 @@ final class Portal
         ?DateTimeImmutable $updatedAt = null
     ) {
         if ($name === '') {
-            throw new InvalidArgumentException('Portal name must not be empty');
+            throw new PortalNameEmptyException();
         }
         if ($baseUrl === '') {
-            throw new InvalidArgumentException('Portal baseUrl must not be empty');
+            throw new PortalBaseUrlEmptyException();
         }
 
         $this->id = $id;

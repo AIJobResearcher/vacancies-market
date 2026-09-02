@@ -11,6 +11,7 @@ use App\Domain\Exceptions\OwnershipException\VacancyBelongsToDifferentEmployerEx
 use App\Domain\Exceptions\StateConflictException\EmployerInactiveException;
 use App\Domain\Exceptions\StateConflictException\VacancyNotClosedException;
 use App\Domain\Exceptions\ValidationException\EmployerTitleEmptyException;
+use App\Domain\ValueObjects\EntityIds\EmployerId;
 use DateTimeImmutable;
 
 final class Employer
@@ -19,7 +20,7 @@ final class Employer
     private array $events = [];
 
     private function __construct(
-        private string $id,
+        private readonly EmployerId $id,
         private string $title,
         private ?string $description,
         private ?string $website,
@@ -33,7 +34,7 @@ final class Employer
     ) {}
 
     public static function create(
-        string $id,
+        EmployerId $id,
         string $title,
         ?string $description = null,
         ?string $website = null,
@@ -45,7 +46,7 @@ final class Employer
         if (trim($title) === '') {
             throw new EmployerTitleEmptyException();
         }
-        $now = new DateTimeImmutable();
+        $now = new DateTimeImmutable;
         $employer = new self(
             $id,
             trim($title),
@@ -60,8 +61,8 @@ final class Employer
             1
         );
         $employer->recordEvent(new EmployerImportedEvent(
-            $id,
-            $id,
+            $id->value(),
+            $id->value(),
             $now,
             $correlationId,
             $employer->toArray()
@@ -80,23 +81,24 @@ final class Employer
         if ($title !== null && trim($title) === '') {
             throw new EmployerTitleEmptyException();
         }
+
         $this->title = $title !== null ? trim($title) : $this->title;
         $this->description = $description ?? $this->description;
         $this->website = $website ?? $this->website;
         $this->email = $email ?? $this->email;
         $this->phone = $phone ?? $this->phone;
         $this->logoUrl = $logoUrl ?? $this->logoUrl;
-        $this->updatedAt = new DateTimeImmutable();
+        $this->updatedAt = new DateTimeImmutable;
         $this->version++;
     }
 
     public function addVacancy(Vacancy $vacancy): void
     {
         if (!$this->isActive) {
-            throw new EmployerInactiveException($this->id);
+            throw new EmployerInactiveException($this->id->value());
         }
-        if ($vacancy->employerId() !== $this->id) {
-            throw new VacancyBelongsToDifferentEmployerException($vacancy->id(), $this->id);
+        if (!$vacancy->employerId()->equals($this->id)) {
+            throw new VacancyBelongsToDifferentEmployerException($vacancy->id()->value(), $this->id->value());
         }
         // In real implementation, the vacancy is saved separately; no collection stored here.
     }
@@ -104,14 +106,14 @@ final class Employer
     public function removeVacancy(Vacancy $vacancy): void
     {
         if ($vacancy->status() !== 'closed') {
-            throw new VacancyNotClosedException($vacancy->id());
+            throw new VacancyNotClosedException($vacancy->id()->value());
         }
     }
 
     public function addInterviewer(Interviewer $interviewer): void
     {
-        if ($interviewer->employerId() !== $this->id) {
-            throw new InterviewerBelongsToDifferentEmployerException($interviewer->id(), $this->id);
+        if (!$interviewer->employerId()->equals($this->id)) {
+            throw new InterviewerBelongsToDifferentEmployerException($interviewer->id()->value(), $this->id->value());
         }
     }
 
@@ -120,7 +122,7 @@ final class Employer
         // Soft delete handled by interviewer itself.
     }
 
-    public function id(): string
+    public function id(): EmployerId
     {
         return $this->id;
     }
@@ -143,7 +145,7 @@ final class Employer
     public function toArray(): array
     {
         return [
-            'id' => $this->id,
+            'id' => $this->id->value(),
             'title' => $this->title,
             'description' => $this->description,
             'website' => $this->website,

@@ -12,15 +12,19 @@ use App\Domain\Enums\EmploymentTypeEnum;
 use App\Domain\Enums\WorkplaceEnum;
 use App\Domain\Exceptions\EntityNotFoundException\RequirementNotFoundException;
 use App\Domain\Exceptions\EntityNotFoundException\VacancyNotFoundException;
+use App\Domain\Exceptions\ValidationException\MergeListEmptyException;
 use App\Domain\Exceptions\ValidationException\UnknownMutationTypeException;
 use App\Domain\Exceptions\VersionConflictException;
 use App\Domain\Repositories\EmployerRepositoryInterface;
 use App\Domain\Repositories\RequirementRepositoryInterface;
 use App\Domain\Repositories\VacancyRepositoryInterface;
+use App\Domain\ValueObjects\EntityIds\EmployerId;
+use App\Domain\ValueObjects\EntityIds\RequirementId;
+use App\Domain\ValueObjects\EntityIds\VacancyId;
+use App\Domain\ValueObjects\EntityIds\VacancySourceId;
 use App\Domain\ValueObjects\ExternalUrls;
 use App\Domain\ValueObjects\Salary;
 use DateTimeImmutable;
-use Ramsey\Uuid\Uuid;
 
 final readonly class CatalogueChangeApplierService
 {
@@ -28,7 +32,7 @@ final readonly class CatalogueChangeApplierService
         private EmployerRepositoryInterface $employerRepository,
         private VacancyRepositoryInterface $vacancyRepository,
         private RequirementRepositoryInterface $requirementRepository,
-        private RequirementUniquenessCheckerService $uniquenessChecker
+        private RequirementUniquenessCheckerService $uniquenessChecker,
     ) {}
 
     public function apply(array $commandData): void
@@ -59,8 +63,11 @@ final readonly class CatalogueChangeApplierService
         $sourceProvenance = $data['source_provenance'];
         $correlationId = $data['correlation_id'] ?? null;
 
-        // Resolve or create Employer
-        $employerId = $canonicalData['employer']['id'] ?? null;
+        // ---- Employer ----
+        $employerId = isset($canonicalData['employer']['id'])
+            ? EmployerId::fromString($canonicalData['employer']['id'])
+            : EmployerId::generate();
+
         $employer = $this->employerRepository->findById($employerId);
         if ($employer === null) {
             $employer = Employer::create(
@@ -76,33 +83,39 @@ final readonly class CatalogueChangeApplierService
             $this->employerRepository->save($employer);
         }
 
-        // Resolve or create Requirements
+        // ---- Requirements ----
         $requirementIds = [];
         foreach ($canonicalData['requirements'] ?? [] as $reqData) {
-            $reqId = $reqData['id'] ?? null;
-            if ($reqId === null) {
-                // Create new
-                $this->uniquenessChecker->ensureUnique($reqData['title']);
+            if (isset($reqData['id'])) {
+                $reqId = RequirementId::fromString($reqData['id']);
+                $requirement = $this->requirementRepository->findById($reqId);
+                if ($requirement === null) {
+                    throw new RequirementNotFoundException($reqId->value());
+                }
+            } else {
+                $this->uniquenessChecker->ensureUnique($reqData['title'], null);
+                $reqId = RequirementId::generate();
                 $requirement = Requirement::create(
-                    $reqId ?? Uuid::uuid4()->toString(),
+                    $reqId,
                     $reqData['title'],
                     $reqData['description'] ?? null,
                     $reqData['category'] ?? null
                 );
                 $this->requirementRepository->save($requirement);
-                $reqId = $requirement->id();
-            } else {
-                $requirement = $this->requirementRepository->findById($reqId);
-                if ($requirement === null) {
-                    throw new RequirementNotFoundException($reqId);
-                }
             }
             $requirementIds[] = $reqId;
         }
 
-        // Build Vacancy
+        // ---- Vacancy ----
+        $vacancyId = isset($data['aggregate_id'])
+            ? VacancyId::fromString($data['aggregate_id'])
+            : (isset($canonicalData['id'])
+                ? VacancyId::fromString($canonicalData['id'])
+                : VacancyId::generate()
+            );
+
         $vacancy = Vacancy::create(
-            $data['aggregate_id'] ?? $canonicalData['id'] ?? Uuid::uuid4()->toString(),
+            $vacancyId,
             $employerId,
             $canonicalData['title'],
             $canonicalData['description'] ?? '',
@@ -121,39 +134,33 @@ final readonly class CatalogueChangeApplierService
             $correlationId
         );
 
-        // Add requirements
         foreach ($requirementIds as $reqId) {
             $vacancy->addRequirement($reqId);
         }
 
-        // Add source
-        $source = new VacancySource(
-            Uuid::uuid4()->toString(),
-            $vacancy->id(),
-            $sourceProvenance['source_key'],
-            $sourceProvenance['external_vacancy_id'],
-            $sourceProvenance['external_url'],
-            new DateTimeImmutable(),
-            new DateTimeImmutable(),
-            null,
-            $sourceProvenance['is_primary'] ?? false
-        );
+        $source = $this->createSource($sourceProvenance, $vacancy);
         $vacancy->addSource($source);
-
         $this->vacancyRepository->save($vacancy);
     }
 
     private function applyUpdate(array $data): void
     {
-        $vacancy = $this->vacancyRepository->findById($data['aggregate_id']);
+        $vacancyId = VacancyId::fromString($data['aggregate_id']);
+        $vacancy = $this->vacancyRepository->findById($vacancyId);
         if ($vacancy === null) {
             throw new VacancyNotFoundException($data['aggregate_id']);
         }
         if ($vacancy->version() !== $data['expected_version']) {
-            throw new VersionConflictException('Vacancy', $vacancy->id(), $data['expected_version'], $vacancy->version());
+            throw new VersionConflictException(
+                'Vacancy',
+                $vacancy->id()->value(),
+                $data['expected_version'],
+                $vacancy->version()
+            );
         }
 
         $canonicalData = $data['canonical_data'];
+
         // Update fields
         $vacancy->updateDetails(
             $canonicalData['title'] ?? null,
@@ -175,17 +182,7 @@ final readonly class CatalogueChangeApplierService
         // Update source if provided
         if (isset($data['source_provenance'])) {
             $sp = $data['source_provenance'];
-            $source = new VacancySource(
-                Uuid::uuid4()->toString(),
-                $vacancy->id(),
-                $sp['source_key'],
-                $sp['external_vacancy_id'],
-                $sp['external_url'],
-                new DateTimeImmutable(),
-                new DateTimeImmutable(),
-                null,
-                $sp['is_primary'] ?? false
-            );
+            $source = $this->createSource($sp, $vacancy);
             $vacancy->addSource($source);
         }
 
@@ -194,28 +191,37 @@ final readonly class CatalogueChangeApplierService
 
     private function applyMerge(array $data): void
     {
-        $targetVacancy = $this->vacancyRepository->findById($data['aggregate_id']);
+        $targetVacancy = $this->vacancyRepository->findById(VacancyId::fromString($data['aggregate_id']));
         if ($targetVacancy === null) {
             throw new VacancyNotFoundException($data['aggregate_id']);
         }
         if ($targetVacancy->version() !== $data['expected_version']) {
-            throw new VersionConflictException('Vacancy', $targetVacancy->id(), $data['expected_version'], $targetVacancy->version());
+            throw new VersionConflictException(
+                'Vacancy',
+                $targetVacancy->id()->value(),
+                $data['expected_version'],
+                $targetVacancy->version()
+            );
         }
 
-        // Assume source vacancies are in $data['merge_ids']
         $mergedIds = $data['merge_ids'];
-        $primarySource = $this->vacancyRepository->findById($mergedIds[0] ?? null);
-        if ($primarySource === null) {
-            throw new VacancyNotFoundException($mergedIds[0] ?? 'null');
+        if (empty($mergedIds)) {
+            throw new MergeListEmptyException;
         }
 
-        // Merge data: take from primary source or combine? For simplicity, take from primary source.
+        $primarySource = $this->vacancyRepository->findById(VacancyId::fromString($mergedIds[0]));
+        if ($primarySource === null) {
+            throw new VacancyNotFoundException($mergedIds[0]);
+        }
+
+        // Merge data from primary source
         $targetVacancy->mergeFrom($primarySource, $mergedIds);
 
-        // Close the merged source vacancies (except target)
+        // Close all other merged vacancies (except target)
         foreach ($mergedIds as $mergedId) {
-            if ($mergedId !== $targetVacancy->id()) {
-                $source = $this->vacancyRepository->findById($mergedId);
+            $sourceId = VacancyId::fromString($mergedId);
+            if (!$sourceId->equals($targetVacancy->id())) {
+                $source = $this->vacancyRepository->findById($sourceId);
                 if ($source) {
                     $source->close();
                     $this->vacancyRepository->save($source);
@@ -228,14 +234,35 @@ final readonly class CatalogueChangeApplierService
 
     private function applyClose(array $data): void
     {
-        $vacancy = $this->vacancyRepository->findById($data['aggregate_id']);
+        $vacancyId = VacancyId::fromString($data['aggregate_id']);
+        $vacancy = $this->vacancyRepository->findById($vacancyId);
         if ($vacancy === null) {
             throw new VacancyNotFoundException($data['aggregate_id']);
         }
         if ($vacancy->version() !== $data['expected_version']) {
-            throw new VersionConflictException('Vacancy', $vacancy->id(), $data['expected_version'], $vacancy->version());
+            throw new VersionConflictException(
+                'Vacancy',
+                $vacancy->id()->value(),
+                $data['expected_version'],
+                $vacancy->version()
+            );
         }
         $vacancy->close();
         $this->vacancyRepository->save($vacancy);
+    }
+
+    private function createSource(array $provenance, Vacancy $vacancy): VacancySource
+    {
+        return new VacancySource(
+            VacancySourceId::generate(),
+            $vacancy->id(),
+            $provenance['source_key'],
+            $provenance['external_vacancy_id'],
+            $provenance['external_url'],
+            new DateTimeImmutable,
+            new DateTimeImmutable,
+            null,
+            $provenance['is_primary'] ?? false
+        );
     }
 }

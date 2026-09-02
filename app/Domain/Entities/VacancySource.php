@@ -4,15 +4,17 @@ declare(strict_types=1);
 
 namespace App\Domain\Entities;
 
+use App\Domain\ValueObjects\EntityIds\VacancyId;
+use App\Domain\ValueObjects\EntityIds\VacancySourceId;
 use DateTimeImmutable;
 
 final class VacancySource
 {
     public function __construct(
-        private string $id,
-        private string $vacancyId,
+        private readonly VacancySourceId $id,
+        private readonly VacancyId $vacancyId,
         private string $sourceKey,
-        private string $externalVacancyId,
+        private readonly string $externalVacancyId,
         private string $externalUrl,
         private DateTimeImmutable $firstSeenAt,
         private DateTimeImmutable $lastSeenAt,

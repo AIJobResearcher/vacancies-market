@@ -41,4 +41,9 @@ final class ExternalUrls
     {
         return $this->urls === $other->urls;
     }
+
+    public function isEmpty(): bool
+    {
+        return empty($this->urls);
+    }
 }

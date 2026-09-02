@@ -18,11 +18,17 @@ use App\Domain\Exceptions\StateConflictException\RequirementAlreadyAssignedExcep
 use App\Domain\Exceptions\StateConflictException\RequirementNotAssignedException;
 use App\Domain\Exceptions\StateConflictException\VacancyAlreadyClosedException;
 use App\Domain\Exceptions\StateConflictException\VacancyAlreadyOpenException;
+use App\Domain\Exceptions\ValidationException\VacancyExternalUrlsEmptyException;
 use App\Domain\Exceptions\ValidationException\VacancyTitleEmptyException;
+use App\Domain\ValueObjects\EntityIds\EmployerId;
+use App\Domain\ValueObjects\EntityIds\JobId;
+use App\Domain\ValueObjects\EntityIds\RequirementId;
+use App\Domain\ValueObjects\EntityIds\VacancyId;
+use App\Domain\ValueObjects\EntityIds\VacancyJobAssignmentId;
+use App\Domain\ValueObjects\EntityIds\VacancyRequirementAssignmentId;
 use App\Domain\ValueObjects\ExternalUrls;
 use App\Domain\ValueObjects\Salary;
 use DateTimeImmutable;
-use Ramsey\Uuid\Uuid;
 
 final class Vacancy
 {
@@ -39,8 +45,8 @@ final class Vacancy
     private array $sources = [];
 
     private function __construct(
-        private string $id,
-        private string $employerId,
+        private readonly VacancyId $id,
+        private readonly EmployerId $employerId,
         private string $title,
         private ?string $description,
         private Salary $salary,
@@ -60,8 +66,8 @@ final class Vacancy
     }
 
     public static function create(
-        string $id,
-        string $employerId,
+        VacancyId $id,
+        EmployerId $employerId,
         string $title,
         string $description,
         Salary $salary,
@@ -75,9 +81,14 @@ final class Vacancy
         ?string $correlationId = null
     ): self {
         if (trim($title) === '') {
-            throw new VacancyTitleEmptyException();
+            throw new VacancyTitleEmptyException;
         }
-        $now = new DateTimeImmutable();
+
+        if ($externalUrls->isEmpty()) {
+            throw new VacancyExternalUrlsEmptyException;
+        }
+
+        $now = new DateTimeImmutable;
         $vacancy = new self(
             $id,
             $employerId,
@@ -99,8 +110,8 @@ final class Vacancy
         );
         $vacancy->recordEvent(
             new VacancyImportedEvent(
-                $id,
-                $id,
+                $id->value(),
+                $id->value(),
                 $now,
                 $correlationId,
                 $vacancy->toArray()
@@ -122,8 +133,13 @@ final class Vacancy
         ?string $internalUrl = null
     ): void {
         if ($title !== null && trim($title) === '') {
-            throw new VacancyTitleEmptyException();
+            throw new VacancyTitleEmptyException;
         }
+
+        if ($externalUrls !== null && $externalUrls->isEmpty()) {
+            throw new VacancyExternalUrlsEmptyException;
+        }
+
         $this->title = $title !== null ? trim($title) : $this->title;
         $this->description = $description ?? $this->description;
         $this->salary = $salary ?? $this->salary;
@@ -135,12 +151,12 @@ final class Vacancy
         $this->externalUrls = $externalUrls ?? $this->externalUrls;
         $this->internalUrl = $internalUrl ?? $this->internalUrl;
 
-        $this->updatedAt = new DateTimeImmutable();
+        $this->updatedAt = new DateTimeImmutable;
         $this->version++;
         $this->recordEvent(
             new VacancyUpdatedEvent(
-                $this->id,
-                $this->id,
+                $this->id->value(),
+                $this->id->value(),
                 $this->updatedAt,
                 null, // correlationId can be passed if needed
                 $this->toArray()
@@ -151,16 +167,16 @@ final class Vacancy
     public function close(): void
     {
         if ($this->status === VacancyStatusEnum::CLOSED) {
-            throw new VacancyAlreadyClosedException($this->id);
+            throw new VacancyAlreadyClosedException($this->id->value());
         }
         $this->status = VacancyStatusEnum::CLOSED;
-        $this->closedAt = new DateTimeImmutable();
+        $this->closedAt = new DateTimeImmutable;
         $this->updatedAt = $this->closedAt;
         $this->version++;
         $this->recordEvent(
             new VacancyClosedEvent(
-                $this->id,
-                $this->id,
+                $this->id->value(),
+                $this->id->value(),
                 $this->closedAt,
                 null
             )
@@ -170,16 +186,16 @@ final class Vacancy
     public function reopen(): void
     {
         if ($this->status === VacancyStatusEnum::OPEN) {
-            throw new VacancyAlreadyOpenException($this->id);
+            throw new VacancyAlreadyOpenException($this->id->value());
         }
         $this->status = VacancyStatusEnum::OPEN;
         $this->closedAt = null;
-        $this->updatedAt = new DateTimeImmutable();
+        $this->updatedAt = new DateTimeImmutable;
         $this->version++;
         $this->recordEvent(
             new VacancyUpdatedEvent(
-                $this->id,
-                $this->id,
+                $this->id->value(),
+                $this->id->value(),
                 $this->updatedAt,
                 null,
                 $this->toArray()
@@ -199,12 +215,12 @@ final class Vacancy
         $this->workplace = $other->workplace;
         $this->externalUrls = $other->externalUrls;
         $this->internalUrl = $other->internalUrl;
-        $this->updatedAt = new DateTimeImmutable();
+        $this->updatedAt = new DateTimeImmutable;
         $this->version++;
         $this->recordEvent(
             new VacancyMergedEvent(
-                $this->id,
-                $this->id,
+                $this->id->value(),
+                $this->id->value(),
                 $this->updatedAt,
                 null,
                 $mergedIds
@@ -212,68 +228,69 @@ final class Vacancy
         );
     }
 
-    public function addRequirement(string $requirementId): void
+    public function addRequirement(RequirementId $requirementId): void
     {
         foreach ($this->requirementAssignments as $assignment) {
-            if ($assignment->getRequirementId() === $requirementId) {
-                throw new RequirementAlreadyAssignedException($requirementId);
+            if ($assignment->getRequirementId()->equals($requirementId)) {
+                throw new RequirementAlreadyAssignedException($requirementId->value());
             }
         }
         $assignment = new VacancyRequirementAssignment(
-            Uuid::uuid4()->toString(),
+            VacancyRequirementAssignmentId::generate(),
             $this->id,
             $requirementId,
-            new DateTimeImmutable(),
+            new DateTimeImmutable,
         );
         $this->requirementAssignments[] = $assignment;
-        $this->updatedAt = new DateTimeImmutable();
+        $this->updatedAt = new DateTimeImmutable;
         $this->version++;
     }
 
-    public function removeRequirement(string $requirementId): void
+    public function removeRequirement(RequirementId $requirementId): void
     {
         foreach ($this->requirementAssignments as $key => $assignment) {
-            if ($assignment->getRequirementId() === $requirementId) {
+            if ($assignment->getRequirementId()->equals($requirementId)) {
                 unset($this->requirementAssignments[$key]);
                 $this->requirementAssignments = array_values($this->requirementAssignments);
-                $this->updatedAt = new DateTimeImmutable();
+                $this->updatedAt = new DateTimeImmutable;
                 $this->version++;
                 return;
             }
         }
-        throw new RequirementNotAssignedException($requirementId);
+
+        throw new RequirementNotAssignedException($requirementId->value());
     }
 
-    public function assignToJob(string $jobId, ?int $relevanceScore = null): void
+    public function assignToJob(JobId $jobId, ?int $relevanceScore = null): void
     {
         foreach ($this->jobAssignments as $assignment) {
-            if ($assignment->jobId() === $jobId && $assignment->isActive()) {
-                throw new JobAlreadyAssignedException($jobId);
+            if ($assignment->jobId()->equals($jobId) && $assignment->isActive()) {
+                throw new JobAlreadyAssignedException($jobId->value());
             }
         }
         $assignment = new VacancyJobAssignment(
-            Uuid::uuid4()->toString(),
+            VacancyJobAssignmentId::generate(),
             $this->id,
             $jobId,
-            new DateTimeImmutable(),
+            new DateTimeImmutable,
             $relevanceScore
         );
         $this->jobAssignments[] = $assignment;
-        $this->updatedAt = new DateTimeImmutable();
+        $this->updatedAt = new DateTimeImmutable;
         $this->version++;
     }
 
-    public function unassignFromJob(string $jobId): void
+    public function unassignFromJob(JobId $jobId): void
     {
         foreach ($this->jobAssignments as $assignment) {
-            if ($assignment->jobId() === $jobId && $assignment->isActive()) {
+            if ($assignment->jobId()->equals($jobId) && $assignment->isActive()) {
                 $assignment->deactivate();
-                $this->updatedAt = new DateTimeImmutable();
+                $this->updatedAt = new DateTimeImmutable;
                 $this->version++;
                 return;
             }
         }
-        throw new JobNotAssignedException($jobId);
+        throw new JobNotAssignedException($jobId->value());
     }
 
     public function addSource(VacancySource $source): void
@@ -281,22 +298,22 @@ final class Vacancy
         foreach ($this->sources as $existing) {
             if ($existing->sourceKey() === $source->sourceKey()
                 && $existing->externalVacancyId() === $source->externalVacancyId()) {
-                $existing->updateLastSeenAt(new DateTimeImmutable());
+                $existing->updateLastSeenAt(new DateTimeImmutable);
                 $this->version++;
                 return;
             }
         }
         $this->sources[] = $source;
-        $this->updatedAt = new DateTimeImmutable();
+        $this->updatedAt = new DateTimeImmutable;
         $this->version++;
     }
 
-    public function id(): string
+    public function id(): VacancyId
     {
         return $this->id;
     }
 
-    public function employerId(): string
+    public function employerId(): EmployerId
     {
         return $this->employerId;
     }
@@ -314,8 +331,8 @@ final class Vacancy
     public function toArray(): array
     {
         return [
-            'id' => $this->id,
-            'employer_id' => $this->employerId,
+            'id' => $this->id->value(),
+            'employer_id' => $this->employerId->value(),
             'title' => $this->title,
             'description' => $this->description,
             'salary' => [
@@ -335,8 +352,8 @@ final class Vacancy
             'version' => $this->version,
             'external_urls' => $this->externalUrls->toArray(),
             'internal_url' => $this->internalUrl,
-            'requirements' => array_map(fn($a) => $a->getRequirementId(), $this->requirementAssignments),
-            'jobs' => array_map(fn($a) => $a->jobId(), $this->jobAssignments),
+            'requirements' => array_map(fn($a) => $a->getRequirementId()->value(), $this->requirementAssignments),
+            'jobs' => array_map(fn($a) => $a->jobId()->value(), $this->jobAssignments),
         ];
     }
 

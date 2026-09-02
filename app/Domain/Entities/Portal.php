@@ -1,58 +1,99 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Domain\Entities;
 
 use App\Domain\Exceptions\ValidationException\PortalBaseUrlEmptyException;
 use App\Domain\Exceptions\ValidationException\PortalNameEmptyException;
+use App\Domain\ValueObjects\EntityIds\PortalId;
 use DateTimeImmutable;
 
 final class Portal
 {
-    /**
-     * External portal configuration (lookup)
-     *
-     * Contains parsing configuration used by importers. If a portal becomes
-     * unreachable importers should emit `ExternalPortalUnreachable` domain event
-     * (see `app/Domain/Events/ExternalPortalUnreachable.php`).
-     *
-     * parsingConfig is stored as array (JSON) and should be validated by the
-     * import service according to portal-specific rules.
-     */
-    public readonly string $id;
-    public string $name;
-    public string $baseUrl;
-    public ?string $apiEndpoint;
-    /** @var array<string,mixed> */
-    public array $parsingConfig = [];
-    public int $crawlDelaySeconds = 0;
-    public DateTimeImmutable $createdAt;
-    public DateTimeImmutable $updatedAt;
-
     public function __construct(
-        string $id,
-        string $name,
-        string $baseUrl,
-        ?string $apiEndpoint = null,
-        array $parsingConfig = [],
-        int $crawlDelaySeconds = 0,
-        ?DateTimeImmutable $createdAt = null,
-        ?DateTimeImmutable $updatedAt = null
+        private readonly PortalId $id,
+        private string $name,
+        private string $baseUrl,
+        private ?string $apiEndpoint = null,
+        private array $parsingConfig = [],
+        private int $crawlDelaySeconds = 0,
+        private ?DateTimeImmutable $createdAt = null,
+        private ?DateTimeImmutable $updatedAt = null,
     ) {
-        if ($name === '') {
-            throw new PortalNameEmptyException();
-        }
-        if ($baseUrl === '') {
-            throw new PortalBaseUrlEmptyException();
+        if ($this->name === '') {
+            throw new PortalNameEmptyException;
         }
 
-        $this->id = $id;
-        $this->name = $name;
-        $this->baseUrl = $baseUrl;
-        $this->apiEndpoint = $apiEndpoint;
-        $this->parsingConfig = $parsingConfig;
-        $this->crawlDelaySeconds = $crawlDelaySeconds;
-        $this->createdAt = $createdAt ?? new DateTimeImmutable();
-        $this->updatedAt = $updatedAt ?? $this->createdAt;
+        if ($this->baseUrl === '') {
+            throw new PortalBaseUrlEmptyException;
+        }
+
+        $this->createdAt ??= new DateTimeImmutable;
+        $this->updatedAt ??= $this->createdAt;
+    }
+
+    // Геттеры
+    public function id(): PortalId
+    {
+        return $this->id;
+    }
+
+    public function name(): string
+    {
+        return $this->name;
+    }
+
+    public function baseUrl(): string
+    {
+        return $this->baseUrl;
+    }
+
+    public function apiEndpoint(): ?string
+    {
+        return $this->apiEndpoint;
+    }
+
+    public function parsingConfig(): array
+    {
+        return $this->parsingConfig;
+    }
+
+    public function crawlDelaySeconds(): int
+    {
+        return $this->crawlDelaySeconds;
+    }
+
+    public function createdAt(): DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
+    public function updatedAt(): DateTimeImmutable
+    {
+        return $this->updatedAt;
+    }
+
+    public function updateConfig(
+        ?string $name = null,
+        ?string $baseUrl = null,
+        ?string $apiEndpoint = null,
+        ?array $parsingConfig = null,
+        ?int $crawlDelaySeconds = null
+    ): void {
+        if ($name !== null && $name === '') {
+            throw new PortalNameEmptyException;
+        }
+
+        if ($baseUrl !== null && $baseUrl === '') {
+            throw new PortalBaseUrlEmptyException;
+        }
+
+        $this->name = $name ?? $this->name;
+        $this->baseUrl = $baseUrl ?? $this->baseUrl;
+        $this->apiEndpoint = $apiEndpoint ?? $this->apiEndpoint;
+        $this->parsingConfig = $parsingConfig ?? $this->parsingConfig;
+        $this->crawlDelaySeconds = $crawlDelaySeconds ?? $this->crawlDelaySeconds;
+        $this->updatedAt = new DateTimeImmutable;
     }
 }

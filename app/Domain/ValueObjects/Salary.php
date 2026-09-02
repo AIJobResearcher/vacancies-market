@@ -9,7 +9,7 @@ use App\Domain\Exceptions\ValidationException\SalaryMaxLessThanMinException;
 use App\Domain\Exceptions\ValidationException\SalaryMaxNegativeException;
 use App\Domain\Exceptions\ValidationException\SalaryMinNegativeException;
 
-final class Salary
+final readonly class Salary
 {
     private const array ALLOWED_CURRENCIES = ['USD'];
 

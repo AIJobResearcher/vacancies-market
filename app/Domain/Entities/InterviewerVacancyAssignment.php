@@ -5,54 +5,47 @@ declare(strict_types=1);
 namespace App\Domain\Entities;
 
 use App\Domain\Exceptions\StateConflictException\AssignmentAlreadyInactiveException;
-use App\Domain\Exceptions\ValidationException\RelevanceScoreOutOfRangeException;
-use App\Domain\ValueObjects\EntityIds\JobId;
+use App\Domain\ValueObjects\EntityIds\InterviewerId;
+use App\Domain\ValueObjects\EntityIds\InterviewerVacancyAssignmentId;
 use App\Domain\ValueObjects\EntityIds\VacancyId;
-use App\Domain\ValueObjects\EntityIds\VacancyJobAssignmentId;
 use DateTimeImmutable;
 
-final class VacancyJobAssignment
+final class InterviewerVacancyAssignment
 {
     private ?DateTimeImmutable $unassignedAt = null;
+    private int $version = 1;
 
     public function __construct(
-        private readonly VacancyJobAssignmentId $id,
+        private readonly InterviewerVacancyAssignmentId $id,
+        private readonly InterviewerId $interviewerId,
         private readonly VacancyId $vacancyId,
-        private readonly JobId $jobId,
         private DateTimeImmutable $assignedAt,
-        private ?int $relevanceScore = null,
-        private int $version = 1,
     ) {
-        if ($this->relevanceScore !== null && ($this->relevanceScore < 1 || $this->relevanceScore > 100)) {
-            throw new RelevanceScoreOutOfRangeException($this->relevanceScore);
-        }
     }
 
-    /**
-     * Marks the assignment as inactive by setting the unassigned timestamp.
-     * Once unassigned, the assignment cannot be reactivated.
-     */
     public function deactivate(): void
     {
         if ($this->unassignedAt !== null) {
             throw new AssignmentAlreadyInactiveException($this->unassignedAt->format(DATE_ATOM));
         }
+
         $this->unassignedAt = new DateTimeImmutable;
         $this->version++;
     }
 
-    /**
-     * Checks whether the assignment is currently active (no unassigned timestamp).
-     */
     public function isActive(): bool
     {
         return $this->unassignedAt === null;
     }
 
-    // Getters
-    public function id(): VacancyJobAssignmentId
+    public function id(): InterviewerVacancyAssignmentId
     {
         return $this->id;
+    }
+
+    public function interviewerId(): InterviewerId
+    {
+        return $this->interviewerId;
     }
 
     public function vacancyId(): VacancyId
@@ -60,19 +53,9 @@ final class VacancyJobAssignment
         return $this->vacancyId;
     }
 
-    public function jobId(): JobId
-    {
-        return $this->jobId;
-    }
-
     public function assignedAt(): DateTimeImmutable
     {
         return $this->assignedAt;
-    }
-
-    public function relevanceScore(): ?int
-    {
-        return $this->relevanceScore;
     }
 
     public function unassignedAt(): ?DateTimeImmutable

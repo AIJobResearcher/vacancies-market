@@ -4,22 +4,25 @@ declare(strict_types=1);
 
 namespace App\Domain\Entities;
 
+use App\Domain\Exceptions\DomainException;
 use App\Domain\Exceptions\StateConflictException\RequirementAlreadyAssignedException;
 use App\Domain\Exceptions\StateConflictException\RequirementNotAssignedException;
 use App\Domain\Exceptions\ValidationException\JobTitleEmptyException;
+use App\Domain\ValueObjects\EntityIds\JobId;
+use App\Domain\ValueObjects\EntityIds\RequirementId;
 use DateTimeImmutable;
 
 final class Job
 {
-    /** @var string[] */
+    /** @var RequirementId[] */
     private array $requirementIds = [];
 
     private function __construct(
-        private string $id,
+        private readonly JobId $id,
         private string $title,
         private ?string $category,
         private ?string $subCategory,
-        private ?string $parentJobId,
+        private ?JobId $parentJobId,
         private ?string $description,
         private DateTimeImmutable $createdAt,
         private DateTimeImmutable $updatedAt,
@@ -29,18 +32,20 @@ final class Job
     }
 
     public static function create(
-        string $id,
+        JobId $id,
         string $title,
         ?string $category = null,
         ?string $subCategory = null,
-        ?string $parentJobId = null,
+        ?JobId $parentJobId = null,
         ?string $description = null,
         ?string $correlationId = null
     ): self {
         if (trim($title) === '') {
-            throw new JobTitleEmptyException();
+            throw new JobTitleEmptyException;
         }
-        $now = new DateTimeImmutable();
+
+        $now = new DateTimeImmutable;
+
         return new self(
             $id,
             trim($title),
@@ -54,35 +59,47 @@ final class Job
         );
     }
 
-    public function addRequirement(string $requirementId): void
+    public function addRequirement(RequirementId $requirementId): void
     {
-        if (in_array($requirementId, $this->requirementIds, true)) {
-            throw new RequirementAlreadyAssignedException($requirementId);
+        foreach ($this->requirementIds as $existing) {
+            if ($existing->equals($requirementId)) {
+                throw new RequirementAlreadyAssignedException($requirementId->value());
+            }
         }
+
         $this->requirementIds[] = $requirementId;
-        $this->updatedAt = new DateTimeImmutable();
+        $this->updatedAt = new DateTimeImmutable;
         $this->version++;
     }
 
-    public function removeRequirement(string $requirementId): void
+    public function removeRequirement(RequirementId $requirementId): void
     {
-        $index = array_search($requirementId, $this->requirementIds, true);
-        if ($index === false) {
-            throw new RequirementNotAssignedException($requirementId);
+        foreach ($this->requirementIds as $key => $existing) {
+            if ($existing->equals($requirementId)) {
+                unset($this->requirementIds[$key]);
+                $this->requirementIds = array_values($this->requirementIds);
+                $this->updatedAt = new DateTimeImmutable;
+                $this->version++;
+                return;
+            }
         }
-        unset($this->requirementIds[$index]);
-        $this->requirementIds = array_values($this->requirementIds);
-        $this->updatedAt = new DateTimeImmutable();
-        $this->version++;
+
+        throw new RequirementNotAssignedException($requirementId->value());
     }
 
+    /**
+     * Soft delete the Job.
+     *
+     * @throws DomainException if there are active VacancyJobAssignment references
+     *         (this check must be performed by the application layer before calling)
+     */
     public function softDelete(): void
     {
-        $this->deletedAt = new DateTimeImmutable();
+        $this->deletedAt = new DateTimeImmutable;
         $this->version++;
     }
 
-    public function id(): string
+    public function id(): JobId
     {
         return $this->id;
     }

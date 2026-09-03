@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    PHPUnit configuration for Integration tests.
+    This file overrides the database connection to use PostgreSQL
+    (the same as in production, but with a separate test database).
+    It is intended to be run with the 'test-integration' make target.
+-->
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+         cacheDirectory=".phpunit.cache"
+         executionOrder="random"
+>
+    <!-- Only the Integration test suite is included -->
+    <testsuites>
+        <testsuite name="Integration">
+            <directory>tests/Integration</directory>
+        </testsuite>
+    </testsuites>
+
+    <!-- Environment settings for integration tests -->
+    <php>
+        <env name="APP_ENV" value="testing"/>
+        <env name="APP_DEBUG" value="true"/>
+        <env name="CACHE_STORE" value="array"/>
+        <env name="QUEUE_CONNECTION" value="sync"/>   <!-- Use sync to avoid RabbitMQ -->
+        <env name="SESSION_DRIVER" value="array"/>
+        <env name="MAIL_MAILER" value="array"/>
+
+        <!-- Real PostgreSQL database (use a dedicated test database) -->
+        <env name="DB_CONNECTION" value="pgsql"/>
+        <env name="DB_HOST" value="postgres"/>
+        <env name="DB_PORT" value="5432"/>
+        <env name="DB_DATABASE" value="vacancies_market_test"/>
+        <env name="DB_USERNAME" value="vacancies_user"/>
+        <env name="DB_PASSWORD" value="secret"/>
+    </php>
+
+    <!-- Coverage configuration for integration tests -->
+    <source>
+        <include>
+            <directory>app</directory>
+        </include>
+    </source>
+
+    <coverage>
+        <include>
+            <directory>app</directory>
+        </include>
+        <report>
+            <html outputDirectory="coverage-integration"/>
+            <clover outputFile="coverage-integration/clover.xml"/>
+        </report>
+    </coverage>
+</phpunit>

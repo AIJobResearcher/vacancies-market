@@ -28,8 +28,7 @@ final class Job
         private DateTimeImmutable $updatedAt,
         private int $version,
         private ?DateTimeImmutable $deletedAt = null
-    ) {
-    }
+    ) {}
 
     public static function create(
         JobId $id,
@@ -80,6 +79,7 @@ final class Job
                 $this->requirementIds = array_values($this->requirementIds);
                 $this->updatedAt = new DateTimeImmutable;
                 $this->version++;
+
                 return;
             }
         }
@@ -91,7 +91,7 @@ final class Job
      * Soft delete the Job.
      *
      * @throws DomainException if there are active VacancyJobAssignment references
-     *         (this check must be performed by the application layer before calling)
+     *                         (this check must be performed by the application layer before calling)
      */
     public function softDelete(): void
     {
@@ -107,5 +107,35 @@ final class Job
     public function version(): int
     {
         return $this->version;
+    }
+
+    public function title(): string
+    {
+        return $this->title;
+    }
+
+    public function category(): ?string
+    {
+        return $this->category;
+    }
+
+    public function subCategory(): ?string
+    {
+        return $this->subCategory;
+    }
+
+    public function parentJobId(): ?JobId
+    {
+        return $this->parentJobId;
+    }
+
+    public function description(): ?string
+    {
+        return $this->description;
+    }
+
+    public function deletedAt(): ?DateTimeImmutable
+    {
+        return $this->deletedAt;
     }
 }

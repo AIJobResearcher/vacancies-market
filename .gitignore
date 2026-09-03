@@ -24,3 +24,6 @@ auth.json
 /deploy/Dockerfile
 /deploy/nginx.conf
 /docs/
+/junit.xml
+/.dsh/docs/
+/.phpunit.cache/

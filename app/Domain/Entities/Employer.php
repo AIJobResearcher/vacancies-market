@@ -44,7 +44,7 @@ final class Employer
         ?string $correlationId = null
     ): self {
         if (trim($title) === '') {
-            throw new EmployerTitleEmptyException();
+            throw new EmployerTitleEmptyException;
         }
         $now = new DateTimeImmutable;
         $employer = new self(
@@ -67,6 +67,7 @@ final class Employer
             $correlationId,
             $employer->toArray()
         ));
+
         return $employer;
     }
 
@@ -79,7 +80,7 @@ final class Employer
         ?string $logoUrl = null
     ): void {
         if ($title !== null && trim($title) === '') {
-            throw new EmployerTitleEmptyException();
+            throw new EmployerTitleEmptyException;
         }
 
         $this->title = $title !== null ? trim($title) : $this->title;
@@ -94,10 +95,10 @@ final class Employer
 
     public function addVacancy(Vacancy $vacancy): void
     {
-        if (!$this->isActive) {
+        if (! $this->isActive) {
             throw new EmployerInactiveException($this->id->value());
         }
-        if (!$vacancy->employerId()->equals($this->id)) {
+        if (! $vacancy->employerId()->equals($this->id)) {
             throw new VacancyBelongsToDifferentEmployerException($vacancy->id()->value(), $this->id->value());
         }
         // In real implementation, the vacancy is saved separately; no collection stored here.
@@ -112,7 +113,7 @@ final class Employer
 
     public function addInterviewer(Interviewer $interviewer): void
     {
-        if (!$interviewer->employerId()->equals($this->id)) {
+        if (! $interviewer->employerId()->equals($this->id)) {
             throw new InterviewerBelongsToDifferentEmployerException($interviewer->id()->value(), $this->id->value());
         }
     }
@@ -130,6 +131,31 @@ final class Employer
     public function title(): string
     {
         return $this->title;
+    }
+
+    public function description(): ?string
+    {
+        return $this->description;
+    }
+
+    public function website(): ?string
+    {
+        return $this->website;
+    }
+
+    public function email(): ?string
+    {
+        return $this->email;
+    }
+
+    public function phone(): ?string
+    {
+        return $this->phone;
+    }
+
+    public function logoUrl(): ?string
+    {
+        return $this->logoUrl;
     }
 
     public function isActive(): bool
@@ -164,6 +190,7 @@ final class Employer
     {
         $events = $this->events;
         $this->events = [];
+
         return $events;
     }
 

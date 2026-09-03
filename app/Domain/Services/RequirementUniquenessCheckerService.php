@@ -10,7 +10,9 @@ use App\Domain\ValueObjects\EntityIds\RequirementId;
 
 final readonly class RequirementUniquenessCheckerService
 {
-    public function __construct(private RequirementRepositoryInterface $repository) {}
+    public function __construct(private RequirementRepositoryInterface $repository)
+    {
+    }
 
     public function ensureUnique(string $title, ?RequirementId $excludeId = null): void
     {

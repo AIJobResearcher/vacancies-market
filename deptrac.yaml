@@ -1,0 +1,80 @@
+deptrac:
+  paths:
+    - ./app
+
+  layers:
+    - name: Domain
+      collectors:
+        - type: directory
+          regex: app/Domain/.*
+
+    - name: Application
+      collectors:
+        - type: directory
+          regex: app/Application/.*
+
+    - name: Infrastructure
+      collectors:
+        - type: directory
+          regex: app/Infrastructure/.*
+
+    - name: Presentation
+      collectors:
+        - type: directory
+          regex: app/Presentation/.*
+
+    - name: Database
+      collectors:
+        - type: directory
+          regex: database/.*
+
+    # Externals: allow dependencies on Laravel, PHP, etc. (we don't need to restrict them)
+    - name: External
+      collectors:
+        - type: bool
+          must:
+            - type: className
+              regex: .*Illuminate.*
+            - type: className
+              regex: .*Psr\\.*
+            - type: className
+              regex: .*Symfony\\.*
+            - type: className
+              regex: .*Mockery.*
+            - type: className
+              regex: .*PHPUnit.*
+          must_not:
+            - type: directory
+              regex: app/.*
+
+  ruleset:
+    Domain:
+      - External
+
+    Application:
+      - Domain
+      - External
+
+    Infrastructure:
+      - Domain
+      - Application
+      - External
+
+    Presentation:
+      - Application
+      - Domain
+      - External
+
+    Database:
+      - Infrastructure
+      - Domain
+      - External
+
+  exclude_files:
+    - '#.*/database/migrations/.*#'
+    - '#.*/database/seeders/.*#'
+    - '#.*/storage/.*#'
+    - '#.*/vendor/.*#'
+    - '#.*/bootstrap/cache/.*#'
+
+  skip_violations: []

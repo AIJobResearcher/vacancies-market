@@ -1,29 +1,83 @@
+# ============================================================
+# IDE / OS
+# ============================================================
 /.idea/
+/.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# ============================================================
+# Dependencies
+# ============================================================
 /vendor/
-node_modules/
+/node_modules/
+composer.lock
+package-lock.json
+yarn.lock
 npm-debug.log
 yarn-error.log
 
-bootstrap/compiled.php
-app/storage/
-
-storage/*.key
+# ============================================================
+# Environment
+# ============================================================
 .env
+.env.local
+.env.*.local
+.env.behat
+.env.testing
+.env.backup
+.env.production
 Homestead.yaml
 Homestead.json
 /.vagrant
-.phpunit.result.cache
 
-/public/build
+# ============================================================
+# Cache / Logs
+# ============================================================
+storage/
+app/storage/
+storage/*.key
 /storage/pail
-.env.backup
-.env.production
+bootstrap/compiled.php
+bootstrap/cache/
+*.log
 .phpactor.json
-auth.json
+.phpunit.cache/
+.phpunit.result.cache
+.deptrac.cache
+.php-cs-fixer.cache
+
+# ============================================================
+# Testing
+# ============================================================
+coverage/
+coverage-integration/
+coverage.txt
+junit.xml
+.codecept/
+tests/_output/
+tests/_support/_generated/
+.behat/
+
+# ============================================================
+# Static Analysis
+# ============================================================
+phpstan-baseline.neon
+psalm-baseline.xml
+psalm.xml~
+.phpcs-cache
+
+# ============================================================
+# Deployment / Local
+# ============================================================
 /docker-compose.yml
 /deploy/Dockerfile
 /deploy/nginx.conf
+/deploy/deploy.sh
+/deploy/build.sh
 /docs/
-/junit.xml
 /.dsh/docs/
-/.phpunit.cache/
+*.swp
+*.swo
+auth.json

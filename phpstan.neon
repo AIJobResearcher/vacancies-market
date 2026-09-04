@@ -1,0 +1,15 @@
+parameters:
+    level: 9
+    paths:
+        - app
+        - tests/Unit
+    excludePaths:
+        - tests/Feature
+        - tests/Integration
+        - database/migrations
+        - database/seeders
+    bootstrapFiles:
+        - vendor/larastan/larastan/bootstrap.php
+    reportUnmatchedIgnoredErrors: false
+    treatPhpDocTypesAsCertain: false
+    inferPrivatePropertyTypeFromConstructor: true

@@ -1,0 +1,8 @@
+actor: AcceptanceTester
+modules:
+  enabled:
+    - Laravel:
+        environment_file: .env.behat
+    - Asserts
+gherkin:
+  features: docs/features/vacancies-market

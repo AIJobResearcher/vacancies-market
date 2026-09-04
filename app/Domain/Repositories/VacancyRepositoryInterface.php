@@ -12,5 +12,7 @@ interface VacancyRepositoryInterface
 {
     public function findById(VacancyId $id): ?Vacancy;
     public function save(Vacancy $vacancy): void;
+
+    /** @return Vacancy[] */
     public function findActiveByJobId(JobId $jobId): array;
 }

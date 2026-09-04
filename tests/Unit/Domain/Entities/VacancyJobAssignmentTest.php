@@ -16,6 +16,9 @@ use PHPUnit\Framework\TestCase;
 
 class VacancyJobAssignmentTest extends TestCase
 {
+    /**
+     * @return array<string, array{0: int|null}>
+     */
     public static function relevanceScoreProvider(): array
     {
         return [
@@ -26,6 +29,9 @@ class VacancyJobAssignmentTest extends TestCase
         ];
     }
 
+    /**
+     * @return array<string, array{0: int}>
+     */
     public static function invalidRelevanceProvider(): array
     {
         return [
@@ -36,12 +42,12 @@ class VacancyJobAssignmentTest extends TestCase
     }
 
     #[DataProvider('relevanceScoreProvider')]
-    public function test_construct_valid(?int $score): void
+    public function testConstructValid(?int $score): void
     {
         $assignmentId = VacancyJobAssignmentId::generate();
         $vacancyId = VacancyId::generate();
         $jobId = JobId::generate();
-        $assignedAt = new DateTimeImmutable;
+        $assignedAt = new DateTimeImmutable();
         $assignment = new VacancyJobAssignment($assignmentId, $vacancyId, $jobId, $assignedAt, $score);
         $this->assertEquals($score, $assignment->relevanceScore());
         $this->assertTrue($assignment->isActive());
@@ -53,25 +59,25 @@ class VacancyJobAssignmentTest extends TestCase
     }
 
     #[DataProvider('invalidRelevanceProvider')]
-    public function test_construct_invalid_relevance_throws(int $score): void
+    public function testConstructInvalidRelevanceThrows(int $score): void
     {
         $this->expectException(RelevanceScoreOutOfRangeException::class);
         new VacancyJobAssignment(
             VacancyJobAssignmentId::generate(),
             VacancyId::generate(),
             JobId::generate(),
-            new DateTimeImmutable,
+            new DateTimeImmutable(),
             $score
         );
     }
 
-    public function test_deactivate(): void
+    public function testDeactivate(): void
     {
         $assignment = new VacancyJobAssignment(
             VacancyJobAssignmentId::generate(),
             VacancyId::generate(),
             JobId::generate(),
-            new DateTimeImmutable
+            new DateTimeImmutable()
         );
         $assignment->deactivate();
         $this->assertFalse($assignment->isActive());
@@ -79,13 +85,13 @@ class VacancyJobAssignmentTest extends TestCase
         $this->assertEquals(2, $assignment->version());
     }
 
-    public function test_deactivate_already_inactive_throws(): void
+    public function testDeactivateAlreadyInactiveThrows(): void
     {
         $assignment = new VacancyJobAssignment(
             VacancyJobAssignmentId::generate(),
             VacancyId::generate(),
             JobId::generate(),
-            new DateTimeImmutable
+            new DateTimeImmutable()
         );
         $assignment->deactivate();
         $this->expectException(AssignmentAlreadyInactiveException::class);

@@ -9,14 +9,14 @@ use PHPUnit\Framework\TestCase;
 
 class WorkplaceEnumTest extends TestCase
 {
-    public function test_values(): void
+    public function testValues(): void
     {
         $this->assertSame('remote', WorkplaceEnum::REMOTE->value);
         $this->assertSame('on-site', WorkplaceEnum::ON_SITE->value);
         $this->assertSame('hybrid', WorkplaceEnum::HYBRID->value);
     }
 
-    public function test_from_string(): void
+    public function testFromString(): void
     {
         $this->assertSame(WorkplaceEnum::HYBRID, WorkplaceEnum::from('hybrid'));
     }

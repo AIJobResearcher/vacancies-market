@@ -15,5 +15,6 @@ abstract class DomainEvent
         public readonly string $aggregateId,
         public readonly DateTimeImmutable $timestamp,
         public readonly ?string $correlationId = null
-    ) {}
+    ) {
+    }
 }

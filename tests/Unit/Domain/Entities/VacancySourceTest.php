@@ -12,7 +12,7 @@ use PHPUnit\Framework\TestCase;
 
 class VacancySourceTest extends TestCase
 {
-    public function test_construct_and_getters(): void
+    public function testConstructAndGetters(): void
     {
         $id = VacancySourceId::generate();
         $vacancyId = VacancyId::generate();
@@ -36,7 +36,7 @@ class VacancySourceTest extends TestCase
         $this->assertFalse($source->isPrimary());
     }
 
-    public function test_construct_marks_primary(): void
+    public function testConstructMarksPrimary(): void
     {
         $source = new VacancySource(
             VacancySourceId::generate(),
@@ -44,8 +44,8 @@ class VacancySourceTest extends TestCase
             'linkedin',
             'ext-123',
             'https://linkedin.com/123',
-            new DateTimeImmutable,
-            new DateTimeImmutable,
+            new DateTimeImmutable(),
+            new DateTimeImmutable(),
             null,
             true
         );
@@ -53,7 +53,7 @@ class VacancySourceTest extends TestCase
         $this->assertTrue($source->isPrimary());
     }
 
-    public function test_update_last_seen_at(): void
+    public function testUpdateLastSeenAt(): void
     {
         $source = new VacancySource(
             VacancySourceId::generate(),

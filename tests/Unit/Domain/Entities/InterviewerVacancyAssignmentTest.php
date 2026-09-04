@@ -14,12 +14,12 @@ use PHPUnit\Framework\TestCase;
 
 class InterviewerVacancyAssignmentTest extends TestCase
 {
-    public function test_construct(): void
+    public function testConstruct(): void
     {
         $assignmentId = InterviewerVacancyAssignmentId::generate();
         $interviewerId = InterviewerId::generate();
         $vacancyId = VacancyId::generate();
-        $assignedAt = new DateTimeImmutable;
+        $assignedAt = new DateTimeImmutable();
 
         $assignment = new InterviewerVacancyAssignment(
             $assignmentId,
@@ -37,13 +37,13 @@ class InterviewerVacancyAssignmentTest extends TestCase
         $this->assertEquals(1, $assignment->version());
     }
 
-    public function test_deactivate(): void
+    public function testDeactivate(): void
     {
         $assignment = new InterviewerVacancyAssignment(
             InterviewerVacancyAssignmentId::generate(),
             InterviewerId::generate(),
             VacancyId::generate(),
-            new DateTimeImmutable
+            new DateTimeImmutable()
         );
         $this->assertTrue($assignment->isActive());
 
@@ -53,13 +53,13 @@ class InterviewerVacancyAssignmentTest extends TestCase
         $this->assertEquals(2, $assignment->version());
     }
 
-    public function test_deactivate_already_inactive_throws(): void
+    public function testDeactivateAlreadyInactiveThrows(): void
     {
         $assignment = new InterviewerVacancyAssignment(
             InterviewerVacancyAssignmentId::generate(),
             InterviewerId::generate(),
             VacancyId::generate(),
-            new DateTimeImmutable
+            new DateTimeImmutable()
         );
         $assignment->deactivate();
         $this->expectException(AssignmentAlreadyInactiveException::class);

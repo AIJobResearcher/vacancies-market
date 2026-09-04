@@ -12,15 +12,24 @@ use PHPUnit\Framework\TestCase;
 
 class ExternalUrlsTest extends TestCase
 {
+    /**
+     * @return array<string, array{0: string[], 1: string[]}>
+     */
     public static function validUrlsProvider(): array
     {
         return [
             'single' => [['https://example.com'], ['https://example.com']],
             'multiple' => [['https://a.com', 'https://b.com'], ['https://a.com', 'https://b.com']],
-            'with duplicates' => [['https://a.com', 'https://a.com', 'https://b.com'], ['https://a.com', 'https://b.com']],
+            'with duplicates' => [
+                ['https://a.com', 'https://a.com', 'https://b.com'],
+                ['https://a.com', 'https://b.com'],
+            ],
         ];
     }
 
+    /**
+     * @return array<string, array{0: string[], 1: string}>
+     */
     public static function invalidUrlsProvider(): array
     {
         return [
@@ -30,21 +39,28 @@ class ExternalUrlsTest extends TestCase
         ];
     }
 
+    /**
+     * @param string[] $input
+     * @param string[] $expected
+     */
     #[DataProvider('validUrlsProvider')]
-    public function test_construct_valid(array $input, array $expected): void
+    public function testConstructValid(array $input, array $expected): void
     {
         $urls = new ExternalUrls($input);
         $this->assertEquals($expected, $urls->toArray());
     }
 
+    /**
+     * @param string[] $input
+     */
     #[DataProvider('invalidUrlsProvider')]
-    public function test_construct_invalid(array $input, string $exceptionClass): void
+    public function testConstructInvalid(array $input, string $exceptionClass): void
     {
         $this->expectException($exceptionClass);
         new ExternalUrls($input);
     }
 
-    public function test_equals(): void
+    public function testEquals(): void
     {
         $u1 = new ExternalUrls(['https://a.com']);
         $u2 = new ExternalUrls(['https://a.com']);
@@ -53,7 +69,7 @@ class ExternalUrlsTest extends TestCase
         $this->assertFalse($u1->equals($u3));
     }
 
-    public function test_is_empty(): void
+    public function testIsEmpty(): void
     {
         $urls = new ExternalUrls(['https://a.com']);
         $this->assertFalse($urls->isEmpty());

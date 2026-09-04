@@ -81,14 +81,14 @@ final class Vacancy
         ?string $correlationId = null
     ): self {
         if (trim($title) === '') {
-            throw new VacancyTitleEmptyException;
+            throw new VacancyTitleEmptyException();
         }
 
         if ($externalUrls->isEmpty()) {
-            throw new VacancyExternalUrlsEmptyException;
+            throw new VacancyExternalUrlsEmptyException();
         }
 
-        $now = new DateTimeImmutable;
+        $now = new DateTimeImmutable();
         $vacancy = new self(
             $id,
             $employerId,
@@ -133,11 +133,11 @@ final class Vacancy
         ?string $internalUrl = null
     ): void {
         if ($title !== null && trim($title) === '') {
-            throw new VacancyTitleEmptyException;
+            throw new VacancyTitleEmptyException();
         }
 
         if ($externalUrls !== null && $externalUrls->isEmpty()) {
-            throw new VacancyExternalUrlsEmptyException;
+            throw new VacancyExternalUrlsEmptyException();
         }
 
         $this->title = $title !== null ? trim($title) : $this->title;
@@ -151,7 +151,7 @@ final class Vacancy
         $this->externalUrls = $externalUrls ?? $this->externalUrls;
         $this->internalUrl = $internalUrl ?? $this->internalUrl;
 
-        $this->updatedAt = new DateTimeImmutable;
+        $this->updatedAt = new DateTimeImmutable();
         $this->version++;
         $this->recordEvent(
             new VacancyUpdatedEvent(
@@ -170,7 +170,7 @@ final class Vacancy
             throw new VacancyAlreadyClosedException($this->id->value());
         }
         $this->status = VacancyStatusEnum::CLOSED;
-        $this->closedAt = new DateTimeImmutable;
+        $this->closedAt = new DateTimeImmutable();
         $this->updatedAt = $this->closedAt;
         $this->version++;
         $this->recordEvent(
@@ -190,7 +190,7 @@ final class Vacancy
         }
         $this->status = VacancyStatusEnum::OPEN;
         $this->closedAt = null;
-        $this->updatedAt = new DateTimeImmutable;
+        $this->updatedAt = new DateTimeImmutable();
         $this->version++;
         $this->recordEvent(
             new VacancyUpdatedEvent(
@@ -203,6 +203,7 @@ final class Vacancy
         );
     }
 
+    /** @param string[] $mergedIds */
     public function mergeFrom(Vacancy $other, array $mergedIds): void
     {
         // Take canonical fields from $other (the source of truth after merge)
@@ -215,7 +216,7 @@ final class Vacancy
         $this->workplace = $other->workplace;
         $this->externalUrls = $other->externalUrls;
         $this->internalUrl = $other->internalUrl;
-        $this->updatedAt = new DateTimeImmutable;
+        $this->updatedAt = new DateTimeImmutable();
         $this->version++;
         $this->recordEvent(
             new VacancyMergedEvent(
@@ -239,10 +240,10 @@ final class Vacancy
             VacancyRequirementAssignmentId::generate(),
             $this->id,
             $requirementId,
-            new DateTimeImmutable,
+            new DateTimeImmutable(),
         );
         $this->requirementAssignments[] = $assignment;
-        $this->updatedAt = new DateTimeImmutable;
+        $this->updatedAt = new DateTimeImmutable();
         $this->version++;
     }
 
@@ -252,7 +253,7 @@ final class Vacancy
             if ($assignment->getRequirementId()->equals($requirementId)) {
                 unset($this->requirementAssignments[$key]);
                 $this->requirementAssignments = array_values($this->requirementAssignments);
-                $this->updatedAt = new DateTimeImmutable;
+                $this->updatedAt = new DateTimeImmutable();
                 $this->version++;
                 return;
             }
@@ -272,11 +273,11 @@ final class Vacancy
             VacancyJobAssignmentId::generate(),
             $this->id,
             $jobId,
-            new DateTimeImmutable,
+            new DateTimeImmutable(),
             $relevanceScore
         );
         $this->jobAssignments[] = $assignment;
-        $this->updatedAt = new DateTimeImmutable;
+        $this->updatedAt = new DateTimeImmutable();
         $this->version++;
     }
 
@@ -285,7 +286,7 @@ final class Vacancy
         foreach ($this->jobAssignments as $assignment) {
             if ($assignment->jobId()->equals($jobId) && $assignment->isActive()) {
                 $assignment->deactivate();
-                $this->updatedAt = new DateTimeImmutable;
+                $this->updatedAt = new DateTimeImmutable();
                 $this->version++;
                 return;
             }
@@ -296,15 +297,17 @@ final class Vacancy
     public function addSource(VacancySource $source): void
     {
         foreach ($this->sources as $existing) {
-            if ($existing->sourceKey() === $source->sourceKey()
-                && $existing->externalVacancyId() === $source->externalVacancyId()) {
-                $existing->updateLastSeenAt(new DateTimeImmutable);
+            if (
+                $existing->sourceKey() === $source->sourceKey()
+                && $existing->externalVacancyId() === $source->externalVacancyId()
+            ) {
+                $existing->updateLastSeenAt(new DateTimeImmutable());
                 $this->version++;
                 return;
             }
         }
         $this->sources[] = $source;
-        $this->updatedAt = new DateTimeImmutable;
+        $this->updatedAt = new DateTimeImmutable();
         $this->version++;
     }
 
@@ -328,6 +331,29 @@ final class Vacancy
         return $this->version;
     }
 
+    /**
+     * @return array{
+     *     id: string,
+     *     employer_id: string,
+     *     title: string,
+     *     description: string|null,
+     *     salary: array{min: int, max: int|null, currency: string},
+     *     status: string,
+     *     country: string|null,
+     *     city: string|null,
+     *     employment_type: string,
+     *     workplace: string,
+     *     posted_at: string,
+     *     created_at: string,
+     *     updated_at: string,
+     *     closed_at: string|null,
+     *     version: int,
+     *     external_urls: string[],
+     *     internal_url: string|null,
+     *     requirements: string[],
+     *     jobs: string[]
+     * }
+     */
     public function toArray(): array
     {
         return [

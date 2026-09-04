@@ -28,8 +28,12 @@ final class Job
         private DateTimeImmutable $updatedAt,
         private int $version,
         private ?DateTimeImmutable $deletedAt = null
-    ) {}
+    ) {
+    }
 
+    /**
+     * @phpcsSuppress SlevomatCodingStandard.Functions.UnusedParameter
+     */
     public static function create(
         JobId $id,
         string $title,
@@ -40,10 +44,10 @@ final class Job
         ?string $correlationId = null
     ): self {
         if (trim($title) === '') {
-            throw new JobTitleEmptyException;
+            throw new JobTitleEmptyException();
         }
 
-        $now = new DateTimeImmutable;
+        $now = new DateTimeImmutable();
 
         return new self(
             $id,
@@ -67,7 +71,7 @@ final class Job
         }
 
         $this->requirementIds[] = $requirementId;
-        $this->updatedAt = new DateTimeImmutable;
+        $this->updatedAt = new DateTimeImmutable();
         $this->version++;
     }
 
@@ -77,7 +81,7 @@ final class Job
             if ($existing->equals($requirementId)) {
                 unset($this->requirementIds[$key]);
                 $this->requirementIds = array_values($this->requirementIds);
-                $this->updatedAt = new DateTimeImmutable;
+                $this->updatedAt = new DateTimeImmutable();
                 $this->version++;
 
                 return;
@@ -95,7 +99,7 @@ final class Job
      */
     public function softDelete(): void
     {
-        $this->deletedAt = new DateTimeImmutable;
+        $this->deletedAt = new DateTimeImmutable();
         $this->version++;
     }
 

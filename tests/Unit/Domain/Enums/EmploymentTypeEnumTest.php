@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 
 class EmploymentTypeEnumTest extends TestCase
 {
-    public function test_values(): void
+    public function testValues(): void
     {
         $this->assertSame('part-time', EmploymentTypeEnum::PART_TIME->value);
         $this->assertSame('contract', EmploymentTypeEnum::CONTRACT->value);
@@ -18,7 +18,7 @@ class EmploymentTypeEnumTest extends TestCase
         $this->assertSame('volunteer', EmploymentTypeEnum::VOLUNTEER->value);
     }
 
-    public function test_from_string(): void
+    public function testFromString(): void
     {
         $this->assertSame(EmploymentTypeEnum::FULL_TIME, EmploymentTypeEnum::from('full-time'));
     }

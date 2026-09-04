@@ -14,6 +14,16 @@ use PHPUnit\Framework\TestCase;
 
 class SalaryTest extends TestCase
 {
+    /**
+     * @return array<string, array{
+     *     0: int,
+     *     1: int|null,
+     *     2: string|null,
+     *     3: int,
+     *     4: int|null,
+     *     5?: string
+     * }>
+     */
     public static function validSalaryProvider(): array
     {
         return [
@@ -24,6 +34,9 @@ class SalaryTest extends TestCase
         ];
     }
 
+    /**
+     * @return array<string, array{0: int, 1: int, 2: string, 3: string}>
+     */
     public static function invalidSalaryProvider(): array
     {
         return [
@@ -35,8 +48,14 @@ class SalaryTest extends TestCase
     }
 
     #[DataProvider('validSalaryProvider')]
-    public function test_construct_valid(int $min, ?int $max, ?string $currency, int $expectedMin, ?int $expectedMax, string $expectedCurrency = 'USD'): void
-    {
+    public function testConstructValid(
+        int $min,
+        ?int $max,
+        ?string $currency,
+        int $expectedMin,
+        ?int $expectedMax,
+        string $expectedCurrency = 'USD'
+    ): void {
         $salary = $currency === null
             ? new Salary($min, $max)
             : new Salary($min, $max, $currency);
@@ -46,13 +65,13 @@ class SalaryTest extends TestCase
     }
 
     #[DataProvider('invalidSalaryProvider')]
-    public function test_construct_invalid(int $min, ?int $max, string $currency, string $exceptionClass): void
+    public function testConstructInvalid(int $min, ?int $max, string $currency, string $exceptionClass): void
     {
         $this->expectException($exceptionClass);
         new Salary($min, $max, $currency);
     }
 
-    public function test_equals(): void
+    public function testEquals(): void
     {
         $s1 = new Salary(1000, 2000);
         $s2 = new Salary(1000, 2000);

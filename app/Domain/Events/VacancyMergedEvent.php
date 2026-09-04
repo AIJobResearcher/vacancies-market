@@ -8,6 +8,7 @@ use DateTimeImmutable;
 
 final class VacancyMergedEvent extends DomainEvent
 {
+    /** @param string[] $mergedVacancyIds */
     public function __construct(
         string $eventId,
         string $aggregateId,

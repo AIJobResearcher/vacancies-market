@@ -33,6 +33,9 @@ final class Interviewer
     ) {
     }
 
+    /**
+     * @phpcsSuppress SlevomatCodingStandard.Functions.UnusedParameter
+     */
     public static function create(
         InterviewerId $id,
         EmployerId $employerId,
@@ -42,10 +45,10 @@ final class Interviewer
         ?string $correlationId = null
     ): self {
         if (trim($fullName) === '') {
-            throw new InterviewerFullNameEmptyException;
+            throw new InterviewerFullNameEmptyException();
         }
 
-        $now = new DateTimeImmutable;
+        $now = new DateTimeImmutable();
 
         return new self(
             $id,
@@ -67,7 +70,7 @@ final class Interviewer
         }
 
         if (!$vacancy->employerId()->equals($this->employerId)) {
-            throw new InterviewerVacancyEmployerMismatchException;
+            throw new InterviewerVacancyEmployerMismatchException();
         }
 
         foreach ($this->vacancyAssignments as $assignment) {
@@ -80,10 +83,10 @@ final class Interviewer
             InterviewerVacancyAssignmentId::generate(),
             $this->id,
             $vacancy->id(),
-            new DateTimeImmutable,
+            new DateTimeImmutable(),
         );
         $this->vacancyAssignments[] = $assignment;
-        $this->updatedAt = new DateTimeImmutable;
+        $this->updatedAt = new DateTimeImmutable();
         $this->version++;
     }
 
@@ -92,7 +95,7 @@ final class Interviewer
         foreach ($this->vacancyAssignments as $assignment) {
             if ($assignment->vacancyId()->equals($vacancy->id()) && $assignment->isActive()) {
                 $assignment->deactivate();
-                $this->updatedAt = new DateTimeImmutable;
+                $this->updatedAt = new DateTimeImmutable();
                 $this->version++;
                 return;
             }
@@ -104,19 +107,19 @@ final class Interviewer
     public function updateProfile(?string $fullName = null, ?string $position = null, ?array $profileUrls = null): void
     {
         if ($fullName !== null && trim($fullName) === '') {
-            throw new InterviewerFullNameEmptyException;
+            throw new InterviewerFullNameEmptyException();
         }
         $this->fullName = $fullName !== null ? trim($fullName) : $this->fullName;
         $this->position = $position ?? $this->position;
         $this->profileUrls = $profileUrls ?? $this->profileUrls;
-        $this->updatedAt = new DateTimeImmutable;
+        $this->updatedAt = new DateTimeImmutable();
         $this->version++;
     }
 
     public function softDelete(): void
     {
         $this->isActive = false;
-        $this->deletedAt = new DateTimeImmutable;
+        $this->deletedAt = new DateTimeImmutable();
         $this->version++;
     }
 
@@ -140,6 +143,7 @@ final class Interviewer
         return $this->position;
     }
 
+    /** @return string[]|null */
     public function profileUrls(): ?array
     {
         return $this->profileUrls;

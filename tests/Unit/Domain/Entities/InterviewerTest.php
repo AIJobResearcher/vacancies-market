@@ -34,6 +34,13 @@ class InterviewerTest extends TestCase
         $this->interviewerId = InterviewerId::generate();
     }
 
+    /**
+     * @return array<string, array{
+     *     0: string|null,
+     *     1: string|null,
+     *     2: array<string, string>|null
+     * }>
+     */
     public static function updateProfileProvider(): array
     {
         return [
@@ -44,7 +51,7 @@ class InterviewerTest extends TestCase
         ];
     }
 
-    public function test_create_valid(): void
+    public function testCreateValid(): void
     {
         $interviewer = Interviewer::create(
             $this->interviewerId,
@@ -66,13 +73,13 @@ class InterviewerTest extends TestCase
         $this->assertInstanceOf(DateTimeImmutable::class, $interviewer->updatedAt());
     }
 
-    public function test_create_empty_full_name_throws(): void
+    public function testCreateEmptyFullNameThrows(): void
     {
         $this->expectException(InterviewerFullNameEmptyException::class);
         Interviewer::create($this->interviewerId, $this->employerId, '');
     }
 
-    public function test_assign_to_vacancy_success(): void
+    public function testAssignToVacancySuccess(): void
     {
         $interviewer = Interviewer::create($this->interviewerId, $this->employerId, 'John Doe');
         $vacancy = $this->createVacancy($this->employerId);
@@ -85,7 +92,7 @@ class InterviewerTest extends TestCase
         $this->assertEquals($oldVersion + 1, $interviewer->version());
     }
 
-    public function test_assign_to_vacancy_different_employer_throws(): void
+    public function testAssignToVacancyDifferentEmployerThrows(): void
     {
         $interviewer = Interviewer::create($this->interviewerId, $this->employerId, 'John Doe');
         $otherEmployerId = EmployerId::generate();
@@ -94,7 +101,7 @@ class InterviewerTest extends TestCase
         $interviewer->assignToVacancy($vacancy);
     }
 
-    public function test_assign_to_vacancy_when_inactive_throws(): void
+    public function testAssignToVacancyWhenInactiveThrows(): void
     {
         $interviewer = Interviewer::create($this->interviewerId, $this->employerId, 'John Doe');
         $interviewer->softDelete();
@@ -103,7 +110,7 @@ class InterviewerTest extends TestCase
         $interviewer->assignToVacancy($vacancy);
     }
 
-    public function test_assign_duplicate_throws(): void
+    public function testAssignDuplicateThrows(): void
     {
         $interviewer = Interviewer::create($this->interviewerId, $this->employerId, 'John Doe');
         $vacancy = $this->createVacancy($this->employerId);
@@ -112,7 +119,7 @@ class InterviewerTest extends TestCase
         $interviewer->assignToVacancy($vacancy);
     }
 
-    public function test_unassign_success(): void
+    public function testUnassignSuccess(): void
     {
         $interviewer = Interviewer::create($this->interviewerId, $this->employerId, 'John Doe');
         $vacancy = $this->createVacancy($this->employerId);
@@ -126,7 +133,7 @@ class InterviewerTest extends TestCase
         $this->assertEquals($oldVersion + 1, $interviewer->version());
     }
 
-    public function test_unassign_without_active_assignment_throws(): void
+    public function testUnassignWithoutActiveAssignmentThrows(): void
     {
         $interviewer = Interviewer::create($this->interviewerId, $this->employerId, 'John Doe');
         $vacancy = $this->createVacancy($this->employerId);
@@ -134,7 +141,7 @@ class InterviewerTest extends TestCase
         $interviewer->unassignFromVacancy($vacancy);
     }
 
-    public function test_reassign_after_unassign_succeeds(): void
+    public function testReassignAfterUnassignSucceeds(): void
     {
         $interviewer = Interviewer::create($this->interviewerId, $this->employerId, 'John Doe');
         $vacancy = $this->createVacancy($this->employerId);
@@ -148,7 +155,7 @@ class InterviewerTest extends TestCase
     }
 
     #[DataProvider('updateProfileProvider')]
-    public function test_update_profile(?string $fullName, ?string $position, ?array $profileUrls): void
+    public function testUpdateProfile(?string $fullName, ?string $position, ?array $profileUrls): void
     {
         $interviewer = Interviewer::create($this->interviewerId, $this->employerId, 'John Doe');
         $oldVersion = $interviewer->version();
@@ -167,14 +174,14 @@ class InterviewerTest extends TestCase
         $this->assertEquals($oldVersion + 1, $interviewer->version());
     }
 
-    public function test_update_profile_with_empty_full_name_throws(): void
+    public function testUpdateProfileWithEmptyFullNameThrows(): void
     {
         $interviewer = Interviewer::create($this->interviewerId, $this->employerId, 'John Doe');
         $this->expectException(InterviewerFullNameEmptyException::class);
         $interviewer->updateProfile('');
     }
 
-    public function test_soft_delete(): void
+    public function testSoftDelete(): void
     {
         $interviewer = Interviewer::create($this->interviewerId, $this->employerId, 'John Doe');
         $oldVersion = $interviewer->version();
@@ -197,7 +204,7 @@ class InterviewerTest extends TestCase
             'NYC',
             EmploymentTypeEnum::FULL_TIME,
             WorkplaceEnum::REMOTE,
-            new DateTimeImmutable,
+            new DateTimeImmutable(),
             new ExternalUrls(['https://example.com']),
             null,
             null

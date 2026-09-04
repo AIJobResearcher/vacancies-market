@@ -31,7 +31,8 @@ final class Employer
         private DateTimeImmutable $createdAt,
         private DateTimeImmutable $updatedAt,
         private int $version
-    ) {}
+    ) {
+    }
 
     public static function create(
         EmployerId $id,
@@ -44,9 +45,9 @@ final class Employer
         ?string $correlationId = null
     ): self {
         if (trim($title) === '') {
-            throw new EmployerTitleEmptyException;
+            throw new EmployerTitleEmptyException();
         }
-        $now = new DateTimeImmutable;
+        $now = new DateTimeImmutable();
         $employer = new self(
             $id,
             trim($title),
@@ -80,7 +81,7 @@ final class Employer
         ?string $logoUrl = null
     ): void {
         if ($title !== null && trim($title) === '') {
-            throw new EmployerTitleEmptyException;
+            throw new EmployerTitleEmptyException();
         }
 
         $this->title = $title !== null ? trim($title) : $this->title;
@@ -89,7 +90,7 @@ final class Employer
         $this->email = $email ?? $this->email;
         $this->phone = $phone ?? $this->phone;
         $this->logoUrl = $logoUrl ?? $this->logoUrl;
-        $this->updatedAt = new DateTimeImmutable;
+        $this->updatedAt = new DateTimeImmutable();
         $this->version++;
     }
 
@@ -118,6 +119,9 @@ final class Employer
         }
     }
 
+    /**
+     * @phpcsSuppress SlevomatCodingStandard.Functions.UnusedParameter
+     */
     public function removeInterviewer(Interviewer $interviewer): void
     {
         // Soft delete handled by interviewer itself.
@@ -168,6 +172,21 @@ final class Employer
         return $this->version;
     }
 
+    /**
+     * @return array{
+     *     id: string,
+     *     title: string,
+     *     description: string|null,
+     *     website: string|null,
+     *     email: string|null,
+     *     phone: string|null,
+     *     logo_url: string|null,
+     *     is_active: bool,
+     *     created_at: string,
+     *     updated_at: string,
+     *     version: int
+     * }
+     */
     public function toArray(): array
     {
         return [

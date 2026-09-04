@@ -9,13 +9,13 @@ use PHPUnit\Framework\TestCase;
 
 class VacancyStatusEnumTest extends TestCase
 {
-    public function test_values(): void
+    public function testValues(): void
     {
         $this->assertSame('open', VacancyStatusEnum::OPEN->value);
         $this->assertSame('closed', VacancyStatusEnum::CLOSED->value);
     }
 
-    public function test_from_string(): void
+    public function testFromString(): void
     {
         $this->assertSame(VacancyStatusEnum::CLOSED, VacancyStatusEnum::from('closed'));
     }

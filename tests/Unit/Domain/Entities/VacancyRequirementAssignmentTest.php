@@ -13,7 +13,7 @@ use PHPUnit\Framework\TestCase;
 
 class VacancyRequirementAssignmentTest extends TestCase
 {
-    public function test_construct_and_get_requirement_id(): void
+    public function testConstructAndGetRequirementId(): void
     {
         $requirementId = RequirementId::generate();
 
@@ -21,7 +21,7 @@ class VacancyRequirementAssignmentTest extends TestCase
             VacancyRequirementAssignmentId::generate(),
             VacancyId::generate(),
             $requirementId,
-            new DateTimeImmutable
+            new DateTimeImmutable()
         );
 
         $this->assertEquals($requirementId, $assignment->getRequirementId());

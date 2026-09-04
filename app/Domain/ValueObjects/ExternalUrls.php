@@ -12,11 +12,13 @@ final class ExternalUrls
     /** @var string[] */
     private array $urls;
 
+    /** @param string[] $urls */
     public function __construct(array $urls)
     {
         $this->setUrls($urls);
     }
 
+    /** @param string[] $urls */
     private function setUrls(array $urls): void
     {
         $urls = array_values(array_unique($urls));

@@ -29,7 +29,7 @@ final class InterviewerVacancyAssignment
             throw new AssignmentAlreadyInactiveException($this->unassignedAt->format(DATE_ATOM));
         }
 
-        $this->unassignedAt = new DateTimeImmutable;
+        $this->unassignedAt = new DateTimeImmutable();
         $this->version++;
     }
 

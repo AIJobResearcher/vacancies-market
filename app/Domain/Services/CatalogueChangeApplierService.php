@@ -33,8 +33,54 @@ final readonly class CatalogueChangeApplierService
         private VacancyRepositoryInterface $vacancyRepository,
         private RequirementRepositoryInterface $requirementRepository,
         private RequirementUniquenessCheckerService $uniquenessChecker,
-    ) {}
+    ) {
+    }
 
+    /**
+     * @param array{
+     *     mutation_type: 'create'|'update'|'merge'|'close',
+     *     aggregate_id?: string,
+     *     expected_version?: int,
+     *     correlation_id?: string|null,
+     *     canonical_data?: array{
+     *         id?: string,
+     *         employer?: array{
+     *             id?: string,
+     *             title: string,
+     *             description?: string,
+     *             website?: string,
+     *             email?: string,
+     *             phone?: string,
+     *             logo_url?: string
+     *         },
+     *         requirements?: array<int, array{
+     *             id?: string,
+     *             title: string,
+     *             description?: string,
+     *             category?: string
+     *         }>,
+     *         title?: string,
+     *         description?: string,
+     *         min_salary?: int,
+     *         max_salary?: int|null,
+     *         currency?: string,
+     *         country?: string,
+     *         city?: string,
+     *         employment_type?: string,
+     *         workplace?: string,
+     *         posted_at?: string,
+     *         external_urls?: string[],
+     *         internal_url?: string
+     *     },
+     *     source_provenance?: array{
+     *         source_key: string,
+     *         external_vacancy_id: string,
+     *         external_url: string,
+     *         is_primary?: bool
+     *     },
+     *     merge_ids?: string[]
+     * } $commandData
+     */
     public function apply(array $commandData): void
     {
         $mutationType = $commandData['mutation_type'] ?? null;
@@ -57,13 +103,57 @@ final readonly class CatalogueChangeApplierService
         }
     }
 
+    /**
+     * @param array{
+     *     mutation_type: 'create'|'update'|'merge'|'close',
+     *     aggregate_id?: string,
+     *     expected_version?: int,
+     *     correlation_id?: string|null,
+     *     canonical_data?: array{
+     *         id?: string,
+     *         employer?: array{
+     *             id?: string,
+     *             title: string,
+     *             description?: string,
+     *             website?: string,
+     *             email?: string,
+     *             phone?: string,
+     *             logo_url?: string
+     *         },
+     *         requirements?: array<int, array{
+     *             id?: string,
+     *             title: string,
+     *             description?: string,
+     *             category?: string
+     *         }>,
+     *         title?: string,
+     *         description?: string,
+     *         min_salary?: int,
+     *         max_salary?: int|null,
+     *         currency?: string,
+     *         country?: string,
+     *         city?: string,
+     *         employment_type?: string,
+     *         workplace?: string,
+     *         posted_at?: string,
+     *         external_urls?: string[],
+     *         internal_url?: string
+     *     },
+     *     source_provenance?: array{
+     *         source_key: string,
+     *         external_vacancy_id: string,
+     *         external_url: string,
+     *         is_primary?: bool
+     *     },
+     *     merge_ids?: string[]
+     * } $data
+     */
     private function applyCreate(array $data): void
     {
         $canonicalData = $data['canonical_data'];
         $sourceProvenance = $data['source_provenance'];
         $correlationId = $data['correlation_id'] ?? null;
 
-        // ---- Employer ----
         $employerId = isset($canonicalData['employer']['id'])
             ? EmployerId::fromString($canonicalData['employer']['id'])
             : EmployerId::generate();
@@ -83,7 +173,6 @@ final readonly class CatalogueChangeApplierService
             $this->employerRepository->save($employer);
         }
 
-        // ---- Requirements ----
         $requirementIds = [];
         foreach ($canonicalData['requirements'] ?? [] as $reqData) {
             if (isset($reqData['id'])) {
@@ -106,7 +195,6 @@ final readonly class CatalogueChangeApplierService
             $requirementIds[] = $reqId;
         }
 
-        // ---- Vacancy ----
         $vacancyId = isset($data['aggregate_id'])
             ? VacancyId::fromString($data['aggregate_id'])
             : (isset($canonicalData['id'])
@@ -143,6 +231,51 @@ final readonly class CatalogueChangeApplierService
         $this->vacancyRepository->save($vacancy);
     }
 
+    /**
+     * @param array{
+     *     mutation_type: 'create'|'update'|'merge'|'close',
+     *     aggregate_id?: string,
+     *     expected_version?: int,
+     *     correlation_id?: string|null,
+     *     canonical_data?: array{
+     *         id?: string,
+     *         employer?: array{
+     *             id?: string,
+     *             title: string,
+     *             description?: string,
+     *             website?: string,
+     *             email?: string,
+     *             phone?: string,
+     *             logo_url?: string
+     *         },
+     *         requirements?: array<int, array{
+     *             id?: string,
+     *             title: string,
+     *             description?: string,
+     *             category?: string
+     *         }>,
+     *         title?: string,
+     *         description?: string,
+     *         min_salary?: int,
+     *         max_salary?: int|null,
+     *         currency?: string,
+     *         country?: string,
+     *         city?: string,
+     *         employment_type?: string,
+     *         workplace?: string,
+     *         posted_at?: string,
+     *         external_urls?: string[],
+     *         internal_url?: string
+     *     },
+     *     source_provenance?: array{
+     *         source_key: string,
+     *         external_vacancy_id: string,
+     *         external_url: string,
+     *         is_primary?: bool
+     *     },
+     *     merge_ids?: string[]
+     * } $data
+     */
     private function applyUpdate(array $data): void
     {
         $vacancyId = VacancyId::fromString($data['aggregate_id']);
@@ -161,7 +294,6 @@ final readonly class CatalogueChangeApplierService
 
         $canonicalData = $data['canonical_data'];
 
-        // Update fields
         $vacancy->updateDetails(
             $canonicalData['title'] ?? null,
             $canonicalData['description'] ?? null,
@@ -172,14 +304,15 @@ final readonly class CatalogueChangeApplierService
             ) : null,
             $canonicalData['country'] ?? null,
             $canonicalData['city'] ?? null,
-            isset($canonicalData['employment_type']) ? EmploymentTypeEnum::from($canonicalData['employment_type']) : null,
+            isset($canonicalData['employment_type'])
+                ? EmploymentTypeEnum::from($canonicalData['employment_type'])
+                : null,
             isset($canonicalData['workplace']) ? WorkplaceEnum::from($canonicalData['workplace']) : null,
             isset($canonicalData['posted_at']) ? new DateTimeImmutable($canonicalData['posted_at']) : null,
             isset($canonicalData['external_urls']) ? new ExternalUrls($canonicalData['external_urls']) : null,
             $canonicalData['internal_url'] ?? null
         );
 
-        // Update source if provided
         if (isset($data['source_provenance'])) {
             $sp = $data['source_provenance'];
             $source = $this->createSource($sp, $vacancy);
@@ -189,6 +322,51 @@ final readonly class CatalogueChangeApplierService
         $this->vacancyRepository->save($vacancy);
     }
 
+    /**
+     * @param array{
+     *     mutation_type: 'create'|'update'|'merge'|'close',
+     *     aggregate_id?: string,
+     *     expected_version?: int,
+     *     correlation_id?: string|null,
+     *     canonical_data?: array{
+     *         id?: string,
+     *         employer?: array{
+     *             id?: string,
+     *             title: string,
+     *             description?: string,
+     *             website?: string,
+     *             email?: string,
+     *             phone?: string,
+     *             logo_url?: string
+     *         },
+     *         requirements?: array<int, array{
+     *             id?: string,
+     *             title: string,
+     *             description?: string,
+     *             category?: string
+     *         }>,
+     *         title?: string,
+     *         description?: string,
+     *         min_salary?: int,
+     *         max_salary?: int|null,
+     *         currency?: string,
+     *         country?: string,
+     *         city?: string,
+     *         employment_type?: string,
+     *         workplace?: string,
+     *         posted_at?: string,
+     *         external_urls?: string[],
+     *         internal_url?: string
+     *     },
+     *     source_provenance?: array{
+     *         source_key: string,
+     *         external_vacancy_id: string,
+     *         external_url: string,
+     *         is_primary?: bool
+     *     },
+     *     merge_ids?: string[]
+     * } $data
+     */
     private function applyMerge(array $data): void
     {
         $targetVacancy = $this->vacancyRepository->findById(VacancyId::fromString($data['aggregate_id']));
@@ -206,7 +384,7 @@ final readonly class CatalogueChangeApplierService
 
         $mergedIds = $data['merge_ids'];
         if (empty($mergedIds)) {
-            throw new MergeListEmptyException;
+            throw new MergeListEmptyException();
         }
 
         $primarySource = $this->vacancyRepository->findById(VacancyId::fromString($mergedIds[0]));
@@ -214,10 +392,8 @@ final readonly class CatalogueChangeApplierService
             throw new VacancyNotFoundException($mergedIds[0]);
         }
 
-        // Merge data from primary source
         $targetVacancy->mergeFrom($primarySource, $mergedIds);
 
-        // Close all other merged vacancies (except target)
         foreach ($mergedIds as $mergedId) {
             $sourceId = VacancyId::fromString($mergedId);
             if (!$sourceId->equals($targetVacancy->id())) {
@@ -232,6 +408,51 @@ final readonly class CatalogueChangeApplierService
         $this->vacancyRepository->save($targetVacancy);
     }
 
+    /**
+     * @param array{
+     *     mutation_type: 'create'|'update'|'merge'|'close',
+     *     aggregate_id?: string,
+     *     expected_version?: int,
+     *     correlation_id?: string|null,
+     *     canonical_data?: array{
+     *         id?: string,
+     *         employer?: array{
+     *             id?: string,
+     *             title: string,
+     *             description?: string,
+     *             website?: string,
+     *             email?: string,
+     *             phone?: string,
+     *             logo_url?: string
+     *         },
+     *         requirements?: array<int, array{
+     *             id?: string,
+     *             title: string,
+     *             description?: string,
+     *             category?: string
+     *         }>,
+     *         title?: string,
+     *         description?: string,
+     *         min_salary?: int,
+     *         max_salary?: int|null,
+     *         currency?: string,
+     *         country?: string,
+     *         city?: string,
+     *         employment_type?: string,
+     *         workplace?: string,
+     *         posted_at?: string,
+     *         external_urls?: string[],
+     *         internal_url?: string
+     *     },
+     *     source_provenance?: array{
+     *         source_key: string,
+     *         external_vacancy_id: string,
+     *         external_url: string,
+     *         is_primary?: bool
+     *     },
+     *     merge_ids?: string[]
+     * } $data
+     */
     private function applyClose(array $data): void
     {
         $vacancyId = VacancyId::fromString($data['aggregate_id']);
@@ -251,6 +472,14 @@ final readonly class CatalogueChangeApplierService
         $this->vacancyRepository->save($vacancy);
     }
 
+    /**
+     * @param array{
+     *     source_key: string,
+     *     external_vacancy_id: string,
+     *     external_url: string,
+     *     is_primary?: bool
+     * } $provenance
+     */
     private function createSource(array $provenance, Vacancy $vacancy): VacancySource
     {
         return new VacancySource(
@@ -259,8 +488,8 @@ final readonly class CatalogueChangeApplierService
             $provenance['source_key'],
             $provenance['external_vacancy_id'],
             $provenance['external_url'],
-            new DateTimeImmutable,
-            new DateTimeImmutable,
+            new DateTimeImmutable(),
+            new DateTimeImmutable(),
             null,
             $provenance['is_primary'] ?? false
         );

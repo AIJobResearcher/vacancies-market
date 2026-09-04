@@ -84,6 +84,14 @@ class CatalogueChangeApplierServiceTest extends TestCase
         return $vacancy;
     }
 
+    /**
+     * @return array{
+     *     mutation_type: string,
+     *     aggregate_id: string,
+     *     expected_version: int,
+     *     canonical_data: array{title: string}
+     * }
+     */
     private function versionCommand(string $aggregateId, int $expectedVersion): array
     {
         return [
@@ -94,6 +102,15 @@ class CatalogueChangeApplierServiceTest extends TestCase
         ];
     }
 
+    /**
+     * @return array<string, array{
+     *     0: ?string,
+     *     1: string,
+     *     2: array<int, array{title: string}>,
+     *     3: bool,
+     *     4: bool
+     * }>
+     */
     public static function createCommandProvider(): array
     {
         return [
@@ -114,8 +131,11 @@ class CatalogueChangeApplierServiceTest extends TestCase
         ];
     }
 
+    /**
+     * @param array<int, array{title: string}> $requirements
+     */
     #[DataProvider('createCommandProvider')]
-    public function test_apply_create(
+    public function testApplyCreate(
         ?string $employerId,
         string $employerTitle,
         array $requirements,
@@ -174,7 +194,7 @@ class CatalogueChangeApplierServiceTest extends TestCase
         $this->assertTrue(true);
     }
 
-    public function test_apply_create_requirement_not_found_throws(): void
+    public function testApplyCreateRequirementNotFoundThrows(): void
     {
         $command = $this->buildCreateCommand(null, 'New Employer', [['id' => RequirementId::generate()->value()]]);
 
@@ -187,7 +207,7 @@ class CatalogueChangeApplierServiceTest extends TestCase
         $this->service->apply($command);
     }
 
-    public function test_apply_create_reuses_existing_requirement_by_id(): void
+    public function testApplyCreateReusesExistingRequirementById(): void
     {
         $existingRequirement = Requirement::create(RequirementId::generate(), 'PHP');
         $command = $this->buildCreateCommand(null, 'New Employer', [['id' => $existingRequirement->id()->value()]]);
@@ -204,7 +224,7 @@ class CatalogueChangeApplierServiceTest extends TestCase
         $this->assertTrue(true);
     }
 
-    public function test_apply_update_adds_source_when_provenance_present(): void
+    public function testApplyUpdateAddsSourceWhenProvenancePresent(): void
     {
         $vacancy = $this->createVacancy();
 
@@ -228,7 +248,7 @@ class CatalogueChangeApplierServiceTest extends TestCase
         $this->assertSame(3, $vacancy->version());
     }
 
-    public function test_apply_update_success(): void
+    public function testApplyUpdateSuccess(): void
     {
         $vacancy = $this->createVacancy();
 
@@ -241,7 +261,7 @@ class CatalogueChangeApplierServiceTest extends TestCase
         $this->assertSame('Updated', $vacancy->toArray()['title']);
     }
 
-    public function test_apply_update_version_mismatch_throws(): void
+    public function testApplyUpdateVersionMismatchThrows(): void
     {
         $vacancy = $this->createVacancy();
 
@@ -254,7 +274,7 @@ class CatalogueChangeApplierServiceTest extends TestCase
         $this->service->apply($command);
     }
 
-    public function test_apply_update_vacancy_not_found_throws(): void
+    public function testApplyUpdateVacancyNotFoundThrows(): void
     {
         $this->vacancyRepo->shouldReceive('findById')->once()->andReturn(null);
 
@@ -264,7 +284,7 @@ class CatalogueChangeApplierServiceTest extends TestCase
         $this->service->apply($command);
     }
 
-    public function test_apply_merge_success(): void
+    public function testApplyMergeSuccess(): void
     {
         $target = $this->createVacancyVersioned(3);
         $source = $this->createVacancy();
@@ -289,7 +309,7 @@ class CatalogueChangeApplierServiceTest extends TestCase
         $this->assertSame('closed', $source->status());
     }
 
-    public function test_apply_merge_empty_ids_throws(): void
+    public function testApplyMergeEmptyIdsThrows(): void
     {
         $vacancy = $this->createVacancy();
 
@@ -305,7 +325,7 @@ class CatalogueChangeApplierServiceTest extends TestCase
         $this->service->apply($command);
     }
 
-    public function test_apply_merge_target_not_found_throws(): void
+    public function testApplyMergeTargetNotFoundThrows(): void
     {
         $this->vacancyRepo->shouldReceive('findById')->once()->andReturn(null);
         $command = [
@@ -318,7 +338,7 @@ class CatalogueChangeApplierServiceTest extends TestCase
         $this->service->apply($command);
     }
 
-    public function test_apply_merge_version_mismatch_throws(): void
+    public function testApplyMergeVersionMismatchThrows(): void
     {
         $target = $this->createVacancyVersioned(3);
 
@@ -336,7 +356,7 @@ class CatalogueChangeApplierServiceTest extends TestCase
         $this->service->apply($command);
     }
 
-    public function test_apply_merge_primary_source_not_found_throws(): void
+    public function testApplyMergePrimarySourceNotFoundThrows(): void
     {
         $target = $this->createVacancyVersioned(3);
 
@@ -355,7 +375,7 @@ class CatalogueChangeApplierServiceTest extends TestCase
         $this->service->apply($command);
     }
 
-    public function test_apply_close_success(): void
+    public function testApplyCloseSuccess(): void
     {
         $vacancy = $this->createVacancy();
 
@@ -372,7 +392,7 @@ class CatalogueChangeApplierServiceTest extends TestCase
         $this->assertSame('closed', $vacancy->status());
     }
 
-    public function test_apply_close_version_mismatch_throws(): void
+    public function testApplyCloseVersionMismatchThrows(): void
     {
         $vacancy = $this->createVacancy();
 
@@ -389,7 +409,7 @@ class CatalogueChangeApplierServiceTest extends TestCase
         $this->service->apply($command);
     }
 
-    public function test_apply_close_vacancy_not_found_throws(): void
+    public function testApplyCloseVacancyNotFoundThrows(): void
     {
         $this->vacancyRepo->shouldReceive('findById')->once()->andReturn(null);
 
@@ -403,13 +423,41 @@ class CatalogueChangeApplierServiceTest extends TestCase
         $this->service->apply($command);
     }
 
-    public function test_apply_unknown_mutation_type_throws(): void
+    public function testApplyUnknownMutationTypeThrows(): void
     {
         $command = ['mutation_type' => 'unknown'];
         $this->expectException(UnknownMutationTypeException::class);
         $this->service->apply($command);
     }
 
+    /**
+     * @param array<int, array{id: string}|array{title: string}> $requirements
+     * @return array{
+     *     mutation_type: string,
+     *     correlation_id: string,
+     *     canonical_data: array{
+     *         title: string,
+     *         description: string,
+     *         min_salary: int,
+     *         max_salary: int,
+     *         currency: string,
+     *         country: string,
+     *         city: string,
+     *         employment_type: string,
+     *         workplace: string,
+     *         posted_at: string,
+     *         external_urls: string[],
+     *         employer: array{id: string, title: string},
+     *         requirements: array<int, array{id: string}|array{title: string}>
+     *     },
+     *     source_provenance: array{
+     *         source_key: string,
+     *         external_vacancy_id: string,
+     *         external_url: string,
+     *         is_primary: bool
+     *     }
+     * }
+     */
     private function buildCreateCommand(?string $employerId, string $employerTitle, array $requirements): array
     {
         return [

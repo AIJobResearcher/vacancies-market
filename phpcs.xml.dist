@@ -25,7 +25,12 @@
     <!-- ========================================== -->
 
     <!-- Strict types declaration -->
-    <rule ref="SlevomatCodingStandard.TypeHints.DeclareStrictTypes"/>
+    <rule ref="SlevomatCodingStandard.TypeHints.DeclareStrictTypes">
+        <properties>
+            <!-- Keep declare(strict_types=1) consistent with PSR-12 (no spaces around =) -->
+            <property name="spacesCountAroundEqualsSign" value="0"/>
+        </properties>
+    </rule>
 
     <!-- Parameter type hints -->
     <rule ref="SlevomatCodingStandard.TypeHints.ParameterTypeHint"/>

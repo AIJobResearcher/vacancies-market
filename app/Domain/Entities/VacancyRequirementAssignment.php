@@ -17,7 +17,8 @@ final class VacancyRequirementAssignment
         private readonly RequirementId $requirementId,
         private DateTimeImmutable $assignedAt,
         private int $version = 1
-    ) {}
+    ) {
+    }
 
     public function getRequirementId(): RequirementId
     {

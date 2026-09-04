@@ -26,7 +26,7 @@ class RequirementUniquenessCheckerServiceTest extends TestCase
         $this->service = new RequirementUniquenessCheckerService($this->repository);
     }
 
-    public function test_ensure_unique_when_no_existing(): void
+    public function testEnsureUniqueWhenNoExisting(): void
     {
         $this->repository
             ->shouldReceive('findByTitleCaseInsensitive')
@@ -38,7 +38,7 @@ class RequirementUniquenessCheckerServiceTest extends TestCase
         $this->assertTrue(true);
     }
 
-    public function test_ensure_unique_when_existing_but_same_id_excluded(): void
+    public function testEnsureUniqueWhenExistingButSameIdExcluded(): void
     {
         $existing = Requirement::create(RequirementId::generate(), 'PHP');
         $excludeId = $existing->id();
@@ -53,7 +53,7 @@ class RequirementUniquenessCheckerServiceTest extends TestCase
         $this->assertTrue(true);
     }
 
-    public function test_ensure_unique_when_existing_and_not_excluded_throws(): void
+    public function testEnsureUniqueWhenExistingAndNotExcludedThrows(): void
     {
         $existing = Requirement::create(RequirementId::generate(), 'PHP');
 
@@ -67,7 +67,7 @@ class RequirementUniquenessCheckerServiceTest extends TestCase
         $this->service->ensureUnique('PHP', null);
     }
 
-    public function test_ensure_unique_when_existing_but_different_id_excluded_throws(): void
+    public function testEnsureUniqueWhenExistingButDifferentIdExcludedThrows(): void
     {
         $existing = Requirement::create(RequirementId::generate(), 'PHP');
         $otherId = RequirementId::generate();

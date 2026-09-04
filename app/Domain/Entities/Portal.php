@@ -16,24 +16,22 @@ final class Portal
         private string $name,
         private string $baseUrl,
         private ?string $apiEndpoint = null,
-        private array $parsingConfig = [],
         private int $crawlDelaySeconds = 0,
         private ?DateTimeImmutable $createdAt = null,
         private ?DateTimeImmutable $updatedAt = null,
     ) {
         if ($this->name === '') {
-            throw new PortalNameEmptyException;
+            throw new PortalNameEmptyException();
         }
 
         if ($this->baseUrl === '') {
-            throw new PortalBaseUrlEmptyException;
+            throw new PortalBaseUrlEmptyException();
         }
 
-        $this->createdAt ??= new DateTimeImmutable;
+        $this->createdAt ??= new DateTimeImmutable();
         $this->updatedAt ??= $this->createdAt;
     }
 
-    // Геттеры
     public function id(): PortalId
     {
         return $this->id;
@@ -52,11 +50,6 @@ final class Portal
     public function apiEndpoint(): ?string
     {
         return $this->apiEndpoint;
-    }
-
-    public function parsingConfig(): array
-    {
-        return $this->parsingConfig;
     }
 
     public function crawlDelaySeconds(): int
@@ -78,22 +71,20 @@ final class Portal
         ?string $name = null,
         ?string $baseUrl = null,
         ?string $apiEndpoint = null,
-        ?array $parsingConfig = null,
         ?int $crawlDelaySeconds = null
     ): void {
         if ($name !== null && $name === '') {
-            throw new PortalNameEmptyException;
+            throw new PortalNameEmptyException();
         }
 
         if ($baseUrl !== null && $baseUrl === '') {
-            throw new PortalBaseUrlEmptyException;
+            throw new PortalBaseUrlEmptyException();
         }
 
         $this->name = $name ?? $this->name;
         $this->baseUrl = $baseUrl ?? $this->baseUrl;
         $this->apiEndpoint = $apiEndpoint ?? $this->apiEndpoint;
-        $this->parsingConfig = $parsingConfig ?? $this->parsingConfig;
         $this->crawlDelaySeconds = $crawlDelaySeconds ?? $this->crawlDelaySeconds;
-        $this->updatedAt = new DateTimeImmutable;
+        $this->updatedAt = new DateTimeImmutable();
     }
 }

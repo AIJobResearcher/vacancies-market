@@ -8,6 +8,21 @@ use DateTimeImmutable;
 
 final class EmployerImportedEvent extends DomainEvent
 {
+    /**
+     * @param array{
+     *     id: string,
+     *     title: string,
+     *     description: string|null,
+     *     website: string|null,
+     *     email: string|null,
+     *     phone: string|null,
+     *     logo_url: string|null,
+     *     is_active: bool,
+     *     created_at: string,
+     *     updated_at: string,
+     *     version: int
+     * } $employerData
+     */
     public function __construct(
         string $eventId,
         string $aggregateId,

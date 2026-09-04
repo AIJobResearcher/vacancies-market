@@ -37,7 +37,7 @@ final class VacancyJobAssignment
         if ($this->unassignedAt !== null) {
             throw new AssignmentAlreadyInactiveException($this->unassignedAt->format(DATE_ATOM));
         }
-        $this->unassignedAt = new DateTimeImmutable;
+        $this->unassignedAt = new DateTimeImmutable();
         $this->version++;
     }
 
@@ -49,7 +49,6 @@ final class VacancyJobAssignment
         return $this->unassignedAt === null;
     }
 
-    // Getters
     public function id(): VacancyJobAssignmentId
     {
         return $this->id;

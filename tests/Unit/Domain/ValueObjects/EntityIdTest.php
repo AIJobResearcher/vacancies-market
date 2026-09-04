@@ -12,6 +12,9 @@ use Ramsey\Uuid\Uuid;
 
 class EntityIdTest extends TestCase
 {
+    /**
+     * @return array<string, array{0: string}>
+     */
     public static function validUuidProvider(): array
     {
         return [
@@ -20,6 +23,9 @@ class EntityIdTest extends TestCase
         ];
     }
 
+    /**
+     * @return array<string, array{0: string}>
+     */
     public static function invalidUuidProvider(): array
     {
         return [
@@ -30,26 +36,26 @@ class EntityIdTest extends TestCase
     }
 
     #[DataProvider('validUuidProvider')]
-    public function test_from_string_accepts_valid_uuid(string $uuid): void
+    public function testFromStringAcceptsValidUuid(string $uuid): void
     {
         $id = VacancyId::fromString($uuid);
         $this->assertEquals($uuid, $id->value());
     }
 
     #[DataProvider('invalidUuidProvider')]
-    public function test_from_string_throws_for_invalid_uuid(string $invalid): void
+    public function testFromStringThrowsForInvalidUuid(string $invalid): void
     {
         $this->expectException(InvalidUuidFormatException::class);
         VacancyId::fromString($invalid);
     }
 
-    public function test_generate_returns_valid_uuid(): void
+    public function testGenerateReturnsValidUuid(): void
     {
         $id = VacancyId::generate();
         $this->assertTrue(Uuid::isValid($id->value()));
     }
 
-    public function test_equals(): void
+    public function testEquals(): void
     {
         $uuid = Uuid::uuid4()->toString();
         $id1 = VacancyId::fromString($uuid);
@@ -58,7 +64,7 @@ class EntityIdTest extends TestCase
         $this->assertFalse($id1->equals(VacancyId::generate()));
     }
 
-    public function test_to_string_returns_value(): void
+    public function testToStringReturnsValue(): void
     {
         $uuid = Uuid::uuid4()->toString();
         $id = VacancyId::fromString($uuid);

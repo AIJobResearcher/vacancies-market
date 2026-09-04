@@ -14,7 +14,7 @@ abstract readonly class EntityId
     protected function __construct(string $value)
     {
         if (!Uuid::isValid($value)) {
-            throw new InvalidUuidFormatException;
+            throw new InvalidUuidFormatException();
         }
 
         $this->value = $value;

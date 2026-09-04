@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Domain\ValueObjects;
@@ -18,6 +19,9 @@ final readonly class Contacts
         $this->phone = $phone;
     }
 
+    /**
+     * @return array{email: string|null, phone: string|null}
+     */
     public function toArray(): array
     {
         return [

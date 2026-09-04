@@ -19,6 +19,9 @@ class RequirementTest extends TestCase
         $this->id = RequirementId::generate();
     }
 
+    /**
+     * @return array<string, array{0: string|null, 1: string|null, 2: string|null}>
+     */
     public static function updateProvider(): array
     {
         return [
@@ -29,7 +32,7 @@ class RequirementTest extends TestCase
         ];
     }
 
-    public function test_create_valid(): void
+    public function testCreateValid(): void
     {
         $req = Requirement::create($this->id, 'PHP', 'Programming language', 'technical');
         $this->assertEquals('PHP', $req->title());
@@ -37,14 +40,14 @@ class RequirementTest extends TestCase
         $this->assertEquals('technical', $req->category());
     }
 
-    public function test_create_empty_title_throws(): void
+    public function testCreateEmptyTitleThrows(): void
     {
         $this->expectException(RequirementTitleEmptyException::class);
         Requirement::create($this->id, '');
     }
 
     #[DataProvider('updateProvider')]
-    public function test_update(?string $title, ?string $desc, ?string $category): void
+    public function testUpdate(?string $title, ?string $desc, ?string $category): void
     {
         $req = Requirement::create($this->id, 'PHP', 'Old desc', 'tech');
         $req->update($title, $desc, $category);
@@ -60,7 +63,7 @@ class RequirementTest extends TestCase
         }
     }
 
-    public function test_update_with_empty_title_throws(): void
+    public function testUpdateWithEmptyTitleThrows(): void
     {
         $req = Requirement::create($this->id, 'PHP');
         $this->expectException(RequirementTitleEmptyException::class);

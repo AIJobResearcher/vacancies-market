@@ -11,6 +11,9 @@ use PHPUnit\Framework\TestCase;
 
 class ContactsTest extends TestCase
 {
+    /**
+     * @return array<string, array{0: ?string, 1: ?string}>
+     */
     public static function validContactsProvider(): array
     {
         return [
@@ -21,6 +24,9 @@ class ContactsTest extends TestCase
         ];
     }
 
+    /**
+     * @return array<string, array{0: string}>
+     */
     public static function invalidEmailProvider(): array
     {
         return [
@@ -31,7 +37,7 @@ class ContactsTest extends TestCase
     }
 
     #[DataProvider('validContactsProvider')]
-    public function test_construct_valid(?string $email, ?string $phone): void
+    public function testConstructValid(?string $email, ?string $phone): void
     {
         $contacts = new Contacts($email, $phone);
         $this->assertEquals($email, $contacts->email);
@@ -39,13 +45,13 @@ class ContactsTest extends TestCase
     }
 
     #[DataProvider('invalidEmailProvider')]
-    public function test_invalid_email_throws(string $invalid): void
+    public function testInvalidEmailThrows(string $invalid): void
     {
         $this->expectException(InvalidEmailException::class);
         new Contacts($invalid);
     }
 
-    public function test_to_array(): void
+    public function testToArray(): void
     {
         $contacts = new Contacts('test@example.com', '+123');
         $this->assertEquals(['email' => 'test@example.com', 'phone' => '+123'], $contacts->toArray());

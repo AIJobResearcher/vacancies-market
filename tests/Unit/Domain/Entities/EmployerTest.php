@@ -119,10 +119,10 @@ class EmployerTest extends TestCase
 
     public function testAddVacancyWithSameEmployer(): void
     {
+        $this->expectNotToPerformAssertions();
         $employer = Employer::create($this->employerId, 'TechCorp');
         $vacancy = $this->createVacancy($this->employerId);
         $employer->addVacancy($vacancy);
-        $this->assertTrue(true);
     }
 
     public function testAddVacancyWithDifferentEmployerThrows(): void
@@ -156,29 +156,29 @@ class EmployerTest extends TestCase
 
     public function testRemoveVacancyWhenClosedSucceeds(): void
     {
+        $this->expectNotToPerformAssertions();
         $employer = Employer::create($this->employerId, 'TechCorp');
         $vacancy = $this->createVacancy($this->employerId);
         $vacancy->close();
 
         $employer->removeVacancy($vacancy);
-        $this->assertTrue(true);
     }
 
     public function testRemoveInterviewerSucceeds(): void
     {
+        $this->expectNotToPerformAssertions();
         $employer = Employer::create($this->employerId, 'TechCorp');
         $interviewer = $this->createInterviewer($this->employerId);
 
         $employer->removeInterviewer($interviewer);
-        $this->assertTrue(true);
     }
 
     public function testAddInterviewerWithSameEmployer(): void
     {
+        $this->expectNotToPerformAssertions();
         $employer = Employer::create($this->employerId, 'TechCorp');
         $interviewer = $this->createInterviewer($this->employerId);
         $employer->addInterviewer($interviewer);
-        $this->assertTrue(true);
     }
 
     public function testAddInterviewerWithDifferentEmployerThrows(): void

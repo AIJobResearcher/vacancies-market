@@ -10,13 +10,14 @@ use App\Domain\Repositories\RequirementRepositoryInterface;
 use App\Domain\Services\RequirementUniquenessCheckerService;
 use App\Domain\ValueObjects\EntityIds\RequirementId;
 use Mockery;
+use Mockery\MockInterface;
 use PHPUnit\Framework\TestCase;
 
 class RequirementUniquenessCheckerServiceTest extends TestCase
 {
     use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 
-    private RequirementRepositoryInterface $repository;
+    private RequirementRepositoryInterface&MockInterface $repository;
 
     private RequirementUniquenessCheckerService $service;
 
@@ -35,7 +36,6 @@ class RequirementUniquenessCheckerServiceTest extends TestCase
             ->andReturn(null);
 
         $this->service->ensureUnique('PHP', null);
-        $this->assertTrue(true);
     }
 
     public function testEnsureUniqueWhenExistingButSameIdExcluded(): void
@@ -50,7 +50,6 @@ class RequirementUniquenessCheckerServiceTest extends TestCase
             ->andReturn($existing);
 
         $this->service->ensureUnique('PHP', $excludeId);
-        $this->assertTrue(true);
     }
 
     public function testEnsureUniqueWhenExistingAndNotExcludedThrows(): void

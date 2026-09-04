@@ -123,6 +123,9 @@ class VacancyTest extends TestCase
         );
     }
 
+    /**
+     * @param class-string<\Throwable> $exceptionClass
+     */
     #[DataProvider('invalidCreateProvider')]
     public function testCreateInvalid(
         string $title,
@@ -165,6 +168,9 @@ class VacancyTest extends TestCase
         $this->assertEquals($this->vacancyId->value(), $events[0]->aggregateId);
     }
 
+    /**
+     * @param string[]|null $externalUrls
+     */
     #[DataProvider('updateDetailsProvider')]
     public function testUpdateDetails(
         ?string $title,
@@ -339,7 +345,6 @@ class VacancyTest extends TestCase
         $this->assertEquals($oldVersion + 1, $vacancy->version());
 
         $vacancy->assignToJob($jobId);
-        $this->assertTrue(true);
     }
 
     public function testUnassignFromJobNotAssignedThrows(): void

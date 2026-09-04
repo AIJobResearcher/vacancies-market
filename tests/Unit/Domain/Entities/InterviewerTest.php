@@ -154,6 +154,9 @@ class InterviewerTest extends TestCase
         $this->assertTrue($assignments[1]->isActive());
     }
 
+    /**
+     * @param array<string, string>|null $profileUrls
+     */
     #[DataProvider('updateProfileProvider')]
     public function testUpdateProfile(?string $fullName, ?string $position, ?array $profileUrls): void
     {

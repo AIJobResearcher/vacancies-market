@@ -93,7 +93,6 @@ class JobTest extends TestCase
         $this->assertEquals($oldVersion + 1, $job->version());
         // adding again works
         $job->addRequirement($this->reqId);
-        $this->assertTrue(true);
     }
 
     public function testRemoveNonExistentRequirementThrows(): void

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Domain\Entities;
 
-use App\Domain\Exceptions\DomainException;
 use App\Domain\Exceptions\StateConflictException\RequirementAlreadyAssignedException;
 use App\Domain\Exceptions\StateConflictException\RequirementNotAssignedException;
 use App\Domain\Exceptions\ValidationException\JobTitleEmptyException;
@@ -94,8 +93,7 @@ final class Job
     /**
      * Soft delete the Job.
      *
-     * @throws DomainException if there are active VacancyJobAssignment references
-     *                         (this check must be performed by the application layer before calling)
+     * Active VacancyJobAssignment references must be validated by the application layer before calling.
      */
     public function softDelete(): void
     {
@@ -136,6 +134,16 @@ final class Job
     public function description(): ?string
     {
         return $this->description;
+    }
+
+    public function createdAt(): DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
+    public function updatedAt(): DateTimeImmutable
+    {
+        return $this->updatedAt;
     }
 
     public function deletedAt(): ?DateTimeImmutable

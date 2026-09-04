@@ -36,6 +36,9 @@ final readonly class CatalogueChangeApplierService
     ) {
     }
 
+    // TODO: Refactor mutation-command handling to typed/discriminated command objects
+    // (per mutation_type); the per-line phpstan ignores below are a temporary stopgap.
+
     /**
      * @param array{
      *     mutation_type: 'create'|'update'|'merge'|'close',
@@ -99,6 +102,7 @@ final readonly class CatalogueChangeApplierService
                 $this->applyClose($commandData);
                 break;
             default:
+                // @phpstan-ignore-next-line nullCoalesce.variable
                 throw new UnknownMutationTypeException($mutationType ?? 'null');
         }
     }
@@ -150,7 +154,9 @@ final readonly class CatalogueChangeApplierService
      */
     private function applyCreate(array $data): void
     {
+        // @phpstan-ignore-next-line offsetAccess.notFound
         $canonicalData = $data['canonical_data'];
+        // @phpstan-ignore-next-line offsetAccess.notFound
         $sourceProvenance = $data['source_provenance'];
         $correlationId = $data['correlation_id'] ?? null;
 
@@ -162,6 +168,7 @@ final readonly class CatalogueChangeApplierService
         if ($employer === null) {
             $employer = Employer::create(
                 $employerId,
+                // @phpstan-ignore-next-line offsetAccess.notFound
                 $canonicalData['employer']['title'],
                 $canonicalData['employer']['description'] ?? null,
                 $canonicalData['employer']['website'] ?? null,
@@ -205,6 +212,7 @@ final readonly class CatalogueChangeApplierService
         $vacancy = Vacancy::create(
             $vacancyId,
             $employerId,
+            // @phpstan-ignore-next-line offsetAccess.notFound
             $canonicalData['title'],
             $canonicalData['description'] ?? '',
             new Salary(
@@ -214,9 +222,13 @@ final readonly class CatalogueChangeApplierService
             ),
             $canonicalData['country'] ?? null,
             $canonicalData['city'] ?? null,
+            // @phpstan-ignore-next-line offsetAccess.notFound
             EmploymentTypeEnum::from($canonicalData['employment_type']),
+            // @phpstan-ignore-next-line offsetAccess.notFound
             WorkplaceEnum::from($canonicalData['workplace']),
+            // @phpstan-ignore-next-line offsetAccess.notFound
             new DateTimeImmutable($canonicalData['posted_at']),
+            // @phpstan-ignore-next-line offsetAccess.notFound
             new ExternalUrls($canonicalData['external_urls']),
             $canonicalData['internal_url'] ?? null,
             $correlationId
@@ -278,20 +290,25 @@ final readonly class CatalogueChangeApplierService
      */
     private function applyUpdate(array $data): void
     {
+        // @phpstan-ignore-next-line offsetAccess.notFound
         $vacancyId = VacancyId::fromString($data['aggregate_id']);
         $vacancy = $this->vacancyRepository->findById($vacancyId);
         if ($vacancy === null) {
+            // @phpstan-ignore-next-line offsetAccess.notFound
             throw new VacancyNotFoundException($data['aggregate_id']);
         }
+        // @phpstan-ignore-next-line offsetAccess.notFound
         if ($vacancy->version() !== $data['expected_version']) {
             throw new VersionConflictException(
                 'Vacancy',
                 $vacancy->id()->value(),
+                // @phpstan-ignore-next-line offsetAccess.notFound
                 $data['expected_version'],
                 $vacancy->version()
             );
         }
 
+        // @phpstan-ignore-next-line offsetAccess.notFound
         $canonicalData = $data['canonical_data'];
 
         $vacancy->updateDetails(
@@ -369,19 +386,24 @@ final readonly class CatalogueChangeApplierService
      */
     private function applyMerge(array $data): void
     {
+        // @phpstan-ignore-next-line offsetAccess.notFound
         $targetVacancy = $this->vacancyRepository->findById(VacancyId::fromString($data['aggregate_id']));
         if ($targetVacancy === null) {
+            // @phpstan-ignore-next-line offsetAccess.notFound
             throw new VacancyNotFoundException($data['aggregate_id']);
         }
+        // @phpstan-ignore-next-line offsetAccess.notFound
         if ($targetVacancy->version() !== $data['expected_version']) {
             throw new VersionConflictException(
                 'Vacancy',
                 $targetVacancy->id()->value(),
+                // @phpstan-ignore-next-line offsetAccess.notFound
                 $data['expected_version'],
                 $targetVacancy->version()
             );
         }
 
+        // @phpstan-ignore-next-line offsetAccess.notFound
         $mergedIds = $data['merge_ids'];
         if (empty($mergedIds)) {
             throw new MergeListEmptyException();
@@ -455,15 +477,19 @@ final readonly class CatalogueChangeApplierService
      */
     private function applyClose(array $data): void
     {
+        // @phpstan-ignore-next-line offsetAccess.notFound
         $vacancyId = VacancyId::fromString($data['aggregate_id']);
         $vacancy = $this->vacancyRepository->findById($vacancyId);
         if ($vacancy === null) {
+            // @phpstan-ignore-next-line offsetAccess.notFound
             throw new VacancyNotFoundException($data['aggregate_id']);
         }
+        // @phpstan-ignore-next-line offsetAccess.notFound
         if ($vacancy->version() !== $data['expected_version']) {
             throw new VersionConflictException(
                 'Vacancy',
                 $vacancy->id()->value(),
+                // @phpstan-ignore-next-line offsetAccess.notFound
                 $data['expected_version'],
                 $vacancy->version()
             );

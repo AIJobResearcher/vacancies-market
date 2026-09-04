@@ -64,6 +64,9 @@ class SalaryTest extends TestCase
         $this->assertEquals($expectedCurrency, $salary->currency());
     }
 
+    /**
+     * @param class-string<\Throwable> $exceptionClass
+     */
     #[DataProvider('invalidSalaryProvider')]
     public function testConstructInvalid(int $min, ?int $max, string $currency, string $exceptionClass): void
     {

@@ -26,6 +26,7 @@ use App\Domain\ValueObjects\ExternalUrls;
 use App\Domain\ValueObjects\Salary;
 use DateTimeImmutable;
 use Mockery;
+use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -33,11 +34,11 @@ class CatalogueChangeApplierServiceTest extends TestCase
 {
     use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 
-    private EmployerRepositoryInterface $employerRepo;
+    private EmployerRepositoryInterface&MockInterface $employerRepo;
 
-    private VacancyRepositoryInterface $vacancyRepo;
+    private VacancyRepositoryInterface&MockInterface $vacancyRepo;
 
-    private RequirementRepositoryInterface $requirementRepo;
+    private RequirementRepositoryInterface&MockInterface $requirementRepo;
 
     private RequirementUniquenessCheckerService $uniquenessChecker;
 
@@ -157,6 +158,7 @@ class CatalogueChangeApplierServiceTest extends TestCase
                     }
                 ));
         } else {
+            // @phpstan-ignore-next-line argument.type
             $existing = Employer::create(EmployerId::fromString($employerId), $employerTitle);
             $expectedEmployerId = $existing->id();
             $this->employerRepo->shouldReceive('findById')->once()->andReturn($existing);
@@ -183,15 +185,16 @@ class CatalogueChangeApplierServiceTest extends TestCase
                 }
             ));
 
+        // @phpstan-ignore-next-line argument.type
         $this->service->apply($command);
 
         $this->assertInstanceOf(Vacancy::class, $savedVacancy);
         $data = $savedVacancy->toArray();
+        // @phpstan-ignore-next-line method.nonObject
         $this->assertSame($expectedEmployerId->value(), $data['employer_id']);
         if ($expectNewRequirement) {
             $this->assertNotEmpty($data['requirements']);
         }
-        $this->assertTrue(true);
     }
 
     public function testApplyCreateRequirementNotFoundThrows(): void
@@ -204,6 +207,7 @@ class CatalogueChangeApplierServiceTest extends TestCase
         $this->requirementRepo->shouldReceive('findById')->once()->andReturn(null);
 
         $this->expectException(RequirementNotFoundException::class);
+        // @phpstan-ignore-next-line argument.type
         $this->service->apply($command);
     }
 
@@ -220,8 +224,8 @@ class CatalogueChangeApplierServiceTest extends TestCase
 
         $this->vacancyRepo->shouldReceive('save')->once()->with(Mockery::type(Vacancy::class));
 
+        // @phpstan-ignore-next-line argument.type
         $this->service->apply($command);
-        $this->assertTrue(true);
     }
 
     public function testApplyUpdateAddsSourceWhenProvenancePresent(): void
@@ -257,6 +261,7 @@ class CatalogueChangeApplierServiceTest extends TestCase
 
         $command = $this->versionCommand($vacancy->id()->value(), $vacancy->version());
 
+        // @phpstan-ignore-next-line argument.type
         $this->service->apply($command);
         $this->assertSame('Updated', $vacancy->toArray()['title']);
     }
@@ -271,6 +276,7 @@ class CatalogueChangeApplierServiceTest extends TestCase
         $command = $this->versionCommand($vacancy->id()->value(), $vacancy->version() + 1);
 
         $this->expectException(VersionConflictException::class);
+        // @phpstan-ignore-next-line argument.type
         $this->service->apply($command);
     }
 
@@ -281,6 +287,7 @@ class CatalogueChangeApplierServiceTest extends TestCase
         $command = $this->versionCommand(VacancyId::generate()->value(), 1);
 
         $this->expectException(VacancyNotFoundException::class);
+        // @phpstan-ignore-next-line argument.type
         $this->service->apply($command);
     }
 
@@ -427,6 +434,7 @@ class CatalogueChangeApplierServiceTest extends TestCase
     {
         $command = ['mutation_type' => 'unknown'];
         $this->expectException(UnknownMutationTypeException::class);
+        // @phpstan-ignore-next-line argument.type
         $this->service->apply($command);
     }
 

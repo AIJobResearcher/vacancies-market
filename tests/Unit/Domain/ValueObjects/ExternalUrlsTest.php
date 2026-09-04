@@ -52,6 +52,7 @@ class ExternalUrlsTest extends TestCase
 
     /**
      * @param string[] $input
+     * @param class-string<\Throwable> $exceptionClass
      */
     #[DataProvider('invalidUrlsProvider')]
     public function testConstructInvalid(array $input, string $exceptionClass): void

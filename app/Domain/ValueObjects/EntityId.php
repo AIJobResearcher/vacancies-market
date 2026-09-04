@@ -7,6 +7,9 @@ namespace App\Domain\ValueObjects;
 use App\Domain\Exceptions\ValidationException\InvalidUuidFormatException;
 use Ramsey\Uuid\Uuid;
 
+/**
+ * @phpstan-consistent-constructor
+ */
 abstract readonly class EntityId
 {
     protected string $value;

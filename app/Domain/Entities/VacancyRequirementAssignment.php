@@ -24,4 +24,24 @@ final class VacancyRequirementAssignment
     {
         return $this->requirementId;
     }
+
+    public function id(): VacancyRequirementAssignmentId
+    {
+        return $this->id;
+    }
+
+    public function vacancyId(): VacancyId
+    {
+        return $this->vacancyId;
+    }
+
+    public function assignedAt(): DateTimeImmutable
+    {
+        return $this->assignedAt;
+    }
+
+    public function version(): int
+    {
+        return $this->version;
+    }
 }

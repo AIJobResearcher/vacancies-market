@@ -19,6 +19,7 @@ final class Interviewer
     /** @var InterviewerVacancyAssignment[] */
     private array $vacancyAssignments = [];
 
+    /** @param array<string, string>|null $profileUrls */
     private function __construct(
         private readonly InterviewerId $id,
         private readonly EmployerId $employerId,
@@ -35,6 +36,7 @@ final class Interviewer
 
     /**
      * @phpcsSuppress SlevomatCodingStandard.Functions.UnusedParameter
+     * @param array<string, string>|null $profileUrls
      */
     public static function create(
         InterviewerId $id,
@@ -104,6 +106,7 @@ final class Interviewer
         throw new NoActiveAssignmentException($vacancy->id()->value());
     }
 
+    /** @param array<string, string>|null $profileUrls */
     public function updateProfile(?string $fullName = null, ?string $position = null, ?array $profileUrls = null): void
     {
         if ($fullName !== null && trim($fullName) === '') {
@@ -143,7 +146,7 @@ final class Interviewer
         return $this->position;
     }
 
-    /** @return string[]|null */
+    /** @return array<string, string>|null */
     public function profileUrls(): ?array
     {
         return $this->profileUrls;

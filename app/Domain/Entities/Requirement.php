@@ -66,4 +66,14 @@ final class Requirement
     {
         return $this->category;
     }
+
+    public function createdAt(): DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
+    public function updatedAt(): DateTimeImmutable
+    {
+        return $this->updatedAt;
+    }
 }

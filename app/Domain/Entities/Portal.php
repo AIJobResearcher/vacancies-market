@@ -11,25 +11,38 @@ use DateTimeImmutable;
 
 final class Portal
 {
+    private PortalId $id;
+    private string $name;
+    private string $baseUrl;
+    private ?string $apiEndpoint;
+    private int $crawlDelaySeconds;
+    private DateTimeImmutable $createdAt;
+    private DateTimeImmutable $updatedAt;
+
     public function __construct(
-        private readonly PortalId $id,
-        private string $name,
-        private string $baseUrl,
-        private ?string $apiEndpoint = null,
-        private int $crawlDelaySeconds = 0,
-        private ?DateTimeImmutable $createdAt = null,
-        private ?DateTimeImmutable $updatedAt = null,
+        PortalId $id,
+        string $name,
+        string $baseUrl,
+        ?string $apiEndpoint = null,
+        int $crawlDelaySeconds = 0,
+        ?DateTimeImmutable $createdAt = null,
+        ?DateTimeImmutable $updatedAt = null,
     ) {
-        if ($this->name === '') {
+        if ($name === '') {
             throw new PortalNameEmptyException();
         }
 
-        if ($this->baseUrl === '') {
+        if ($baseUrl === '') {
             throw new PortalBaseUrlEmptyException();
         }
 
-        $this->createdAt ??= new DateTimeImmutable();
-        $this->updatedAt ??= $this->createdAt;
+        $this->id = $id;
+        $this->name = $name;
+        $this->baseUrl = $baseUrl;
+        $this->apiEndpoint = $apiEndpoint;
+        $this->crawlDelaySeconds = $crawlDelaySeconds;
+        $this->createdAt = $createdAt ?? new DateTimeImmutable();
+        $this->updatedAt = $updatedAt ?? $this->createdAt;
     }
 
     public function id(): PortalId

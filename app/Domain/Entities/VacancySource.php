@@ -33,6 +33,26 @@ final class VacancySource
         return $this->sourceKey;
     }
 
+    public function id(): VacancySourceId
+    {
+        return $this->id;
+    }
+
+    public function vacancyId(): VacancyId
+    {
+        return $this->vacancyId;
+    }
+
+    public function firstSeenAt(): DateTimeImmutable
+    {
+        return $this->firstSeenAt;
+    }
+
+    public function closedAt(): ?DateTimeImmutable
+    {
+        return $this->closedAt;
+    }
+
     public function externalVacancyId(): string
     {
         return $this->externalVacancyId;

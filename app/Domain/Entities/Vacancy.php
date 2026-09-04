@@ -18,7 +18,6 @@ use App\Domain\Exceptions\StateConflictException\RequirementAlreadyAssignedExcep
 use App\Domain\Exceptions\StateConflictException\RequirementNotAssignedException;
 use App\Domain\Exceptions\StateConflictException\VacancyAlreadyClosedException;
 use App\Domain\Exceptions\StateConflictException\VacancyAlreadyOpenException;
-use App\Domain\Exceptions\ValidationException\VacancyExternalUrlsEmptyException;
 use App\Domain\Exceptions\ValidationException\VacancyTitleEmptyException;
 use App\Domain\ValueObjects\EntityIds\EmployerId;
 use App\Domain\ValueObjects\EntityIds\JobId;
@@ -62,8 +61,7 @@ final class Vacancy
         private int $version,
         private ExternalUrls $externalUrls,
         private ?string $internalUrl = null
-    ) {
-    }
+    ) {}
 
     public static function create(
         VacancyId $id,
@@ -81,14 +79,10 @@ final class Vacancy
         ?string $correlationId = null
     ): self {
         if (trim($title) === '') {
-            throw new VacancyTitleEmptyException();
+            throw new VacancyTitleEmptyException;
         }
 
-        if ($externalUrls->isEmpty()) {
-            throw new VacancyExternalUrlsEmptyException();
-        }
-
-        $now = new DateTimeImmutable();
+        $now = new DateTimeImmutable;
         $vacancy = new self(
             $id,
             $employerId,
@@ -117,6 +111,7 @@ final class Vacancy
                 $vacancy->toArray()
             )
         );
+
         return $vacancy;
     }
 
@@ -133,11 +128,7 @@ final class Vacancy
         ?string $internalUrl = null
     ): void {
         if ($title !== null && trim($title) === '') {
-            throw new VacancyTitleEmptyException();
-        }
-
-        if ($externalUrls !== null && $externalUrls->isEmpty()) {
-            throw new VacancyExternalUrlsEmptyException();
+            throw new VacancyTitleEmptyException;
         }
 
         $this->title = $title !== null ? trim($title) : $this->title;
@@ -151,7 +142,7 @@ final class Vacancy
         $this->externalUrls = $externalUrls ?? $this->externalUrls;
         $this->internalUrl = $internalUrl ?? $this->internalUrl;
 
-        $this->updatedAt = new DateTimeImmutable();
+        $this->updatedAt = new DateTimeImmutable;
         $this->version++;
         $this->recordEvent(
             new VacancyUpdatedEvent(
@@ -170,7 +161,7 @@ final class Vacancy
             throw new VacancyAlreadyClosedException($this->id->value());
         }
         $this->status = VacancyStatusEnum::CLOSED;
-        $this->closedAt = new DateTimeImmutable();
+        $this->closedAt = new DateTimeImmutable;
         $this->updatedAt = $this->closedAt;
         $this->version++;
         $this->recordEvent(
@@ -183,6 +174,10 @@ final class Vacancy
         );
     }
 
+    /**
+     * Reopens a closed vacancy. Only an approved external change (VacancyUpdated)
+     * may trigger this; it is never invoked by a local command of this context.
+     */
     public function reopen(): void
     {
         if ($this->status === VacancyStatusEnum::OPEN) {
@@ -190,7 +185,7 @@ final class Vacancy
         }
         $this->status = VacancyStatusEnum::OPEN;
         $this->closedAt = null;
-        $this->updatedAt = new DateTimeImmutable();
+        $this->updatedAt = new DateTimeImmutable;
         $this->version++;
         $this->recordEvent(
             new VacancyUpdatedEvent(
@@ -216,7 +211,7 @@ final class Vacancy
         $this->workplace = $other->workplace;
         $this->externalUrls = $other->externalUrls;
         $this->internalUrl = $other->internalUrl;
-        $this->updatedAt = new DateTimeImmutable();
+        $this->updatedAt = new DateTimeImmutable;
         $this->version++;
         $this->recordEvent(
             new VacancyMergedEvent(
@@ -240,10 +235,10 @@ final class Vacancy
             VacancyRequirementAssignmentId::generate(),
             $this->id,
             $requirementId,
-            new DateTimeImmutable(),
+            new DateTimeImmutable,
         );
         $this->requirementAssignments[] = $assignment;
-        $this->updatedAt = new DateTimeImmutable();
+        $this->updatedAt = new DateTimeImmutable;
         $this->version++;
     }
 
@@ -253,8 +248,9 @@ final class Vacancy
             if ($assignment->getRequirementId()->equals($requirementId)) {
                 unset($this->requirementAssignments[$key]);
                 $this->requirementAssignments = array_values($this->requirementAssignments);
-                $this->updatedAt = new DateTimeImmutable();
+                $this->updatedAt = new DateTimeImmutable;
                 $this->version++;
+
                 return;
             }
         }
@@ -273,11 +269,11 @@ final class Vacancy
             VacancyJobAssignmentId::generate(),
             $this->id,
             $jobId,
-            new DateTimeImmutable(),
+            new DateTimeImmutable,
             $relevanceScore
         );
         $this->jobAssignments[] = $assignment;
-        $this->updatedAt = new DateTimeImmutable();
+        $this->updatedAt = new DateTimeImmutable;
         $this->version++;
     }
 
@@ -286,8 +282,9 @@ final class Vacancy
         foreach ($this->jobAssignments as $assignment) {
             if ($assignment->jobId()->equals($jobId) && $assignment->isActive()) {
                 $assignment->deactivate();
-                $this->updatedAt = new DateTimeImmutable();
+                $this->updatedAt = new DateTimeImmutable;
                 $this->version++;
+
                 return;
             }
         }
@@ -301,13 +298,14 @@ final class Vacancy
                 $existing->sourceKey() === $source->sourceKey()
                 && $existing->externalVacancyId() === $source->externalVacancyId()
             ) {
-                $existing->updateLastSeenAt(new DateTimeImmutable());
+                $existing->updateLastSeenAt(new DateTimeImmutable);
                 $this->version++;
+
                 return;
             }
         }
         $this->sources[] = $source;
-        $this->updatedAt = new DateTimeImmutable();
+        $this->updatedAt = new DateTimeImmutable;
         $this->version++;
     }
 
@@ -329,6 +327,71 @@ final class Vacancy
     public function version(): int
     {
         return $this->version;
+    }
+
+    public function title(): string
+    {
+        return $this->title;
+    }
+
+    public function description(): ?string
+    {
+        return $this->description;
+    }
+
+    public function salary(): Salary
+    {
+        return $this->salary;
+    }
+
+    public function country(): ?string
+    {
+        return $this->country;
+    }
+
+    public function city(): ?string
+    {
+        return $this->city;
+    }
+
+    public function employmentType(): EmploymentTypeEnum
+    {
+        return $this->employmentType;
+    }
+
+    public function workplace(): WorkplaceEnum
+    {
+        return $this->workplace;
+    }
+
+    public function postedAt(): DateTimeImmutable
+    {
+        return $this->postedAt;
+    }
+
+    public function createdAt(): DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
+    public function updatedAt(): DateTimeImmutable
+    {
+        return $this->updatedAt;
+    }
+
+    public function closedAt(): ?DateTimeImmutable
+    {
+        return $this->closedAt;
+    }
+
+    public function externalUrls(): ExternalUrls
+    {
+        return $this->externalUrls;
+    }
+
+    public function internalUrl(): ?string
+    {
+        return $this->internalUrl;
     }
 
     /**
@@ -378,8 +441,8 @@ final class Vacancy
             'version' => $this->version,
             'external_urls' => $this->externalUrls->toArray(),
             'internal_url' => $this->internalUrl,
-            'requirements' => array_map(fn($a) => $a->getRequirementId()->value(), $this->requirementAssignments),
-            'jobs' => array_map(fn($a) => $a->jobId()->value(), $this->jobAssignments),
+            'requirements' => array_map(fn ($a) => $a->getRequirementId()->value(), $this->requirementAssignments),
+            'jobs' => array_map(fn ($a) => $a->jobId()->value(), $this->jobAssignments),
         ];
     }
 
@@ -388,6 +451,7 @@ final class Vacancy
     {
         $events = $this->events;
         $this->events = [];
+
         return $events;
     }
 

@@ -18,7 +18,6 @@ final class EmployerImportedEvent extends DomainEvent
      *     email: string|null,
      *     phone: string|null,
      *     logo_url: string|null,
-     *     is_active: bool,
      *     created_at: string,
      *     updated_at: string,
      *     version: int

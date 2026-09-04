@@ -12,7 +12,6 @@ use App\Domain\Enums\WorkplaceEnum;
 use App\Domain\Events\EmployerImportedEvent;
 use App\Domain\Exceptions\OwnershipException\InterviewerBelongsToDifferentEmployerException;
 use App\Domain\Exceptions\OwnershipException\VacancyBelongsToDifferentEmployerException;
-use App\Domain\Exceptions\StateConflictException\EmployerInactiveException;
 use App\Domain\Exceptions\StateConflictException\VacancyNotClosedException;
 use App\Domain\Exceptions\ValidationException\EmployerTitleEmptyException;
 use App\Domain\ValueObjects\EntityIds\EmployerId;
@@ -59,7 +58,7 @@ final class EmployerTest extends TestCase
         ];
     }
 
-    public function testCreateValid(): void
+    public function test_create_valid(): void
     {
         $employer = Employer::create(
             $this->employerId,
@@ -73,8 +72,9 @@ final class EmployerTest extends TestCase
         );
 
         $this->assertEquals('TechCorp', $employer->title());
-        $this->assertTrue($employer->isActive());
         $this->assertEquals(1, $employer->version());
+        $this->assertInstanceOf(DateTimeImmutable::class, $employer->createdAt());
+        $this->assertInstanceOf(DateTimeImmutable::class, $employer->updatedAt());
 
         $events = $employer->releaseEvents();
         $this->assertCount(1, $events);
@@ -83,14 +83,14 @@ final class EmployerTest extends TestCase
         $this->assertEquals(1, $events[0]->eventVersion);
     }
 
-    public function testCreateEmptyTitleThrows(): void
+    public function test_create_empty_title_throws(): void
     {
         $this->expectException(EmployerTitleEmptyException::class);
         Employer::create($this->employerId, '');
     }
 
     #[DataProvider('updateDetailsProvider')]
-    public function testUpdateDetails(
+    public function test_update_details(
         ?string $title,
         ?string $desc,
         ?string $website,
@@ -112,14 +112,14 @@ final class EmployerTest extends TestCase
         $this->assertEquals($oldVersion + 1, $employer->version());
     }
 
-    public function testUpdateDetailsWithEmptyTitleThrows(): void
+    public function test_update_details_with_empty_title_throws(): void
     {
         $employer = Employer::create($this->employerId, 'Title');
         $this->expectException(EmployerTitleEmptyException::class);
         $employer->updateDetails('');
     }
 
-    public function testAddVacancyWithSameEmployer(): void
+    public function test_add_vacancy_with_same_employer(): void
     {
         $this->expectNotToPerformAssertions();
         $employer = Employer::create($this->employerId, 'TechCorp');
@@ -127,7 +127,7 @@ final class EmployerTest extends TestCase
         $employer->addVacancy($vacancy);
     }
 
-    public function testAddVacancyWithDifferentEmployerThrows(): void
+    public function test_add_vacancy_with_different_employer_throws(): void
     {
         $employer = Employer::create($this->employerId, 'TechCorp');
         $otherEmployerId = EmployerId::generate();
@@ -136,19 +136,7 @@ final class EmployerTest extends TestCase
         $employer->addVacancy($vacancy);
     }
 
-    public function testAddVacancyWhenEmployerInactiveThrows(): void
-    {
-        $employer = Employer::create($this->employerId, 'TechCorp');
-        $reflection = new \ReflectionClass($employer);
-        $prop = $reflection->getProperty('isActive');
-        $prop->setValue($employer, false);
-
-        $vacancy = $this->createVacancy($this->employerId);
-        $this->expectException(EmployerInactiveException::class);
-        $employer->addVacancy($vacancy);
-    }
-
-    public function testRemoveVacancyOnlyWhenClosed(): void
+    public function test_remove_vacancy_only_when_closed(): void
     {
         $employer = Employer::create($this->employerId, 'TechCorp');
         $vacancy = $this->createVacancy($this->employerId);
@@ -156,7 +144,7 @@ final class EmployerTest extends TestCase
         $employer->removeVacancy($vacancy);
     }
 
-    public function testRemoveVacancyWhenClosedSucceeds(): void
+    public function test_remove_vacancy_when_closed_succeeds(): void
     {
         $this->expectNotToPerformAssertions();
         $employer = Employer::create($this->employerId, 'TechCorp');
@@ -166,7 +154,7 @@ final class EmployerTest extends TestCase
         $employer->removeVacancy($vacancy);
     }
 
-    public function testRemoveInterviewerSucceeds(): void
+    public function test_remove_interviewer_succeeds(): void
     {
         $this->expectNotToPerformAssertions();
         $employer = Employer::create($this->employerId, 'TechCorp');
@@ -175,7 +163,7 @@ final class EmployerTest extends TestCase
         $employer->removeInterviewer($interviewer);
     }
 
-    public function testAddInterviewerWithSameEmployer(): void
+    public function test_add_interviewer_with_same_employer(): void
     {
         $this->expectNotToPerformAssertions();
         $employer = Employer::create($this->employerId, 'TechCorp');
@@ -183,7 +171,7 @@ final class EmployerTest extends TestCase
         $employer->addInterviewer($interviewer);
     }
 
-    public function testAddInterviewerWithDifferentEmployerThrows(): void
+    public function test_add_interviewer_with_different_employer_throws(): void
     {
         $employer = Employer::create($this->employerId, 'TechCorp');
         $otherEmployerId = EmployerId::generate();
@@ -204,7 +192,7 @@ final class EmployerTest extends TestCase
             'NYC',
             EmploymentTypeEnum::FULL_TIME,
             WorkplaceEnum::REMOTE,
-            new DateTimeImmutable(),
+            new DateTimeImmutable,
             new ExternalUrls(['https://example.com']),
             null,
             null

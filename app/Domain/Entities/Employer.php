@@ -8,7 +8,6 @@ use App\Domain\Events\DomainEvent;
 use App\Domain\Events\EmployerImportedEvent;
 use App\Domain\Exceptions\OwnershipException\InterviewerBelongsToDifferentEmployerException;
 use App\Domain\Exceptions\OwnershipException\VacancyBelongsToDifferentEmployerException;
-use App\Domain\Exceptions\StateConflictException\EmployerInactiveException;
 use App\Domain\Exceptions\StateConflictException\VacancyNotClosedException;
 use App\Domain\Exceptions\ValidationException\EmployerTitleEmptyException;
 use App\Domain\ValueObjects\EntityIds\EmployerId;
@@ -27,12 +26,10 @@ final class Employer
         private ?string $email,
         private ?string $phone,
         private ?string $logoUrl,
-        private bool $isActive,
         private DateTimeImmutable $createdAt,
         private DateTimeImmutable $updatedAt,
         private int $version
-    ) {
-    }
+    ) {}
 
     public static function create(
         EmployerId $id,
@@ -45,9 +42,9 @@ final class Employer
         ?string $correlationId = null
     ): self {
         if (trim($title) === '') {
-            throw new EmployerTitleEmptyException();
+            throw new EmployerTitleEmptyException;
         }
-        $now = new DateTimeImmutable();
+        $now = new DateTimeImmutable;
         $employer = new self(
             $id,
             trim($title),
@@ -56,7 +53,6 @@ final class Employer
             $email,
             $phone,
             $logoUrl,
-            true,
             $now,
             $now,
             1
@@ -81,7 +77,7 @@ final class Employer
         ?string $logoUrl = null
     ): void {
         if ($title !== null && trim($title) === '') {
-            throw new EmployerTitleEmptyException();
+            throw new EmployerTitleEmptyException;
         }
 
         $this->title = $title !== null ? trim($title) : $this->title;
@@ -90,15 +86,12 @@ final class Employer
         $this->email = $email ?? $this->email;
         $this->phone = $phone ?? $this->phone;
         $this->logoUrl = $logoUrl ?? $this->logoUrl;
-        $this->updatedAt = new DateTimeImmutable();
+        $this->updatedAt = new DateTimeImmutable;
         $this->version++;
     }
 
     public function addVacancy(Vacancy $vacancy): void
     {
-        if (! $this->isActive) {
-            throw new EmployerInactiveException($this->id->value());
-        }
         if (! $vacancy->employerId()->equals($this->id)) {
             throw new VacancyBelongsToDifferentEmployerException($vacancy->id()->value(), $this->id->value());
         }
@@ -121,6 +114,7 @@ final class Employer
 
     /**
      * @phpcsSuppress SlevomatCodingStandard.Functions.UnusedParameter
+     *
      * @psalm-suppress UnusedParam
      */
     public function removeInterviewer(Interviewer $interviewer): void
@@ -163,9 +157,14 @@ final class Employer
         return $this->logoUrl;
     }
 
-    public function isActive(): bool
+    public function createdAt(): DateTimeImmutable
     {
-        return $this->isActive;
+        return $this->createdAt;
+    }
+
+    public function updatedAt(): DateTimeImmutable
+    {
+        return $this->updatedAt;
     }
 
     public function version(): int
@@ -182,7 +181,6 @@ final class Employer
      *     email: string|null,
      *     phone: string|null,
      *     logo_url: string|null,
-     *     is_active: bool,
      *     created_at: string,
      *     updated_at: string,
      *     version: int
@@ -198,7 +196,6 @@ final class Employer
             'email' => $this->email,
             'phone' => $this->phone,
             'logo_url' => $this->logoUrl,
-            'is_active' => $this->isActive,
             'created_at' => $this->createdAt->format(DATE_ATOM),
             'updated_at' => $this->updatedAt->format(DATE_ATOM),
             'version' => $this->version,

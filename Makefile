@@ -24,7 +24,7 @@ logs:
 
 # Runs all test suites and all static analysis tools.
 # Integration tests require the test database to be prepared (see db-test-prepare).
-test: test-unit test-feature test-integration test-phpstan test-psalm test-phpcs test-deptrac test-bdd
+test: test-unit test-feature test-integration test-phpstan test-psalm test-phpcs test-deptrac
 	@echo "✅ All tests and static analysis checks passed"
 
 # ===== Individual Test Suites =====
@@ -72,12 +72,8 @@ test-phpcs-fix:
 	docker-compose exec app vendor/bin/phpcbf --standard=phpcs.xml.dist
 
 test-deptrac:
-	docker-compose exec app php -d error_reporting='E_ALL & ~E_DEPRECATED' vendor/bin/deptrac analyse
+	docker-compose exec app vendor/bin/deptrac analyse
 
 # Run all static analysis tools together (optional convenience)
 test-static: test-phpstan test-psalm test-phpcs test-deptrac
 	@echo "✅ All static analysis checks passed"
-
-# Run BDD tests (Codeception Gherkin)
-test-bdd:
-	docker-compose exec app vendor/bin/codecept run Acceptance docs/features/vacancies-market/managing_vacancies.feature

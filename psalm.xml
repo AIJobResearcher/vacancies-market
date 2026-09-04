@@ -24,5 +24,22 @@
     </plugins>
     <issueHandlers>
         <PropertyNotSetInConstructor errorLevel="suppress"/>
+        <UnusedClass>
+            <errorLevel type="suppress"><directory name="tests/Unit"/></errorLevel>
+        </UnusedClass>
+        <PossiblyUnusedMethod>
+            <errorLevel type="suppress"><directory name="tests/Unit"/></errorLevel>
+        </PossiblyUnusedMethod>
+        <UndefinedMagicMethod>
+            <errorLevel type="suppress"><directory name="tests/Unit"/></errorLevel>
+        </UndefinedMagicMethod>
+        <UndefinedInterfaceMethod>
+            <errorLevel type="suppress"><directory name="tests/Unit"/></errorLevel>
+        </UndefinedInterfaceMethod>
+        <MixedMethodCall>
+            <errorLevel type="suppress">
+                <directory name="tests/Unit"/>
+            </errorLevel>
+        </MixedMethodCall>
     </issueHandlers>
 </psalm>

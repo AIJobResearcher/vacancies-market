@@ -10,7 +10,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Ramsey\Uuid\Uuid;
 
-class EntityIdTest extends TestCase
+final class EntityIdTest extends TestCase
 {
     /**
      * @return array<string, array{0: string}>

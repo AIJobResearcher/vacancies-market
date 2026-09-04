@@ -72,7 +72,7 @@ test-phpcs-fix:
 	docker-compose exec app vendor/bin/phpcbf --standard=phpcs.xml.dist
 
 test-deptrac:
-	docker-compose exec app vendor/bin/deptrac analyse
+	docker-compose exec app php -d error_reporting='E_ALL & ~E_DEPRECATED' vendor/bin/deptrac analyse
 
 # Run all static analysis tools together (optional convenience)
 test-static: test-phpstan test-psalm test-phpcs test-deptrac

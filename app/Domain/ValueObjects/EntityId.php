@@ -9,6 +9,7 @@ use Ramsey\Uuid\Uuid;
 
 /**
  * @phpstan-consistent-constructor
+ * @psalm-consistent-constructor
  */
 abstract readonly class EntityId
 {

@@ -121,6 +121,7 @@ final class Employer
 
     /**
      * @phpcsSuppress SlevomatCodingStandard.Functions.UnusedParameter
+     * @psalm-suppress UnusedParam
      */
     public function removeInterviewer(Interviewer $interviewer): void
     {

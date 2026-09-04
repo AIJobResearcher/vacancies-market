@@ -1,8 +1,10 @@
 includes:
     - vendor/phpstan/phpstan-mockery/extension.neon
+    - vendor/phpstan/phpstan-phpunit/extension.neon
+    - vendor/phpstan/phpstan-phpunit/rules.neon
 
 parameters:
-    level: 9
+    level: 10
     paths:
         - app
         - tests/Unit

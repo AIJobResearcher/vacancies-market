@@ -19,15 +19,17 @@ use App\Domain\ValueObjects\EntityIds\VacancyId;
 use App\Domain\ValueObjects\ExternalUrls;
 use App\Domain\ValueObjects\Salary;
 use DateTimeImmutable;
+use Override;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-class InterviewerTest extends TestCase
+final class InterviewerTest extends TestCase
 {
     private EmployerId $employerId;
 
     private InterviewerId $interviewerId;
 
+    #[Override]
     protected function setUp(): void
     {
         $this->employerId = EmployerId::generate();
@@ -69,8 +71,6 @@ class InterviewerTest extends TestCase
         $this->assertNull($interviewer->deletedAt());
         $this->assertEquals($this->interviewerId, $interviewer->id());
         $this->assertEquals($this->employerId, $interviewer->employerId());
-        $this->assertInstanceOf(DateTimeImmutable::class, $interviewer->createdAt());
-        $this->assertInstanceOf(DateTimeImmutable::class, $interviewer->updatedAt());
     }
 
     public function testCreateEmptyFullNameThrows(): void

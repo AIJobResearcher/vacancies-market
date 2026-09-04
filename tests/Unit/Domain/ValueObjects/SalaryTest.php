@@ -12,7 +12,7 @@ use App\Domain\ValueObjects\Salary;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-class SalaryTest extends TestCase
+final class SalaryTest extends TestCase
 {
     /**
      * @return array<string, array{

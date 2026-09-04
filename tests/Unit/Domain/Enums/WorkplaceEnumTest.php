@@ -7,7 +7,7 @@ namespace Tests\Unit\Domain\Enums;
 use App\Domain\Enums\WorkplaceEnum;
 use PHPUnit\Framework\TestCase;
 
-class WorkplaceEnumTest extends TestCase
+final class WorkplaceEnumTest extends TestCase
 {
     public function testValues(): void
     {

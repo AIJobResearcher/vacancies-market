@@ -10,7 +10,7 @@ use App\Domain\ValueObjects\EntityIds\VacancySourceId;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 
-class VacancySourceTest extends TestCase
+final class VacancySourceTest extends TestCase
 {
     public function testConstructAndGetters(): void
     {

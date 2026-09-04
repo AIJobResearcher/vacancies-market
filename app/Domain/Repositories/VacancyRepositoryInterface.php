@@ -13,6 +13,9 @@ interface VacancyRepositoryInterface
     public function findById(VacancyId $id): ?Vacancy;
     public function save(Vacancy $vacancy): void;
 
-    /** @return Vacancy[] */
+    /**
+     * @return Vacancy[]
+     * @psalm-suppress PossiblyUnusedMethod
+     */
     public function findActiveByJobId(JobId $jobId): array;
 }

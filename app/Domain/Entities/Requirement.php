@@ -67,11 +67,13 @@ final class Requirement
         return $this->category;
     }
 
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function createdAt(): DateTimeImmutable
     {
         return $this->createdAt;
     }
 
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function updatedAt(): DateTimeImmutable
     {
         return $this->updatedAt;

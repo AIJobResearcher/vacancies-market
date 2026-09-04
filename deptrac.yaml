@@ -1,72 +1,60 @@
+# Architectural dependency rules for the Vacancies Market service.
+#
+# Layers follow Clean Architecture: Presentation -> Application -> Domain.
+# Domain depends on nothing but the outside world (PHP, Laravel, libraries).
+# "External" is a catch-all for everything that does not live under app/
+# (vendor/PHP/Symfony/Ramsey, ...), so we never have to enumerate libraries.
 deptrac:
   paths:
     - ./app
 
   layers:
+    - name: External
+      collectors:
+        - type: bool
+          must_not:
+            - type: directory
+              value: app/.*
+
     - name: Domain
       collectors:
         - type: directory
-          regex: app/Domain/.*
+          value: app/Domain/.*
 
     - name: Application
       collectors:
         - type: directory
-          regex: app/Application/.*
+          value: app/Application/.*
 
     - name: Infrastructure
       collectors:
         - type: directory
-          regex: app/Infrastructure/.*
+          value: app/Infrastructure/.*
 
     - name: Presentation
       collectors:
         - type: directory
-          regex: app/Presentation/.*
-
-    - name: Database
-      collectors:
-        - type: directory
-          regex: database/.*
-
-    # Externals: allow dependencies on Laravel, PHP, etc. (we don't need to restrict them)
-    - name: External
-      collectors:
-        - type: bool
-          must:
-            - type: className
-              regex: .*Illuminate.*
-            - type: className
-              regex: .*Psr\\.*
-            - type: className
-              regex: .*Symfony\\.*
-            - type: className
-              regex: .*Mockery.*
-            - type: className
-              regex: .*PHPUnit.*
-          must_not:
-            - type: directory
-              regex: app/.*
+          value: app/Presentation/.*
 
   ruleset:
+    # Domain is the heart: it may only rely on the outside world.
     Domain:
       - External
 
+    # Application orchestrates the Domain.
     Application:
       - Domain
       - External
 
+    # Infrastructure implements ports/adapters; it may use Domain + Application.
     Infrastructure:
       - Domain
       - Application
       - External
 
+    # Presentation is the outer-most ring.
     Presentation:
       - Application
-      - Domain
-      - External
-
-    Database:
-      - Infrastructure
       - Domain
       - External
 

@@ -28,10 +28,11 @@ use App\Domain\ValueObjects\EntityIds\VacancySourceId;
 use App\Domain\ValueObjects\ExternalUrls;
 use App\Domain\ValueObjects\Salary;
 use DateTimeImmutable;
+use Override;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-class VacancyTest extends TestCase
+final class VacancyTest extends TestCase
 {
     private VacancyId $vacancyId;
 
@@ -41,6 +42,7 @@ class VacancyTest extends TestCase
 
     private ExternalUrls $urls;
 
+    #[Override]
     protected function setUp(): void
     {
         $this->vacancyId = VacancyId::generate();
@@ -192,8 +194,8 @@ class VacancyTest extends TestCase
         $salary = ($minSalary !== null || $maxSalary !== null)
             ? new Salary($minSalary ?? 0, $maxSalary)
             : null;
-        $urls = $externalUrls ? new ExternalUrls($externalUrls) : null;
-        $posted = $postedAt ? new DateTimeImmutable($postedAt) : null;
+        $urls = ($externalUrls !== null && count($externalUrls) > 0) ? new ExternalUrls($externalUrls) : null;
+        $posted = ($postedAt !== null && $postedAt !== '') ? new DateTimeImmutable($postedAt) : null;
 
         $vacancy->updateDetails(
             $title,

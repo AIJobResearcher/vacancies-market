@@ -7,6 +7,7 @@ namespace App\Domain\Repositories;
 use App\Domain\Entities\Job;
 use App\Domain\ValueObjects\EntityIds\JobId;
 
+/** @psalm-suppress UnusedClass */
 interface JobRepositoryInterface
 {
     public function findById(JobId $id): ?Job;

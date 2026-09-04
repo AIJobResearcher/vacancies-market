@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Exceptions;
 
-class VersionConflictException extends DomainException
+final class VersionConflictException extends DomainException
 {
     public function __construct(string $entityType, string $id, int $expected, int $actual)
     {

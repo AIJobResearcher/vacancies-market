@@ -7,7 +7,7 @@ namespace Tests\Unit\Domain\Enums;
 use App\Domain\Enums\VacancyStatusEnum;
 use PHPUnit\Framework\TestCase;
 
-class VacancyStatusEnumTest extends TestCase
+final class VacancyStatusEnumTest extends TestCase
 {
     public function testValues(): void
     {

@@ -37,6 +37,7 @@ final class Interviewer
     /**
      * @phpcsSuppress SlevomatCodingStandard.Functions.UnusedParameter
      * @param array<string, string>|null $profileUrls
+     * @psalm-suppress UnusedParam
      */
     public static function create(
         InterviewerId $id,
@@ -157,11 +158,13 @@ final class Interviewer
         return $this->isActive;
     }
 
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function createdAt(): DateTimeImmutable
     {
         return $this->createdAt;
     }
 
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function updatedAt(): DateTimeImmutable
     {
         return $this->updatedAt;

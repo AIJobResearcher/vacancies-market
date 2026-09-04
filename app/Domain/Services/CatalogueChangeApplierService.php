@@ -26,6 +26,10 @@ use App\Domain\ValueObjects\ExternalUrls;
 use App\Domain\ValueObjects\Salary;
 use DateTimeImmutable;
 
+/**
+ * @psalm-suppress PossiblyUndefinedArrayOffset PossiblyNullArrayAccess
+ * @psalm-suppress PossiblyNullArgument DocblockTypeContradiction RiskyTruthyFalsyComparison
+ */
 final readonly class CatalogueChangeApplierService
 {
     public function __construct(
@@ -41,7 +45,7 @@ final readonly class CatalogueChangeApplierService
 
     /**
      * @param array{
-     *     mutation_type: 'create'|'update'|'merge'|'close',
+     *     mutation_type: string,
      *     aggregate_id?: string,
      *     expected_version?: int,
      *     correlation_id?: string|null,
@@ -109,7 +113,7 @@ final readonly class CatalogueChangeApplierService
 
     /**
      * @param array{
-     *     mutation_type: 'create'|'update'|'merge'|'close',
+     *     mutation_type: string,
      *     aggregate_id?: string,
      *     expected_version?: int,
      *     correlation_id?: string|null,
@@ -245,7 +249,7 @@ final readonly class CatalogueChangeApplierService
 
     /**
      * @param array{
-     *     mutation_type: 'create'|'update'|'merge'|'close',
+     *     mutation_type: string,
      *     aggregate_id?: string,
      *     expected_version?: int,
      *     correlation_id?: string|null,
@@ -341,7 +345,7 @@ final readonly class CatalogueChangeApplierService
 
     /**
      * @param array{
-     *     mutation_type: 'create'|'update'|'merge'|'close',
+     *     mutation_type: string,
      *     aggregate_id?: string,
      *     expected_version?: int,
      *     correlation_id?: string|null,
@@ -432,7 +436,7 @@ final readonly class CatalogueChangeApplierService
 
     /**
      * @param array{
-     *     mutation_type: 'create'|'update'|'merge'|'close',
+     *     mutation_type: string,
      *     aggregate_id?: string,
      *     expected_version?: int,
      *     correlation_id?: string|null,

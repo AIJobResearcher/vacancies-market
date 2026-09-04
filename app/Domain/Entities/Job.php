@@ -32,6 +32,7 @@ final class Job
 
     /**
      * @phpcsSuppress SlevomatCodingStandard.Functions.UnusedParameter
+     * @psalm-suppress UnusedParam
      */
     public static function create(
         JobId $id,
@@ -101,6 +102,7 @@ final class Job
         $this->version++;
     }
 
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function id(): JobId
     {
         return $this->id;
@@ -131,16 +133,19 @@ final class Job
         return $this->parentJobId;
     }
 
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function description(): ?string
     {
         return $this->description;
     }
 
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function createdAt(): DateTimeImmutable
     {
         return $this->createdAt;
     }
 
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function updatedAt(): DateTimeImmutable
     {
         return $this->updatedAt;

@@ -6,6 +6,7 @@ namespace App\Domain\Events;
 
 use DateTimeImmutable;
 
+/** @psalm-suppress UnusedClass */
 final class InterviewerAssignedEvent extends DomainEvent
 {
     public function __construct(

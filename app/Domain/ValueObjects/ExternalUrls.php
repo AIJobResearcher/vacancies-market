@@ -26,7 +26,7 @@ final class ExternalUrls
             throw new ExternalUrlsEmptyException();
         }
         foreach ($urls as $url) {
-            if (!is_string($url) || filter_var($url, FILTER_VALIDATE_URL) === false) {
+            if (filter_var($url, FILTER_VALIDATE_URL) === false) {
                 throw new ExternalUrlInvalidException($url);
             }
         }

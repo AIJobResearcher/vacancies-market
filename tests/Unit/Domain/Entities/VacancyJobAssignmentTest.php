@@ -14,7 +14,7 @@ use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-class VacancyJobAssignmentTest extends TestCase
+final class VacancyJobAssignmentTest extends TestCase
 {
     /**
      * @return array<string, array{0: int|null}>

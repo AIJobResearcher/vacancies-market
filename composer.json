@@ -24,6 +24,7 @@
         "nunomaduro/collision": "^8.6",
         "phpstan/phpstan": "*",
         "phpstan/phpstan-mockery": "^2.0",
+        "phpstan/phpstan-phpunit": "^2.0",
         "phpunit/phpunit": "^12.5.12",
         "psalm/plugin-laravel": "^3.16",
         "qossmic/deptrac": "^2.0",

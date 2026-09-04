@@ -6,6 +6,7 @@ namespace App\Domain\Events;
 
 use DateTimeImmutable;
 
+/** @psalm-suppress PossiblyUnusedProperty */
 final class VacancyImportedEvent extends DomainEvent
 {
     /**

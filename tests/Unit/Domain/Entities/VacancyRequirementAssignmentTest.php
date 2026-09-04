@@ -11,7 +11,7 @@ use App\Domain\ValueObjects\EntityIds\VacancyRequirementAssignmentId;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 
-class VacancyRequirementAssignmentTest extends TestCase
+final class VacancyRequirementAssignmentTest extends TestCase
 {
     public function testConstructAndGetRequirementId(): void
     {

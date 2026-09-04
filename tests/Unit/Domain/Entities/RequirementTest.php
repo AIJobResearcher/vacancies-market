@@ -7,13 +7,15 @@ namespace Tests\Unit\Domain\Entities;
 use App\Domain\Entities\Requirement;
 use App\Domain\Exceptions\ValidationException\RequirementTitleEmptyException;
 use App\Domain\ValueObjects\EntityIds\RequirementId;
+use Override;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-class RequirementTest extends TestCase
+final class RequirementTest extends TestCase
 {
     private RequirementId $id;
 
+    #[Override]
     protected function setUp(): void
     {
         $this->id = RequirementId::generate();

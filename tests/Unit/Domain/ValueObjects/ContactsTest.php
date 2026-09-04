@@ -9,7 +9,7 @@ use App\Domain\ValueObjects\Contacts;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-class ContactsTest extends TestCase
+final class ContactsTest extends TestCase
 {
     /**
      * @return array<string, array{0: ?string, 1: ?string}>

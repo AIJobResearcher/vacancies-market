@@ -27,10 +27,14 @@ use App\Domain\ValueObjects\Salary;
 use DateTimeImmutable;
 use Mockery;
 use Mockery\MockInterface;
+use Override;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-class CatalogueChangeApplierServiceTest extends TestCase
+/**
+ * @psalm-suppress InvalidArgument ArgumentTypeCoercion PossiblyNullReference
+ */
+final class CatalogueChangeApplierServiceTest extends TestCase
 {
     use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 
@@ -44,6 +48,7 @@ class CatalogueChangeApplierServiceTest extends TestCase
 
     private CatalogueChangeApplierService $service;
 
+    #[Override]
     protected function setUp(): void
     {
         $this->employerRepo = Mockery::mock(EmployerRepositoryInterface::class);
@@ -172,7 +177,7 @@ class CatalogueChangeApplierServiceTest extends TestCase
                 ->once()
                 ->andReturn(null);
             $this->requirementRepo->shouldReceive('save')->once()
-                ->with(Mockery::on(fn ($arg) => $arg instanceof Requirement && $arg->title() === 'PHP'));
+                ->with(Mockery::on(fn (Requirement $arg) => $arg->title() === 'PHP'));
         }
 
         $savedVacancy = null;
@@ -191,6 +196,9 @@ class CatalogueChangeApplierServiceTest extends TestCase
         $this->assertInstanceOf(Vacancy::class, $savedVacancy);
         $data = $savedVacancy->toArray();
         // @phpstan-ignore-next-line method.nonObject
+        if ($expectedEmployerId === null) {
+            throw new \LogicException('Expected employer id was not captured.');
+        }
         $this->assertSame($expectedEmployerId->value(), $data['employer_id']);
         if ($expectNewRequirement) {
             $this->assertNotEmpty($data['requirements']);
@@ -298,7 +306,7 @@ class CatalogueChangeApplierServiceTest extends TestCase
 
         $this->vacancyRepo->shouldReceive('findById')
             ->andReturnUsing(
-                fn ($id) => $id->value() === $target->id()->value()
+                fn (VacancyId $id) => $id->value() === $target->id()->value()
                     ? $target
                     : ($id->value() === $source->id()->value() ? $source : null)
             );
@@ -368,7 +376,7 @@ class CatalogueChangeApplierServiceTest extends TestCase
         $target = $this->createVacancyVersioned(3);
 
         $this->vacancyRepo->shouldReceive('findById')
-            ->andReturnUsing(fn ($id) => $id->value() === $target->id()->value() ? $target : null);
+            ->andReturnUsing(fn (VacancyId $id) => $id->value() === $target->id()->value() ? $target : null);
 
         $missingSourceId = VacancyId::generate();
         $command = [

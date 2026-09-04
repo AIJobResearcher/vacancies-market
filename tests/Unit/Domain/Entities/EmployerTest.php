@@ -22,15 +22,17 @@ use App\Domain\ValueObjects\ExternalUrls;
 use App\Domain\ValueObjects\Salary;
 use DateTimeImmutable;
 use Mockery;
+use Override;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-class EmployerTest extends TestCase
+final class EmployerTest extends TestCase
 {
     use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 
     private EmployerId $employerId;
 
+    #[Override]
     protected function setUp(): void
     {
         $this->employerId = EmployerId::generate();

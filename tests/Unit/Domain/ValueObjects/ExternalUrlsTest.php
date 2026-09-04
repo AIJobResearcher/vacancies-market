@@ -10,7 +10,7 @@ use App\Domain\ValueObjects\ExternalUrls;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-class ExternalUrlsTest extends TestCase
+final class ExternalUrlsTest extends TestCase
 {
     /**
      * @return array<string, array{0: string[], 1: string[]}>

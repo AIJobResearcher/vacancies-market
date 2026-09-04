@@ -11,9 +11,10 @@ use App\Domain\Services\RequirementUniquenessCheckerService;
 use App\Domain\ValueObjects\EntityIds\RequirementId;
 use Mockery;
 use Mockery\MockInterface;
+use Override;
 use PHPUnit\Framework\TestCase;
 
-class RequirementUniquenessCheckerServiceTest extends TestCase
+final class RequirementUniquenessCheckerServiceTest extends TestCase
 {
     use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 
@@ -21,6 +22,7 @@ class RequirementUniquenessCheckerServiceTest extends TestCase
 
     private RequirementUniquenessCheckerService $service;
 
+    #[Override]
     protected function setUp(): void
     {
         $this->repository = Mockery::mock(RequirementRepositoryInterface::class);

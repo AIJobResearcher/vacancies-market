@@ -33,21 +33,25 @@ final class VacancySource
         return $this->sourceKey;
     }
 
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function id(): VacancySourceId
     {
         return $this->id;
     }
 
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function vacancyId(): VacancyId
     {
         return $this->vacancyId;
     }
 
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function firstSeenAt(): DateTimeImmutable
     {
         return $this->firstSeenAt;
     }
 
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function closedAt(): ?DateTimeImmutable
     {
         return $this->closedAt;

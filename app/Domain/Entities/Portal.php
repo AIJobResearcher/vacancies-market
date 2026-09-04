@@ -9,6 +9,7 @@ use App\Domain\Exceptions\ValidationException\PortalNameEmptyException;
 use App\Domain\ValueObjects\EntityIds\PortalId;
 use DateTimeImmutable;
 
+/** @psalm-suppress UnusedClass */
 final class Portal
 {
     private PortalId $id;

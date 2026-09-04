@@ -10,15 +10,17 @@ use App\Domain\Exceptions\StateConflictException\RequirementNotAssignedException
 use App\Domain\Exceptions\ValidationException\JobTitleEmptyException;
 use App\Domain\ValueObjects\EntityIds\JobId;
 use App\Domain\ValueObjects\EntityIds\RequirementId;
+use Override;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-class JobTest extends TestCase
+final class JobTest extends TestCase
 {
     private JobId $jobId;
 
     private RequirementId $reqId;
 
+    #[Override]
     protected function setUp(): void
     {
         $this->jobId = JobId::generate();

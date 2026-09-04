@@ -12,7 +12,7 @@ use App\Domain\ValueObjects\EntityIds\VacancyId;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 
-class InterviewerVacancyAssignmentTest extends TestCase
+final class InterviewerVacancyAssignmentTest extends TestCase
 {
     public function testConstruct(): void
     {

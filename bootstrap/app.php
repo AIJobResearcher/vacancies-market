@@ -1,6 +1,5 @@
 <?php
 
-use App\Presentation\Http\Middleware\ApiAuthMiddleware;
 use App\Presentation\Http\Middleware\ApiRequestTimingMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -16,7 +15,6 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'api.auth' => ApiAuthMiddleware::class,
             'api.timing' => ApiRequestTimingMiddleware::class,
         ]);
     })

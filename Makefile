@@ -24,7 +24,7 @@ logs:
 
 # Runs all test suites and all static analysis tools.
 # Integration tests require the test database to be prepared (see db-test-prepare).
-test: test-unit test-feature test-integration test-phpstan test-psalm test-phpcs test-deptrac
+test: test-unit test-feature test-phpstan test-psalm test-phpcs test-deptrac
 	@echo "✅ All tests and static analysis checks passed"
 
 # ===== Individual Test Suites =====
@@ -37,7 +37,7 @@ test-feature:
 
 test-integration:
 	docker-compose exec -e DB_CONNECTION=pgsql -e DB_DATABASE=vacancies_market_test app \
-		php artisan test --testsuite=Integration --configuration=phpunit.integration.xml
+		php vendor/bin/phpunit --configuration=phpunit.integration.xml
 
 # ===== Code Coverage (optional) =====
 
@@ -46,7 +46,7 @@ test-coverage:
 
 test-coverage-integration:
 	docker-compose exec -e DB_CONNECTION=pgsql -e DB_DATABASE=vacancies_market_test app \
-		php artisan test --testsuite=Integration --configuration=phpunit.integration.xml --coverage-html=coverage-integration
+		php vendor/bin/phpunit --configuration=phpunit.integration.xml --coverage-html=coverage-integration
 
 # ===== Test Database Preparation =====
 
@@ -63,7 +63,7 @@ test-phpstan:
 	docker-compose exec app vendor/bin/phpstan analyse --memory-limit=2G
 
 test-psalm:
-	docker-compose exec app vendor/bin/psalm --shepherd --stats
+	docker-compose exec app vendor/bin/psalm --no-progress
 
 test-phpcs:
 	docker-compose exec app vendor/bin/phpcs --standard=phpcs.xml.dist

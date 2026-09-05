@@ -8,20 +8,24 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('interviewers', function (Blueprint $table) {
+        Schema::create('interviewers', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->uuid('employer_id');
             $table->string('full_name');
             $table->string('position')->nullable();
-            $table->string('email')->nullable();
-            $table->string('phone')->nullable();
-            $table->string('portal_id')->nullable();
-            $table->string('profile_url')->nullable();
-            $table->json('vacancy_ids')->default(json_encode([]));
+            $table->json('profile_urls')->nullable();
+            $table->boolean('is_active')->default(true);
+            $table->unsignedInteger('version')->default(1);
+            $table->timestamp('deleted_at')->nullable();
             $table->timestamps();
-            $table->foreign('employer_id')->references('id')->on('employers')->onDelete('cascade');
+
+            $table->foreign('employer_id')
+                ->references('id')
+                ->on('employers')
+                ->onDelete('cascade');
+
             $table->index('employer_id');
-            $table->index('portal_id');
+            $table->index('deleted_at');
         });
     }
 

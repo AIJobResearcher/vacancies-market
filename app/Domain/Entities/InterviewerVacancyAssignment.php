@@ -20,7 +20,11 @@ final class InterviewerVacancyAssignment
         private readonly InterviewerId $interviewerId,
         private readonly VacancyId $vacancyId,
         private DateTimeImmutable $assignedAt,
+        ?DateTimeImmutable $unassignedAt = null,
+        int $version = 1,
     ) {
+        $this->unassignedAt = $unassignedAt;
+        $this->version = $version;
     }
 
     public function deactivate(): void

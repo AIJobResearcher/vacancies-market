@@ -13,8 +13,6 @@ use DateTimeImmutable;
 
 final class VacancyJobAssignment
 {
-    private ?DateTimeImmutable $unassignedAt = null;
-
     public function __construct(
         private readonly VacancyJobAssignmentId $id,
         private readonly VacancyId $vacancyId,
@@ -22,6 +20,7 @@ final class VacancyJobAssignment
         private DateTimeImmutable $assignedAt,
         private ?int $relevanceScore = null,
         private int $version = 1,
+        private ?DateTimeImmutable $unassignedAt = null,
     ) {
         if ($this->relevanceScore !== null && ($this->relevanceScore < 1 || $this->relevanceScore > 100)) {
             throw new RelevanceScoreOutOfRangeException($this->relevanceScore);

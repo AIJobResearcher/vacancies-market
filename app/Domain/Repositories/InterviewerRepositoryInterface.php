@@ -10,6 +10,9 @@ use App\Domain\ValueObjects\EntityIds\InterviewerId;
 /** @psalm-suppress UnusedClass */
 interface InterviewerRepositoryInterface
 {
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function findById(InterviewerId $id): ?Interviewer;
+
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function save(Interviewer $interviewer): void;
 }

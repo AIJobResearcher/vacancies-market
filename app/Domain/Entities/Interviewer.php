@@ -66,6 +66,42 @@ final class Interviewer
         );
     }
 
+    /**
+     * Restores an Interviewer from persisted state without validation or events.
+     *
+     * @param array<string, string>|null $profileUrls
+     * @param InterviewerVacancyAssignment[] $vacancyAssignments
+     */
+    public static function reconstitute(
+        InterviewerId $id,
+        EmployerId $employerId,
+        string $fullName,
+        ?string $position,
+        ?array $profileUrls,
+        bool $isActive,
+        DateTimeImmutable $createdAt,
+        DateTimeImmutable $updatedAt,
+        int $version,
+        ?DateTimeImmutable $deletedAt = null,
+        array $vacancyAssignments = [],
+    ): self {
+        $interviewer = new self(
+            $id,
+            $employerId,
+            $fullName,
+            $position,
+            $profileUrls,
+            $isActive,
+            $createdAt,
+            $updatedAt,
+            $version,
+            $deletedAt,
+        );
+        $interviewer->vacancyAssignments = $vacancyAssignments;
+
+        return $interviewer;
+    }
+
     public function assignToVacancy(Vacancy $vacancy): void
     {
         if (!$this->isActive) {

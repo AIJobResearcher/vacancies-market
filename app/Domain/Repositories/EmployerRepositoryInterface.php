@@ -9,6 +9,9 @@ use App\Domain\ValueObjects\EntityIds\EmployerId;
 
 interface EmployerRepositoryInterface
 {
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function findById(EmployerId $id): ?Employer;
+
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function save(Employer $employer): void;
 }

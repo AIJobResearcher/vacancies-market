@@ -37,17 +37,15 @@
         <env name="DB_PASSWORD" value="secret"/>
     </php>
 
-    <!-- Coverage configuration for integration tests -->
+    <!-- Source inclusion for code coverage -->
     <source>
         <include>
             <directory>app</directory>
         </include>
     </source>
 
+    <!-- Coverage report output (when a coverage driver is available) -->
     <coverage>
-        <include>
-            <directory>app</directory>
-        </include>
         <report>
             <html outputDirectory="coverage-integration"/>
             <clover outputFile="coverage-integration/clover.xml"/>

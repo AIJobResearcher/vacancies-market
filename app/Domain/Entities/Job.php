@@ -62,6 +62,41 @@ final class Job
         );
     }
 
+    /**
+     * Restores a Job from persisted state without validation or events.
+     *
+     * @param RequirementId[] $requirementIds
+     */
+    public static function reconstitute(
+        JobId $id,
+        string $title,
+        ?string $category,
+        ?string $subCategory,
+        ?JobId $parentJobId,
+        ?string $description,
+        DateTimeImmutable $createdAt,
+        DateTimeImmutable $updatedAt,
+        int $version,
+        ?DateTimeImmutable $deletedAt = null,
+        array $requirementIds = [],
+    ): self {
+        $job = new self(
+            $id,
+            $title,
+            $category,
+            $subCategory,
+            $parentJobId,
+            $description,
+            $createdAt,
+            $updatedAt,
+            $version,
+            $deletedAt,
+        );
+        $job->requirementIds = $requirementIds;
+
+        return $job;
+    }
+
     public function addRequirement(RequirementId $requirementId): void
     {
         foreach ($this->requirementIds as $existing) {
@@ -131,6 +166,12 @@ final class Job
     public function parentJobId(): ?JobId
     {
         return $this->parentJobId;
+    }
+
+    /** @return RequirementId[] */
+    public function requirementIds(): array
+    {
+        return $this->requirementIds;
     }
 
     /** @psalm-suppress PossiblyUnusedMethod */

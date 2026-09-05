@@ -9,25 +9,17 @@ use App\Domain\Exceptions\ValidationException\PortalNameEmptyException;
 use App\Domain\ValueObjects\EntityIds\PortalId;
 use DateTimeImmutable;
 
-/** @psalm-suppress UnusedClass */
 final class Portal
 {
-    private PortalId $id;
-    private string $name;
-    private string $baseUrl;
-    private ?string $apiEndpoint;
-    private int $crawlDelaySeconds;
-    private DateTimeImmutable $createdAt;
-    private DateTimeImmutable $updatedAt;
-
-    public function __construct(
-        PortalId $id,
-        string $name,
-        string $baseUrl,
-        ?string $apiEndpoint = null,
-        int $crawlDelaySeconds = 0,
-        ?DateTimeImmutable $createdAt = null,
-        ?DateTimeImmutable $updatedAt = null,
+    private function __construct(
+        private readonly PortalId $id,
+        private string $name,
+        private string $baseUrl,
+        private ?string $apiEndpoint,
+        private int $crawlDelaySeconds,
+        private DateTimeImmutable $createdAt,
+        private DateTimeImmutable $updatedAt,
+        private int $version,
     ) {
         if ($name === '') {
             throw new PortalNameEmptyException();
@@ -36,14 +28,35 @@ final class Portal
         if ($baseUrl === '') {
             throw new PortalBaseUrlEmptyException();
         }
+    }
 
-        $this->id = $id;
-        $this->name = $name;
-        $this->baseUrl = $baseUrl;
-        $this->apiEndpoint = $apiEndpoint;
-        $this->crawlDelaySeconds = $crawlDelaySeconds;
-        $this->createdAt = $createdAt ?? new DateTimeImmutable();
-        $this->updatedAt = $updatedAt ?? $this->createdAt;
+    /** @psalm-suppress PossiblyUnusedMethod */
+    public static function create(
+        PortalId $id,
+        string $name,
+        string $baseUrl,
+        ?string $apiEndpoint = null,
+        int $crawlDelaySeconds = 0,
+    ): self {
+        $now = new DateTimeImmutable();
+
+        return new self($id, $name, $baseUrl, $apiEndpoint, $crawlDelaySeconds, $now, $now, 1);
+    }
+
+    /**
+     * Restores a Portal from persisted state without validation or events.
+     */
+    public static function reconstitute(
+        PortalId $id,
+        string $name,
+        string $baseUrl,
+        ?string $apiEndpoint,
+        int $crawlDelaySeconds,
+        DateTimeImmutable $createdAt,
+        DateTimeImmutable $updatedAt,
+        int $version,
+    ): self {
+        return new self($id, $name, $baseUrl, $apiEndpoint, $crawlDelaySeconds, $createdAt, $updatedAt, $version);
     }
 
     public function id(): PortalId
@@ -71,21 +84,30 @@ final class Portal
         return $this->crawlDelaySeconds;
     }
 
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function createdAt(): DateTimeImmutable
     {
         return $this->createdAt;
     }
 
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function updatedAt(): DateTimeImmutable
     {
         return $this->updatedAt;
     }
 
+    /** @psalm-suppress PossiblyUnusedMethod */
+    public function version(): int
+    {
+        return $this->version;
+    }
+
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function updateConfig(
         ?string $name = null,
         ?string $baseUrl = null,
         ?string $apiEndpoint = null,
-        ?int $crawlDelaySeconds = null
+        ?int $crawlDelaySeconds = null,
     ): void {
         if ($name !== null && $name === '') {
             throw new PortalNameEmptyException();
@@ -100,5 +122,6 @@ final class Portal
         $this->apiEndpoint = $apiEndpoint ?? $this->apiEndpoint;
         $this->crawlDelaySeconds = $crawlDelaySeconds ?? $this->crawlDelaySeconds;
         $this->updatedAt = new DateTimeImmutable();
+        $this->version++;
     }
 }

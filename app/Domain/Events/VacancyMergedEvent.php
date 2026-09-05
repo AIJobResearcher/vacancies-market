@@ -10,14 +10,12 @@ final class VacancyMergedEvent extends DomainEvent
 {
     /** @param string[] $mergedVacancyIds */
     public function __construct(
-        string $eventId,
         string $aggregateId,
         DateTimeImmutable $timestamp,
         ?string $correlationId,
         public readonly array $mergedVacancyIds
     ) {
         parent::__construct(
-            eventId: $eventId,
             eventType: 'VacancyMerged',
             eventVersion: 1,
             aggregateId: $aggregateId,

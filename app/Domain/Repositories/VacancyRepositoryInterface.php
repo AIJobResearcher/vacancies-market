@@ -10,7 +10,10 @@ use App\Domain\ValueObjects\EntityIds\VacancyId;
 
 interface VacancyRepositoryInterface
 {
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function findById(VacancyId $id): ?Vacancy;
+
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function save(Vacancy $vacancy): void;
 
     /**

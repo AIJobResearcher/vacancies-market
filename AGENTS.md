@@ -1,52 +1,47 @@
-# Project Rules: Vacancies Market Service
-
-> Apply to any request related to this project. If the question is outside these rules, clarify first.
-
----
-
-## 1. General Information
-
-- **Service:** `vacancies-market` (AIJobResearcher).
+## 1. General
 - **Stack:** PHP 8.5, Laravel 13, PostgreSQL 16, Redis.
-- **Architecture:** Clean Architecture (Presentation → Application → Domain → Infrastructure).
-- **Approaches:** DDD, Event-Driven, CQRS, GRASP, SOLID, YAGNI, KISS, Superpowers (brainstorming → plan → TDD → sub-agents → review).
-- **Documentation:** located in `docs/`. Refer to it as needed. Architectural decisions are in `docs/adr/`.
+- **Approaches:** Clean Architecture (DDD, event-driven, CQRS); GRASP, SOLID, YAGNI, KISS.
 
----
+## 2. Documentation
 
-## 2. Ubiquitous Language
-
-Source of truth: `docs/bounded-contexts/vacancies-market.md` (section "Aggregates and entities"). Use it for names and relationships. **Apply Ubiquitous Language in class, method, and variable names.**
-
----
+- Docs are not gospel; report contradictions to the user.
+- Key files (use for reference and Ubiquitous Language naming): `docs/domain/bounded-contexts/vacancies-market.md`, `docs/api/vacancies-market/openapi.yaml`, `docs/event-storming/vacancy-market.md`, `docs/context-map.md`.
+- If an answer exists there, provide a reference, not a summary.
 
 ## 3. Technical Requirements
 
-- Use current features of PHP 8.5, Laravel 13, PostgreSQL 16; avoid outdated approaches.
-- Follow PSR standards.
-- Almost never add comments; if truly necessary, English only.
-- Strict dependency direction per Clean Architecture: Presentation → Application → Domain; Domain does not depend on Infrastructure. Business logic in Domain, orchestration in Application.
-- Prefer mature enterprise patterns and practices over random GitHub examples.
-- For Event-Driven operations, use Outbox Pattern and ensure idempotency.
+- Use current stack features (see General) and avoid outdated approaches; code must pass strict static analysis (phpcs PSR-12+Slevomat, phpstan 10, psalm 1).
+- Dependency direction: Presentation → Application → Domain; Domain not depend on Infrastructure. Business logic in Domain, orchestration in Application.
 - Schema changes only via migrations.
-- Handle errors centrally and log with context.
-- Security: validation, protection against SQL injection, XSS, CSRF, secure secret storage.
-- Before completing changes, run `vendor/bin/pint` and `composer test`.
-- When changing events or API, update contracts in `docs/asyncapi/events.yaml` or `docs/api/<service>/` accordingly.
+- Use framework security defaults; validate at boundary; centralize error handling and logging.
 
----
+## 4. Code Quality
 
-## 4. Token Efficiency
+- Code style — see `.dsh/docs/code-standards.md`; `vendor/bin/pint`,
+  `vendor/bin/phpcs`, `vendor/bin/phpstan` and `vendor/bin/psalm` will fix the
+  formal parts.
 
-- Ask up to 3–5 clarifying questions when ambiguous.
-- If an answer exists in `docs/`, provide a reference, not a summary.
-- Propose the simplest solution first; alternatives on request.
-- Show only diffs during refactoring.
-- Do not generate tests, examples, or extra code without explicit request.
-- Save AI temp artifacts (plans, task lists, test/research results, etc.) under `.dsh/docs/`.
+## 5. Token Efficiency
 
----
+- If prompt lacks concrete scope or design decision is ambiguous, ask at most one round of questions.
+- Respond minimally: changed files/paths + a two-to-three word summary. Return diff hunks only — never regenerate untouched files. No boilerplate, repeated summaries, rationale or "effect" unless asked. For long explanations give a summary first, details on request. Do not restate the question.
+- Do not generate tests, migrations, factories, docs, or extra code without explicit request. When tests are requested, follow existing patterns in `tests/`.
+- Save AI temp artifacts (plans, task lists, test/research results) under `.dsh/docs/`.
+- Before changing code, restate the task in one line and name the affected files/layers — confirm scope when a decision is ambiguous.
+- Never read a whole file or log. Grep first, then read only the matching lines/range. Whole-file and whole-log reads are the top context/token waste; reading a file you already summarized is forbidden — reuse the known content instead.
+- Cap command and log output shown to the model: pipe to `head`/`tail`/`grep` and show only the relevant lines or the error tail (e.g. last lines of a phpcs/phpunit/CI log), never the full dump.
+- Reuse known values and avoid repeating identical operations within a session.
+- If conversation exceeds ~20 messages or context becomes large, suggest summarization or starting a new session.
+- Keep saved artifacts (plans, lists, summaries) under 40 lines unless more is required.
+- When referencing a file, provide a path and line range, not the file content, unless explicitly requested.
 
-## 5. Limitations
+## 5a. Definition of done
 
-- Only the Vacancies Market service. Do not change API, architecture, existing files, or dependencies without explicit request.
+- A task is done only when its requested scope is fully addressed — no partial
+  hand-offs expecting a follow-up. Ask on genuine blockers; otherwise complete
+  it and report per Token Efficiency.
+
+## 6. Limitations
+
+- Only the Vacancies Market service. Do not change API, architecture, existing files, configs (`phpcs.xml.dist`, `phpstan.neon`, `psalm.xml`, `composer.json`, etc.), dependencies, or documentation without explicit request.
+- Run static analysis, tests, migrations, or dependency updates only when explicitly requested; when asked, run them on the changed files only.

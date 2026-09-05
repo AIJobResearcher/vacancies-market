@@ -8,16 +8,16 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('employers', function (Blueprint $table) {
+        Schema::create('employers', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->string('name');
+            $table->string('title');
             $table->text('description')->nullable();
             $table->string('website')->nullable();
             $table->string('email')->nullable();
             $table->string('phone')->nullable();
-            $table->string('portal_id')->nullable();
+            $table->string('logo_url')->nullable();
+            $table->unsignedInteger('version')->default(1);
             $table->timestamps();
-            $table->index('portal_id');
         });
     }
 

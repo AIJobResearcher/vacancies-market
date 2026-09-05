@@ -29,7 +29,8 @@ final class Employer
         private DateTimeImmutable $createdAt,
         private DateTimeImmutable $updatedAt,
         private int $version
-    ) {}
+    ) {
+    }
 
     public static function create(
         EmployerId $id,
@@ -42,9 +43,9 @@ final class Employer
         ?string $correlationId = null
     ): self {
         if (trim($title) === '') {
-            throw new EmployerTitleEmptyException;
+            throw new EmployerTitleEmptyException();
         }
-        $now = new DateTimeImmutable;
+        $now = new DateTimeImmutable();
         $employer = new self(
             $id,
             trim($title),
@@ -59,13 +60,41 @@ final class Employer
         );
         $employer->recordEvent(new EmployerImportedEvent(
             $id->value(),
-            $id->value(),
             $now,
             $correlationId,
             $employer->toArray()
         ));
 
         return $employer;
+    }
+
+    /**
+     * Restores an Employer from persisted state without validation or events.
+     */
+    public static function reconstitute(
+        EmployerId $id,
+        string $title,
+        ?string $description,
+        ?string $website,
+        ?string $email,
+        ?string $phone,
+        ?string $logoUrl,
+        DateTimeImmutable $createdAt,
+        DateTimeImmutable $updatedAt,
+        int $version,
+    ): self {
+        return new self(
+            $id,
+            $title,
+            $description,
+            $website,
+            $email,
+            $phone,
+            $logoUrl,
+            $createdAt,
+            $updatedAt,
+            $version,
+        );
     }
 
     public function updateDetails(
@@ -77,7 +106,7 @@ final class Employer
         ?string $logoUrl = null
     ): void {
         if ($title !== null && trim($title) === '') {
-            throw new EmployerTitleEmptyException;
+            throw new EmployerTitleEmptyException();
         }
 
         $this->title = $title !== null ? trim($title) : $this->title;
@@ -86,7 +115,7 @@ final class Employer
         $this->email = $email ?? $this->email;
         $this->phone = $phone ?? $this->phone;
         $this->logoUrl = $logoUrl ?? $this->logoUrl;
-        $this->updatedAt = new DateTimeImmutable;
+        $this->updatedAt = new DateTimeImmutable();
         $this->version++;
     }
 
@@ -114,7 +143,6 @@ final class Employer
 
     /**
      * @phpcsSuppress SlevomatCodingStandard.Functions.UnusedParameter
-     *
      * @psalm-suppress UnusedParam
      */
     public function removeInterviewer(Interviewer $interviewer): void
@@ -157,11 +185,17 @@ final class Employer
         return $this->logoUrl;
     }
 
+    /**
+     * @psalm-suppress PossiblyUnusedMethod
+     */
     public function createdAt(): DateTimeImmutable
     {
         return $this->createdAt;
     }
 
+    /**
+     * @psalm-suppress PossiblyUnusedMethod
+     */
     public function updatedAt(): DateTimeImmutable
     {
         return $this->updatedAt;

@@ -35,6 +35,20 @@ final class Requirement
         return new self($id, trim($title), $description, $category, $now, $now);
     }
 
+    /**
+     * Restores a Requirement from persisted state without validation or events.
+     */
+    public static function reconstitute(
+        RequirementId $id,
+        string $title,
+        ?string $description,
+        ?string $category,
+        DateTimeImmutable $createdAt,
+        DateTimeImmutable $updatedAt,
+    ): self {
+        return new self($id, $title, $description, $category, $createdAt, $updatedAt);
+    }
+
     public function update(?string $title = null, ?string $description = null, ?string $category = null): void
     {
         if ($title !== null && trim($title) === '') {

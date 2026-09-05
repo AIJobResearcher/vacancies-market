@@ -8,15 +8,14 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('portals', function (Blueprint $table) {
+        Schema::create('portals', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->string('name')->unique();
+            $table->string('name');
             $table->string('base_url');
             $table->string('api_endpoint')->nullable();
-            $table->json('parsing_config')->default(json_encode([]));
-            $table->integer('crawl_delay_seconds')->default(0);
+            $table->unsignedInteger('crawl_delay_seconds')->default(0);
+            $table->unsignedInteger('version')->default(1);
             $table->timestamps();
-            $table->index('name');
         });
     }
 

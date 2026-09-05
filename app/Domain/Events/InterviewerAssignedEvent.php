@@ -10,7 +10,6 @@ use DateTimeImmutable;
 final class InterviewerAssignedEvent extends DomainEvent
 {
     public function __construct(
-        string $eventId,
         string $aggregateId,
         DateTimeImmutable $timestamp,
         ?string $correlationId,
@@ -18,7 +17,6 @@ final class InterviewerAssignedEvent extends DomainEvent
         public readonly string $interviewerId
     ) {
         parent::__construct(
-            eventId: $eventId,
             eventType: 'InterviewerAssigned',
             eventVersion: 1,
             aggregateId: $aggregateId,

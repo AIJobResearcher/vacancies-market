@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Tests\Unit\Domain\Entities;
 
 use App\Domain\Entities\Vacancy;
+use App\Domain\Entities\VacancyJobAssignment;
+use App\Domain\Entities\VacancyRequirementAssignment;
 use App\Domain\Entities\VacancySource;
 use App\Domain\Enums\EmploymentTypeEnum;
 use App\Domain\Enums\VacancyStatusEnum;
@@ -24,6 +26,8 @@ use App\Domain\ValueObjects\EntityIds\EmployerId;
 use App\Domain\ValueObjects\EntityIds\JobId;
 use App\Domain\ValueObjects\EntityIds\RequirementId;
 use App\Domain\ValueObjects\EntityIds\VacancyId;
+use App\Domain\ValueObjects\EntityIds\VacancyJobAssignmentId;
+use App\Domain\ValueObjects\EntityIds\VacancyRequirementAssignmentId;
 use App\Domain\ValueObjects\EntityIds\VacancySourceId;
 use App\Domain\ValueObjects\ExternalUrls;
 use App\Domain\ValueObjects\Salary;
@@ -31,6 +35,7 @@ use DateTimeImmutable;
 use Override;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Ramsey\Uuid\Uuid;
 
 final class VacancyTest extends TestCase
 {
@@ -126,10 +131,10 @@ final class VacancyTest extends TestCase
     }
 
     /**
-     * @param  class-string<\Throwable>  $exceptionClass
+     * @param class-string<\Throwable> $exceptionClass
      */
     #[DataProvider('invalidCreateProvider')]
-    public function test_create_invalid(
+    public function testCreateInvalid(
         string $title,
         string $desc,
         ?string $country,
@@ -149,12 +154,12 @@ final class VacancyTest extends TestCase
             $city,
             $employmentType,
             $workplace,
-            new DateTimeImmutable,
+            new DateTimeImmutable(),
             $this->urls
         );
     }
 
-    public function test_create_valid(): void
+    public function testCreateValid(): void
     {
         $vacancy = $this->createVacancy();
         $this->assertEquals('Software Engineer', $vacancy->title());
@@ -170,9 +175,6 @@ final class VacancyTest extends TestCase
         $this->assertEquals($this->urls, $vacancy->externalUrls());
         $this->assertNull($vacancy->internalUrl());
         $this->assertNull($vacancy->closedAt());
-        $this->assertInstanceOf(DateTimeImmutable::class, $vacancy->createdAt());
-        $this->assertInstanceOf(DateTimeImmutable::class, $vacancy->updatedAt());
-        $this->assertInstanceOf(DateTimeImmutable::class, $vacancy->postedAt());
 
         $events = $vacancy->releaseEvents();
         $this->assertCount(1, $events);
@@ -180,13 +182,16 @@ final class VacancyTest extends TestCase
         $this->assertEquals('corr-id', $events[0]->correlationId);
         $this->assertEquals(1, $events[0]->eventVersion);
         $this->assertEquals($this->vacancyId->value(), $events[0]->aggregateId);
+        $this->assertNotEquals($events[0]->aggregateId, $events[0]->eventId);
+        $this->assertNotSame($events[0]->eventId, '');
+        $this->assertTrue(Uuid::isValid($events[0]->eventId));
     }
 
     /**
-     * @param  string[]|null  $externalUrls
+     * @param string[]|null $externalUrls
      */
     #[DataProvider('updateDetailsProvider')]
-    public function test_update_details(
+    public function testUpdateDetails(
         ?string $title,
         ?string $desc,
         ?int $minSalary,
@@ -233,14 +238,14 @@ final class VacancyTest extends TestCase
         $this->assertEquals(1, $events[0]->eventVersion);
     }
 
-    public function test_update_with_empty_title_throws(): void
+    public function testUpdateWithEmptyTitleThrows(): void
     {
         $vacancy = $this->createVacancy();
         $this->expectException(VacancyTitleEmptyException::class);
         $vacancy->updateDetails(title: '');
     }
 
-    public function test_close(): void
+    public function testClose(): void
     {
         $vacancy = $this->createVacancy();
         $vacancy->releaseEvents();
@@ -257,7 +262,7 @@ final class VacancyTest extends TestCase
         $this->assertEquals(1, $events[0]->eventVersion);
     }
 
-    public function test_close_already_closed_throws(): void
+    public function testCloseAlreadyClosedThrows(): void
     {
         $vacancy = $this->createVacancy();
         $vacancy->close();
@@ -265,7 +270,22 @@ final class VacancyTest extends TestCase
         $vacancy->close();
     }
 
-    public function test_reopen(): void
+    public function testMultipleEventsHaveDistinctEventIds(): void
+    {
+        $vacancy = $this->createVacancy();
+        $vacancy->updateDetails(title: 'Renamed');
+
+        $events = $vacancy->releaseEvents();
+        $this->assertGreaterThanOrEqual(2, count($events));
+
+        $ids = array_map(static fn ($e): string => $e->eventId, $events);
+        $this->assertCount(count($ids), array_unique($ids), 'Each event must carry a unique event_id.');
+        foreach ($events as $event) {
+            $this->assertNotEquals($event->aggregateId, $event->eventId);
+        }
+    }
+
+    public function testReopen(): void
     {
         $vacancy = $this->createVacancy();
         $vacancy->close();
@@ -282,14 +302,14 @@ final class VacancyTest extends TestCase
         $this->assertInstanceOf(VacancyUpdatedEvent::class, $events[0]);
     }
 
-    public function test_reopen_already_open_throws(): void
+    public function testReopenAlreadyOpenThrows(): void
     {
         $vacancy = $this->createVacancy();
         $this->expectException(VacancyAlreadyOpenException::class);
         $vacancy->reopen();
     }
 
-    public function test_add_requirement(): void
+    public function testAddRequirement(): void
     {
         $vacancy = $this->createVacancy();
         $reqId = RequirementId::generate();
@@ -300,7 +320,7 @@ final class VacancyTest extends TestCase
         $this->assertEquals($oldVersion + 1, $vacancy->version());
     }
 
-    public function test_add_requirement_duplicate_throws(): void
+    public function testAddRequirementDuplicateThrows(): void
     {
         $vacancy = $this->createVacancy();
         $reqId = RequirementId::generate();
@@ -309,7 +329,7 @@ final class VacancyTest extends TestCase
         $vacancy->addRequirement($reqId);
     }
 
-    public function test_remove_requirement(): void
+    public function testRemoveRequirement(): void
     {
         $vacancy = $this->createVacancy();
         $reqId = RequirementId::generate();
@@ -321,14 +341,14 @@ final class VacancyTest extends TestCase
         $this->assertEquals($oldVersion + 1, $vacancy->version());
     }
 
-    public function test_remove_requirement_not_assigned_throws(): void
+    public function testRemoveRequirementNotAssignedThrows(): void
     {
         $vacancy = $this->createVacancy();
         $this->expectException(RequirementNotAssignedException::class);
         $vacancy->removeRequirement(RequirementId::generate());
     }
 
-    public function test_assign_to_job(): void
+    public function testAssignToJob(): void
     {
         $vacancy = $this->createVacancy();
         $jobId = JobId::generate();
@@ -339,7 +359,7 @@ final class VacancyTest extends TestCase
         $this->assertEquals($oldVersion + 1, $vacancy->version());
     }
 
-    public function test_assign_to_job_duplicate_active_throws(): void
+    public function testAssignToJobDuplicateActiveThrows(): void
     {
         $vacancy = $this->createVacancy();
         $jobId = JobId::generate();
@@ -348,7 +368,7 @@ final class VacancyTest extends TestCase
         $vacancy->assignToJob($jobId);
     }
 
-    public function test_unassign_from_job(): void
+    public function testUnassignFromJob(): void
     {
         $vacancy = $this->createVacancy();
         $jobId = JobId::generate();
@@ -361,14 +381,14 @@ final class VacancyTest extends TestCase
         $vacancy->assignToJob($jobId);
     }
 
-    public function test_unassign_from_job_not_assigned_throws(): void
+    public function testUnassignFromJobNotAssignedThrows(): void
     {
         $vacancy = $this->createVacancy();
         $this->expectException(JobNotAssignedException::class);
         $vacancy->unassignFromJob(JobId::generate());
     }
 
-    public function test_add_source_new(): void
+    public function testAddSourceNew(): void
     {
         $vacancy = $this->createVacancy();
         $source = new VacancySource(
@@ -377,8 +397,8 @@ final class VacancyTest extends TestCase
             'linkedin',
             'ext123',
             'https://linkedin.com/123',
-            new DateTimeImmutable,
-            new DateTimeImmutable
+            new DateTimeImmutable(),
+            new DateTimeImmutable()
         );
         $oldVersion = $vacancy->version();
 
@@ -386,7 +406,7 @@ final class VacancyTest extends TestCase
         $this->assertEquals($oldVersion + 1, $vacancy->version());
     }
 
-    public function test_add_source_existing_updates_last_seen(): void
+    public function testAddSourceExistingUpdatesLastSeen(): void
     {
         $vacancy = $this->createVacancy();
         $source = new VacancySource(
@@ -414,7 +434,7 @@ final class VacancyTest extends TestCase
         $this->assertEquals($oldVersion + 1, $vacancy->version());
     }
 
-    public function test_merge_from(): void
+    public function testMergeFrom(): void
     {
         $target = $this->createVacancy();
         $source = Vacancy::create(
@@ -446,5 +466,106 @@ final class VacancyTest extends TestCase
         $this->assertInstanceOf(VacancyMergedEvent::class, $events[0]);
         $this->assertEquals($mergedIds, $events[0]->mergedVacancyIds);
         $this->assertEquals(1, $events[0]->eventVersion);
+    }
+
+    public function testReconstituteRestoresFullStateWithoutEvents(): void
+    {
+        $id = VacancyId::generate();
+        $employerId = EmployerId::generate();
+        $postedAt = new DateTimeImmutable('2024-12-01 10:00:00');
+        $createdAt = new DateTimeImmutable('2025-01-01 10:00:00');
+        $updatedAt = new DateTimeImmutable('2025-02-01 10:00:00');
+        $closedAt = new DateTimeImmutable('2025-03-01 10:00:00');
+
+        $vacancy = Vacancy::reconstitute(
+            $id,
+            $employerId,
+            'Closed Senior Role',
+            'Persisted description',
+            new Salary(2000, 3000),
+            VacancyStatusEnum::CLOSED,
+            'USA',
+            'NYC',
+            EmploymentTypeEnum::FULL_TIME,
+            WorkplaceEnum::REMOTE,
+            $postedAt,
+            $createdAt,
+            $updatedAt,
+            $closedAt,
+            7,
+            new ExternalUrls(['https://example.com/vacancy', 'https://linkedin.com/1'])
+        );
+
+        $this->assertEquals($id, $vacancy->id());
+        $this->assertEquals($employerId, $vacancy->employerId());
+        $this->assertEquals(VacancyStatusEnum::CLOSED->value, $vacancy->status());
+        $this->assertEquals(7, $vacancy->version());
+        $this->assertSame($postedAt, $vacancy->postedAt());
+        $this->assertSame($createdAt, $vacancy->createdAt());
+        $this->assertSame($updatedAt, $vacancy->updatedAt());
+        $this->assertSame($closedAt, $vacancy->closedAt());
+        $this->assertEquals([], $vacancy->requirementAssignments());
+        $this->assertEquals([], $vacancy->jobAssignments());
+        $this->assertEquals([], $vacancy->sources());
+        $this->assertEquals(0, count($vacancy->releaseEvents()));
+    }
+
+    public function testReconstitutePopulatesChildCollections(): void
+    {
+        $id = VacancyId::generate();
+        $employerId = EmployerId::generate();
+        $now = new DateTimeImmutable('2025-01-01 10:00:00');
+
+        $requirementAssignment = new VacancyRequirementAssignment(
+            VacancyRequirementAssignmentId::generate(),
+            $id,
+            RequirementId::generate(),
+            $now,
+            1
+        );
+        $jobAssignment = new VacancyJobAssignment(
+            VacancyJobAssignmentId::generate(),
+            $id,
+            JobId::generate(),
+            $now,
+            80,
+            3
+        );
+        $source = new VacancySource(
+            VacancySourceId::generate(),
+            $id,
+            'linkedin',
+            'ext123',
+            'https://linkedin.com/123',
+            $now,
+            $now
+        );
+
+        $vacancy = Vacancy::reconstitute(
+            $id,
+            $employerId,
+            'Role',
+            null,
+            new Salary(1000, 2000),
+            VacancyStatusEnum::OPEN,
+            null,
+            null,
+            EmploymentTypeEnum::FULL_TIME,
+            WorkplaceEnum::REMOTE,
+            $now,
+            $now,
+            $now,
+            null,
+            2,
+            new ExternalUrls(['https://example.com']),
+            null,
+            [$requirementAssignment],
+            [$jobAssignment],
+            [$source]
+        );
+
+        $this->assertSame([$requirementAssignment], $vacancy->requirementAssignments());
+        $this->assertSame([$jobAssignment], $vacancy->jobAssignments());
+        $this->assertSame([$source], $vacancy->sources());
     }
 }

@@ -85,6 +85,24 @@ final class VacancyJobAssignmentTest extends TestCase
         $this->assertEquals(2, $assignment->version());
     }
 
+    public function testReconstituteWithUnassignedAt(): void
+    {
+        $unassignedAt = new DateTimeImmutable('2025-03-01 10:00:00');
+        $assignment = new VacancyJobAssignment(
+            VacancyJobAssignmentId::generate(),
+            VacancyId::generate(),
+            JobId::generate(),
+            new DateTimeImmutable('2025-01-01 10:00:00'),
+            75,
+            5,
+            $unassignedAt
+        );
+
+        $this->assertFalse($assignment->isActive());
+        $this->assertSame($unassignedAt, $assignment->unassignedAt());
+        $this->assertEquals(5, $assignment->version());
+    }
+
     public function testDeactivateAlreadyInactiveThrows(): void
     {
         $assignment = new VacancyJobAssignment(

@@ -17,15 +17,18 @@
 
 ## 4. Code Quality
 
-- Code style — see `.dsh/docs/code-standards.md`; `vendor/bin/pint`,
-  `vendor/bin/phpcs`, `vendor/bin/phpstan` and `vendor/bin/psalm` will fix the
-  formal parts.
+Write each artifact per its matching standard (read it first, comply strictly):
+
+- Laravel code → `.ai-agent/standards/laravel-standards.md`
+- PHP code → `.ai-agent/standards/php-standarts.md`
+- Text in `*.md` files → `.ai-agent/standards/md-files-standards.md`
 
 ## 5. Token Efficiency
 
 - If prompt lacks concrete scope or design decision is ambiguous, ask at most one round of questions.
-- Respond minimally: changed files/paths + a two-to-three word summary. Return diff hunks only — never regenerate untouched files. No boilerplate, repeated summaries, rationale or "effect" unless asked. For long explanations give a summary first, details on request. Do not restate the question.
+- Reply in a single short line: "Done — <files>" or "Done — <file>: <2-3 words>". Return diff hunks only. No explanations, rationale, summaries of steps, or restating; nothing else unless asked.
 - Do not generate tests, migrations, factories, docs, or extra code without explicit request. When tests are requested, follow existing patterns in `tests/`.
+- Never "confirm" a change by running analyzers or tests unless asked — an unrequested tool run is a violation, not best practice.
 - Save AI temp artifacts (plans, task lists, test/research results) under `.dsh/docs/`.
 - Before changing code, restate the task in one line and name the affected files/layers — confirm scope when a decision is ambiguous.
 - Never read a whole file or log. Grep first, then read only the matching lines/range. Whole-file and whole-log reads are the top context/token waste; reading a file you already summarized is forbidden — reuse the known content instead.
@@ -44,4 +47,9 @@
 ## 6. Limitations
 
 - Only the Vacancies Market service. Do not change API, architecture, existing files, configs (`phpcs.xml.dist`, `phpstan.neon`, `psalm.xml`, `composer.json`, etc.), dependencies, or documentation without explicit request.
-- Run static analysis, tests, migrations, or dependency updates only when explicitly requested; when asked, run them on the changed files only.
+- Never run analyzers/tests/migrations/dependency updates on your own
+  initiative (phpcs, phpstan, psalm, deptrac, phpunit, composer). Run them ONLY
+  on an explicit "run" request or "fix and verify"; a pasted error list alone
+  means fix exactly what is reported and STOP — no tool runs, no extra
+  analyzers, no widened scope. Do not self-verify edits by running gates. On an
+  explicit run request, scope to the changed files only and re-report briefly.

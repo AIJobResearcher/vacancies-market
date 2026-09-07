@@ -1,24 +1,21 @@
-# Code Standards
-
-Style and static-analysis rules for the Vacancies Market service. The agent is
-not expected to carry these in context: `vendor/bin/pint`, `vendor/bin/phpcs`,
-`vendor/bin/phpstan` and `vendor/bin/psalm` enforce the formal parts; follow the
-rest when writing code.
+# PHP Code Standards
 
 ## File structure
 
 - PHP files: `<?php declare(strict_types=1);` on the second line (blank line
   after `<?php`). End file with one blank line.
 - PSR-12 formatting: method names `camelCase`, braces on new lines, no line
-  over 120 chars, parentheses required for `new` even without args, no unused
-  imports.
-- No prose comments in code; PHPDoc only for precise types where analyzers
-  require them.
+  over 120 chars; length counts the whole line including leading indentation,
+  not just the code after the indents. Parentheses required for `new` even
+  without args.
+- Keep the `use` block in sync with every file: when you add or remove a
+  class/usage, add or remove its `use` statement too; no unused imports.
 
-## Eloquent models
+## Docblocks and comments
 
-- Add `@property` / `@property-read` for all magic properties.
-- Type-hint relations with `@return` and `@param` where needed.
+- No prose comments or descriptions on classes, methods, or properties; no
+  explanatory comments in code.
+- PHPDoc only for precise types where analyzers require them.
 
 ## Typing and docblocks
 
@@ -35,10 +32,15 @@ rest when writing code.
 
 ## Class design
 
+- Order class members as: constants → properties (public, then protected,
+  then private) → constructor → magic methods → public methods → protected
+  methods → private methods (non-static before static in each; alphabetical).
+  Within a method group: getters first, then setters, then others, alphabetical.
 - Add `#[Override]` to all methods overriding parent methods.
 - Mark classes `final` unless inheritance is intended.
-- No unused classes, methods, properties, or imports; remove or use them.
+- No unused classes, methods, properties, or imports: if you create one that is
+  not used yet, mark it with `@psalm-suppress PossiblyUnusedMethod` /
+  `PossiblyUnusedClass`; remove that suppression the first time it is used.
 - Use readonly properties and immutable value objects where possible.
-- Keep Domain free of Eloquent models, DTOs, and infrastructure details.
 - Write self-documenting code: intention-revealing names, no need for
   explanatory comments.

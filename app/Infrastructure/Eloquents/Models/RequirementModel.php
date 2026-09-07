@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Eloquents\Models;
 
+use Database\Factories\RequirementModelFactory;
 use DateTimeImmutable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Override;
 
@@ -19,6 +21,8 @@ use Override;
  */
 final class RequirementModel extends Model
 {
+    /** @use HasFactory<RequirementModelFactory> */
+    use HasFactory;
     use HasUuids;
 
     /** @phpcsSuppress SlevomatCodingStandard.TypeHints.PropertyTypeHint */
@@ -45,5 +49,10 @@ final class RequirementModel extends Model
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];
+    }
+
+    protected static function newFactory(): RequirementModelFactory
+    {
+        return RequirementModelFactory::new();
     }
 }

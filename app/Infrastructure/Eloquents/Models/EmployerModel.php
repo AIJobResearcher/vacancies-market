@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Eloquents\Models;
 
+use Database\Factories\EmployerModelFactory;
 use DateTimeImmutable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Override;
 
@@ -23,6 +25,8 @@ use Override;
  */
 final class EmployerModel extends Model
 {
+    /** @use HasFactory<EmployerModelFactory> */
+    use HasFactory;
     use HasUuids;
 
     /** @phpcsSuppress SlevomatCodingStandard.TypeHints.PropertyTypeHint */
@@ -45,6 +49,11 @@ final class EmployerModel extends Model
         'logo_url',
         'version',
     ];
+
+    protected static function newFactory(): EmployerModelFactory
+    {
+        return EmployerModelFactory::new();
+    }
 
     #[Override]
     protected function casts(): array

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Eloquents\Models;
 
+use Database\Factories\JobModelFactory;
 use DateTimeImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Override;
@@ -26,6 +28,8 @@ use Override;
  */
 final class JobModel extends Model
 {
+    /** @use HasFactory<JobModelFactory> */
+    use HasFactory;
     use HasUuids;
 
     /** @phpcsSuppress SlevomatCodingStandard.TypeHints.PropertyTypeHint */
@@ -57,6 +61,11 @@ final class JobModel extends Model
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];
+    }
+
+    protected static function newFactory(): JobModelFactory
+    {
+        return JobModelFactory::new();
     }
 
     /**

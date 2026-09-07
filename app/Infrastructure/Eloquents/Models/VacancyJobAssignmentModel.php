@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Eloquents\Models;
 
+use Database\Factories\VacancyJobAssignmentModelFactory;
 use DateTimeImmutable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Override;
 
@@ -20,6 +22,8 @@ use Override;
  */
 final class VacancyJobAssignmentModel extends Model
 {
+    /** @use HasFactory<VacancyJobAssignmentModelFactory> */
+    use HasFactory;
     use HasUuids;
 
     /** @phpcsSuppress SlevomatCodingStandard.TypeHints.PropertyTypeHint */
@@ -52,5 +56,10 @@ final class VacancyJobAssignmentModel extends Model
             'assigned_at' => 'immutable_datetime',
             'unassigned_at' => 'immutable_datetime',
         ];
+    }
+
+    protected static function newFactory(): VacancyJobAssignmentModelFactory
+    {
+        return VacancyJobAssignmentModelFactory::new();
     }
 }

@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Eloquents\Models;
 
+use Database\Factories\VacancyRequirementAssignmentModelFactory;
 use DateTimeImmutable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Override;
 
@@ -18,6 +20,8 @@ use Override;
  */
 final class VacancyRequirementAssignmentModel extends Model
 {
+    /** @use HasFactory<VacancyRequirementAssignmentModelFactory> */
+    use HasFactory;
     use HasUuids;
 
     /** @phpcsSuppress SlevomatCodingStandard.TypeHints.PropertyTypeHint */
@@ -47,5 +51,10 @@ final class VacancyRequirementAssignmentModel extends Model
         return [
             'assigned_at' => 'immutable_datetime',
         ];
+    }
+
+    protected static function newFactory(): VacancyRequirementAssignmentModelFactory
+    {
+        return VacancyRequirementAssignmentModelFactory::new();
     }
 }

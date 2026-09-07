@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Eloquents\Models;
 
+use Database\Factories\InterviewerModelFactory;
 use DateTimeImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Override;
@@ -26,6 +28,8 @@ use Override;
  */
 final class InterviewerModel extends Model
 {
+    /** @use HasFactory<InterviewerModelFactory> */
+    use HasFactory;
     use HasUuids;
 
     /** @phpcsSuppress SlevomatCodingStandard.TypeHints.PropertyTypeHint */
@@ -48,6 +52,11 @@ final class InterviewerModel extends Model
         'version',
         'deleted_at',
     ];
+
+    protected static function newFactory(): InterviewerModelFactory
+    {
+        return InterviewerModelFactory::new();
+    }
 
     #[Override]
     protected function casts(): array

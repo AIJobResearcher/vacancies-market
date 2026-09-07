@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Eloquents\Models;
 
+use Database\Factories\JobRequirementModelFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -12,6 +14,9 @@ use Illuminate\Database\Eloquent\Model;
  */
 final class JobRequirementModel extends Model
 {
+    /** @use HasFactory<JobRequirementModelFactory> */
+    use HasFactory;
+
     /** @phpcsSuppress SlevomatCodingStandard.TypeHints.PropertyTypeHint */
     protected $table = 'job_requirements';
 
@@ -26,4 +31,9 @@ final class JobRequirementModel extends Model
         'job_id',
         'requirement_id',
     ];
+
+    protected static function newFactory(): JobRequirementModelFactory
+    {
+        return JobRequirementModelFactory::new();
+    }
 }

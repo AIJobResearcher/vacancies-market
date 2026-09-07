@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Eloquents\Models;
 
+use Database\Factories\OutboxMessageModelFactory;
 use DateTimeImmutable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Override;
 
@@ -21,6 +23,9 @@ use Override;
  */
 final class OutboxMessageModel extends Model
 {
+    /** @use HasFactory<OutboxMessageModelFactory> */
+    use HasFactory;
+
     /** @phpcsSuppress SlevomatCodingStandard.TypeHints.PropertyTypeHint */
     protected $table = 'outbox_messages';
 
@@ -41,5 +46,10 @@ final class OutboxMessageModel extends Model
             'payload' => 'array',
             'published_at' => 'immutable_datetime',
         ];
+    }
+
+    protected static function newFactory(): OutboxMessageModelFactory
+    {
+        return OutboxMessageModelFactory::new();
     }
 }

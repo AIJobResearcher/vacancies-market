@@ -84,6 +84,7 @@ auth.json
 # ============================================================
 # AI / DeepSeek Harnes
 # ============================================================
-/.dsh/analysis/
 .dsh/docs/*
 !.dsh/docs/code-standards.md
+/.ai-agent/artifacts/
+/.ai-agent/user.data/

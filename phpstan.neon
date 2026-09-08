@@ -1,0 +1,20 @@
+includes:
+    - vendor/phpstan/phpstan-mockery/extension.neon
+    - vendor/phpstan/phpstan-phpunit/extension.neon
+    - vendor/phpstan/phpstan-phpunit/rules.neon
+
+parameters:
+    level: 10
+    paths:
+        - app
+        - tests/Unit
+    excludePaths:
+        - tests/Feature
+        - tests/Integration
+        - database/migrations
+        - database/seeders
+    bootstrapFiles:
+        - vendor/larastan/larastan/bootstrap.php
+    reportUnmatchedIgnoredErrors: false
+    treatPhpDocTypesAsCertain: false
+    inferPrivatePropertyTypeFromConstructor: true

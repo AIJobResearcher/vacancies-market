@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    PHPUnit configuration for the Vacancies Market service.
+    This file is used for Unit and Feature tests with an in-memory SQLite database.
+    For Integration tests (with real PostgreSQL), see phpunit.integration.xml.
+-->
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+         cacheDirectory=".phpunit.cache"
+         beStrictAboutCoverageMetadata="true"
+         stopOnFailure="false"
+         executionOrder="random"
+>
+    <!-- Test suites definition -->
+    <testsuites>
+        <!-- Unit tests: pure business logic, no dependencies -->
+        <testsuite name="Unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
+        <!-- Feature tests: HTTP endpoints, controllers, commands (may use DB) -->
+        <testsuite name="Feature">
+            <directory>tests/Feature</directory>
+        </testsuite>
+        <!-- Integration tests: real database, queues, external services (run separately) -->
+        <testsuite name="Integration">
+            <directory>tests/Integration</directory>
+        </testsuite>
+    </testsuites>
+
+    <!-- Environment variables for testing -->
+    <php>
+        <!-- Laravel testing environment -->
+        <env name="APP_ENV" value="testing"/>
+        <env name="APP_DEBUG" value="true"/>
+        <env name="APP_MAINTENANCE_DRIVER" value="file"/>
+        <env name="BCRYPT_ROUNDS" value="4"/>
+
+        <!-- Disable broadcast, cache, queue, mail, session for speed -->
+        <env name="BROADCAST_CONNECTION" value="null"/>
+        <env name="CACHE_STORE" value="array"/>
+        <env name="QUEUE_CONNECTION" value="sync"/>
+        <env name="SESSION_DRIVER" value="array"/>
+        <env name="MAIL_MAILER" value="array"/>
+
+        <!-- Disable monitoring tools -->
+        <env name="PULSE_ENABLED" value="false"/>
+        <env name="TELESCOPE_ENABLED" value="false"/>
+        <env name="NIGHTWATCH_ENABLED" value="false"/>
+
+        <!-- Use SQLite in-memory for Unit and Feature tests (fast) -->
+        <env name="DB_CONNECTION" value="sqlite"/>
+        <env name="DB_DATABASE" value=":memory:"/>
+        <env name="DB_URL" value=""/>
+
+        <!-- Stub values for external services (not used in Unit/Feature) -->
+        <env name="REDIS_HOST" value="127.0.0.1"/>
+        <env name="REDIS_PORT" value="6379"/>
+        <env name="RABBITMQ_HOST" value="127.0.0.1"/>
+        <env name="RABBITMQ_PORT" value="5672"/>
+    </php>
+
+    <!-- Code coverage configuration -->
+    <source>
+        <!-- Include all application code -->
+        <include>
+            <directory>app</directory>
+        </include>
+        <!-- Exclude layers that are not part of business logic -->
+        <exclude>
+            <directory>app/Console</directory>
+            <directory>app/Exceptions</directory>
+            <directory>app/Http/Controllers</directory>
+            <directory>app/Http/Middleware</directory>
+            <directory>app/Providers</directory>
+            <file>app/Http/Kernel.php</file>
+        </exclude>
+    </source>
+
+    <!-- Logging (JUnit format for CI) -->
+    <logging>
+        <junit outputFile="junit.xml"/>
+    </logging>
+</phpunit>

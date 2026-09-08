@@ -1,0 +1,104 @@
+<?xml version="1.0"?>
+<ruleset name="VacanciesMarket">
+    <description>PSR-12 + Slevomat (enterprise strictness, v8.x compatible)</description>
+
+    <arg name="colors"/>
+    <arg value="p"/>
+    <arg name="extensions" value="php"/>
+
+    <file>app</file>
+    <file>tests/Unit</file>
+    <file>tests/Feature</file>
+    <file>tests/Integration</file>
+
+    <exclude-pattern>*/database/migrations/*</exclude-pattern>
+    <exclude-pattern>*/database/seeders/*</exclude-pattern>
+    <exclude-pattern>*/vendor/*</exclude-pattern>
+    <exclude-pattern>*/storage/*</exclude-pattern>
+    <exclude-pattern>*/bootstrap/cache/*</exclude-pattern>
+
+    <!-- Base PSR-12 -->
+    <rule ref="PSR12"/>
+
+    <!-- ========================================== -->
+    <!-- Slevomat -->
+    <!-- ========================================== -->
+
+    <!-- Strict types declaration -->
+    <rule ref="SlevomatCodingStandard.TypeHints.DeclareStrictTypes">
+        <properties>
+            <!-- Keep declare(strict_types=1) consistent with PSR-12 (no spaces around =) -->
+            <property name="spacesCountAroundEqualsSign" value="0"/>
+        </properties>
+    </rule>
+
+    <!-- Parameter type hints -->
+    <rule ref="SlevomatCodingStandard.TypeHints.ParameterTypeHint"/>
+
+    <!-- Return type hints -->
+    <rule ref="SlevomatCodingStandard.TypeHints.ReturnTypeHint"/>
+
+    <!-- Property type hints -->
+    <rule ref="SlevomatCodingStandard.TypeHints.PropertyTypeHint"/>
+
+    <!-- Disallow mixed -->
+    <rule ref="SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint"/>
+
+    <!-- Namespace and uses -->
+    <rule ref="SlevomatCodingStandard.Namespaces.UnusedUses">
+        <properties>
+            <property name="searchAnnotations" value="true"/>
+        </properties>
+    </rule>
+    <rule ref="SlevomatCodingStandard.Namespaces.AlphabeticallySortedUses"/>
+
+    <!-- Unused variables and parameters -->
+    <rule ref="SlevomatCodingStandard.Variables.UnusedVariable"/>
+    <rule ref="SlevomatCodingStandard.Functions.UnusedParameter"/>
+
+    <!-- Class structure (order of elements, including enum cases) -->
+    <rule ref="SlevomatCodingStandard.Classes.ClassStructure">
+        <properties>
+            <property name="groups" type="array">
+                <element value="uses"/>
+                <element value="enum cases"/>
+                <element value="constants"/>
+                <element value="properties"/>
+                <element value="constructor"/>
+                <element value="methods"/>
+            </property>
+        </properties>
+    </rule>
+
+    <!-- Class constant visibility -->
+    <rule ref="SlevomatCodingStandard.Classes.ClassConstantVisibility"/>
+
+    <!-- Trailing comma in arrays (default behavior) -->
+    <rule ref="SlevomatCodingStandard.Arrays.TrailingArrayComma"/>
+
+    <!-- DocComment spacing -->
+    <rule ref="SlevomatCodingStandard.Commenting.DocCommentSpacing"/>
+
+    <!-- Inline doc comments -->
+    <rule ref="SlevomatCodingStandard.Commenting.InlineDocCommentDeclaration"/>
+
+    <!-- ========================================== -->
+    <!-- Additional base rules (safe)              -->
+    <!-- ========================================== -->
+
+    <rule ref="Generic.Files.LineLength">
+        <properties>
+            <property name="lineLimit" value="120"/>
+            <property name="absoluteLineLimit" value="150"/>
+        </properties>
+    </rule>
+    <rule ref="Squiz.PHP.CommentedOutCode"/>
+    <rule ref="Squiz.Classes.ValidClassName"/>
+    <rule ref="Generic.PHP.DeprecatedFunctions"/>
+    <rule ref="Squiz.ControlStructures.ControlSignature"/>
+    <rule ref="Squiz.WhiteSpace.ControlStructureSpacing"/>
+    <rule ref="Squiz.PHP.DisallowMultipleAssignments"/>
+    <rule ref="Generic.PHP.DisallowShortOpenTag"/>
+    <rule ref="Generic.Functions.FunctionCallArgumentSpacing"/>
+    <rule ref="Squiz.WhiteSpace.SuperfluousWhitespace"/>
+</ruleset>

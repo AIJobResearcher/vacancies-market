@@ -43,8 +43,8 @@ final class VacancyMapperTest extends TestCase
         $this->assertSame('full-time', $model->employment_type);
         $this->assertSame('remote', $model->workplace);
         $this->assertSame(7, $model->version);
-        $this->assertSame(1000, $model->salary_min);
-        $this->assertSame(2000, $model->salary_max);
+        $this->assertSame(1000, $model->min_salary);
+        $this->assertSame(2000, $model->max_salary);
         $this->assertSame('USD', $model->salary_currency);
         $this->assertSame(['https://example.com/vacancy'], $model->external_urls);
     }
@@ -157,8 +157,8 @@ final class VacancyMapperTest extends TestCase
         $model->employer_id = '11111111-1111-1111-1111-111111111111';
         $model->title = 'Closed Role';
         $model->description = 'Description';
-        $model->salary_min = 1000;
-        $model->salary_max = 2000;
+        $model->min_salary = 1000;
+        $model->max_salary = 2000;
         $model->salary_currency = 'USD';
         $model->status = 'closed';
         $model->country = 'USA';

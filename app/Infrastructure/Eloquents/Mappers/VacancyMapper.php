@@ -100,8 +100,8 @@ final class VacancyMapper extends AbstractMapper
             title: $model->title,
             description: $model->description,
             salary: new Salary(
-                $model->salary_min,
-                $model->salary_max,
+                $model->min_salary,
+                $model->max_salary,
                 $model->salary_currency,
             ),
             status: VacancyStatusEnum::from($model->status),
@@ -136,8 +136,8 @@ final class VacancyMapper extends AbstractMapper
         $model->employer_id = $entity->employerId()->value();
         $model->title = $entity->title();
         $model->description = $entity->description();
-        $model->salary_min = $salary->min();
-        $model->salary_max = $salary->max();
+        $model->min_salary = $salary->min();
+        $model->max_salary = $salary->max();
         $model->salary_currency = $salary->currency();
         $model->status = $entity->status();
         $model->country = $entity->country();
@@ -159,8 +159,8 @@ final class VacancyMapper extends AbstractMapper
      *     employer_id: string,
      *     title: string,
      *     description: string|null,
-     *     salary_min: int,
-     *     salary_max: int|null,
+     *     min_salary: int,
+     *     max_salary: int|null,
      *     salary_currency: string,
      *     status: string,
      *     country: string|null,
@@ -183,8 +183,8 @@ final class VacancyMapper extends AbstractMapper
             'employer_id' => $entity->employerId()->value(),
             'title' => $entity->title(),
             'description' => $entity->description(),
-            'salary_min' => $salary->min(),
-            'salary_max' => $salary->max(),
+            'min_salary' => $salary->min(),
+            'max_salary' => $salary->max(),
             'salary_currency' => $salary->currency(),
             'status' => $entity->status(),
             'country' => $entity->country(),

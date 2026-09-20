@@ -88,3 +88,4 @@ auth.json
 !.dsh/docs/code-standards.md
 /.ai-agent/artifacts/
 /.ai-agent/user.data/
+/.ai-agent/standards/

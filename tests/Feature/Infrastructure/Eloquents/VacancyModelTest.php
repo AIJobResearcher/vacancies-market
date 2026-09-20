@@ -31,8 +31,8 @@ final class VacancyModelTest extends TestCase
         $model->employer_id = '11111111-1111-1111-1111-111111111111';
         $model->title = 'Senior Engineer';
         $model->description = null;
-        $model->salary_min = 1000;
-        $model->salary_max = 2000;
+        $model->min_salary = 1000;
+        $model->max_salary = 2000;
         $model->salary_currency = 'USD';
         $model->status = 'open';
         $model->country = 'USA';
@@ -67,8 +67,8 @@ final class VacancyModelTest extends TestCase
             'employer_id' => $employerId,
             'title' => 'Role',
             'description' => null,
-            'salary_min' => 1000,
-            'salary_max' => null,
+            'min_salary' => 1000,
+            'max_salary' => null,
             'salary_currency' => 'USD',
             'status' => 'open',
             'country' => null,

@@ -18,8 +18,8 @@ use Override;
  * @property string $employer_id
  * @property string $title
  * @property string|null $description
- * @property int $salary_min
- * @property int|null $salary_max
+ * @property int $min_salary
+ * @property int|null $max_salary
  * @property string $salary_currency
  * @property string $status
  * @property string|null $country
@@ -58,8 +58,8 @@ final class VacancyModel extends Model
         'employer_id',
         'title',
         'description',
-        'salary_min',
-        'salary_max',
+        'min_salary',
+        'max_salary',
         'salary_currency',
         'status',
         'country',

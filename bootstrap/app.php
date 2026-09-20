@@ -1,9 +1,11 @@
 <?php
 
+use App\Domain\Exceptions\EntityNotFoundException;
 use App\Presentation\Http\Middleware\ApiRequestTimingMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -22,4 +24,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*'),
         );
+
+        $exceptions->render(function (EntityNotFoundException $exception, Request $request): ?JsonResponse {
+            if (!$request->is('api/*')) {
+                return null;
+            }
+
+            return new JsonResponse(['message' => $exception->getMessage()], 404);
+        });
     })->create();

@@ -19,7 +19,7 @@ final class Job
     private function __construct(
         private readonly JobId $id,
         private string $title,
-        private ?string $category,
+        private string $category,
         private ?string $subCategory,
         private ?JobId $parentJobId,
         private ?string $description,
@@ -37,7 +37,7 @@ final class Job
     public static function create(
         JobId $id,
         string $title,
-        ?string $category = null,
+        string $category,
         ?string $subCategory = null,
         ?JobId $parentJobId = null,
         ?string $description = null,
@@ -70,7 +70,7 @@ final class Job
     public static function reconstitute(
         JobId $id,
         string $title,
-        ?string $category,
+        string $category,
         ?string $subCategory,
         ?JobId $parentJobId,
         ?string $description,
@@ -153,7 +153,7 @@ final class Job
         return $this->title;
     }
 
-    public function category(): ?string
+    public function category(): string
     {
         return $this->category;
     }

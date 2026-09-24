@@ -11,7 +11,6 @@ use App\Domain\ValueObjects\EntityIds\JobId;
 use App\Infrastructure\Eloquents\Mappers\JobMapper;
 use App\Infrastructure\Eloquents\Models\JobModel;
 use App\Infrastructure\Eloquents\Models\JobRequirementModel;
-use App\Infrastructure\Eloquents\Models\VacancyJobAssignmentModel;
 use Illuminate\Support\Facades\DB;
 use Override;
 
@@ -31,6 +30,43 @@ final class JobEloquentRepository implements JobRepositoryInterface
         return $model === null ? null : $this->mapper->toDomain($model);
     }
 
+    /**
+     * @param list<string> $ids
+     * @return array{
+     *     items: list<array<string, mixed>>,
+     *     total: int,
+     * }
+     */
+    #[Override]
+    public function findPreviewsByIds(array $ids): array
+    {
+        if ($ids === []) {
+            return ['items' => [], 'total' => 0];
+        }
+
+        /** @var list<array<string, mixed>> $jobs */
+        $jobs = JobModel::query()
+            ->leftJoin(
+                'job_catalogue as parent_jobs',
+                'parent_jobs.id',
+                '=',
+                'job_catalogue.parent_job_id'
+            )
+            ->whereIn('job_catalogue.id', $ids)
+            ->whereNull('job_catalogue.deleted_at')
+            ->get([
+                'job_catalogue.id',
+                'job_catalogue.title',
+                'job_catalogue.category',
+                'job_catalogue.sub_category',
+                'job_catalogue.parent_job_id',
+                'parent_jobs.title as parent_job_title',
+            ])
+            ->toArray();
+
+        return ['items' => $jobs, 'total' => count($jobs)];
+    }
+
     #[Override]
     public function save(Job $job): void
     {
@@ -38,15 +74,6 @@ final class JobEloquentRepository implements JobRepositoryInterface
             $this->persistRoot($job);
             $this->reconcileRequirements($job);
         });
-    }
-
-    #[Override]
-    public function hasActiveVacancyAssignments(JobId $jobId): bool
-    {
-        return VacancyJobAssignmentModel::query()
-            ->where('job_id', $jobId->value())
-            ->whereNull('unassigned_at')
-            ->exists();
     }
 
     private function persistRoot(Job $job): void

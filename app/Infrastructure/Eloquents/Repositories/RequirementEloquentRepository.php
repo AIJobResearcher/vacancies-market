@@ -8,9 +8,7 @@ use App\Domain\Entities\Requirement;
 use App\Domain\Repositories\RequirementRepositoryInterface;
 use App\Domain\ValueObjects\EntityIds\RequirementId;
 use App\Infrastructure\Eloquents\Mappers\RequirementMapper;
-use App\Infrastructure\Eloquents\Models\JobRequirementModel;
 use App\Infrastructure\Eloquents\Models\RequirementModel;
-use App\Infrastructure\Eloquents\Models\VacancyRequirementAssignmentModel;
 use Override;
 
 final class RequirementEloquentRepository implements RequirementRepositoryInterface
@@ -44,27 +42,5 @@ final class RequirementEloquentRepository implements RequirementRepositoryInterf
             ['id' => $requirement->id()->value()],
             $this->mapper->toPersistenceState($requirement),
         );
-    }
-
-    #[Override]
-    public function isReferencedByActiveVacancyOrJob(RequirementId $requirementId): bool
-    {
-        $requirementIdValue = $requirementId->value();
-
-        $byActiveVacancy = VacancyRequirementAssignmentModel::query()
-            ->join('vacancies', 'vacancies.id', '=', 'vacancy_requirement_assignments.vacancy_id')
-            ->where('vacancy_requirement_assignments.requirement_id', $requirementIdValue)
-            ->where('vacancies.status', 'open')
-            ->exists();
-
-        if ($byActiveVacancy) {
-            return true;
-        }
-
-        return JobRequirementModel::query()
-            ->join('job_catalogue', 'job_catalogue.id', '=', 'job_requirements.job_id')
-            ->where('job_requirements.requirement_id', $requirementIdValue)
-            ->whereNull('job_catalogue.deleted_at')
-            ->exists();
     }
 }

@@ -74,7 +74,7 @@ final class JobMapper extends AbstractMapper
      * @return array{
      *     id: string,
      *     title: string,
-     *     category: string|null,
+     *     category: string,
      *     sub_category: string|null,
      *     parent_job_id: string|null,
      *     description: string|null,

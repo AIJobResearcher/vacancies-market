@@ -6,7 +6,7 @@ namespace App\Presentation\Http\Resources;
 
 use Illuminate\Http\Resources\Attributes\Collects;
 
-#[Collects(GetVacanciesByJobIdResource::class)]
-final class GetVacanciesByJobIdCollection extends ApiCollection
+#[Collects(GetJobsByIdsResource::class)]
+final class GetJobsByIdsCollection extends ApiCollection
 {
 }

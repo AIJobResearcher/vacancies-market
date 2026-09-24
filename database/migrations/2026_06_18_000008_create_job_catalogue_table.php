@@ -12,7 +12,7 @@ return new class extends Migration
         Schema::create('job_catalogue', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->string('title');
-            $table->string('category')->nullable();
+            $table->string('category');
             $table->string('sub_category')->nullable();
             $table->uuid('parent_job_id')->nullable();
             $table->text('description')->nullable();

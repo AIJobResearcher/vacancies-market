@@ -77,33 +77,6 @@ final class VacancyEloquentRepository implements VacancyRepositoryInterface
         });
     }
 
-    /** @return Vacancy[] */
-    #[Override]
-    public function findActiveByJobId(JobId $jobId): array
-    {
-        $vacancyIds = VacancyJobAssignmentModel::query()
-            ->where('job_id', $jobId->value())
-            ->whereNull('unassigned_at')
-            ->pluck('vacancy_id');
-
-        if ($vacancyIds->isEmpty()) {
-            return [];
-        }
-
-        $models = VacancyModel::query()
-            ->with(['requirementAssignments', 'jobAssignments', 'sources'])
-            ->whereIn('id', $vacancyIds)
-            ->where('status', 'open')
-            ->get();
-
-        $vacancies = [];
-        foreach ($models as $model) {
-            $vacancies[] = $this->mapper->toDomain($model);
-        }
-
-        return $vacancies;
-    }
-
     /**
      * @return array{
      *     items: list<array<string, mixed>>,

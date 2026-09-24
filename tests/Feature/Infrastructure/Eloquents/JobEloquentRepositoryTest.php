@@ -19,8 +19,6 @@ final class JobEloquentRepositoryTest extends TestCase
 {
     use RefreshDatabase;
 
-    private const EMPLOYER_ID = '11111111-1111-1111-1111-111111111111';
-
     private JobEloquentRepository $repository;
 
     protected function setUp(): void
@@ -51,7 +49,7 @@ final class JobEloquentRepositoryTest extends TestCase
         $requirementId = RequirementId::generate();
         $this->insertRequirement($requirementId->value(), 'PHP');
 
-        $job = Job::create(JobId::generate(), 'Software Engineer');
+        $job = Job::create(JobId::generate(), 'Software Engineer', 'IT');
         $job->addRequirement($requirementId);
         $this->repository->save($job);
 
@@ -67,7 +65,7 @@ final class JobEloquentRepositoryTest extends TestCase
 
     public function testSaveThrowsVersionConflictOnStaleUpdate(): void
     {
-        $job = Job::create(JobId::generate(), 'Software Engineer');
+        $job = Job::create(JobId::generate(), 'Software Engineer', 'IT');
         $this->repository->save($job);
 
         $stale = $this->repository->findById($job->id());
@@ -83,26 +81,6 @@ final class JobEloquentRepositoryTest extends TestCase
         $stale->softDelete();
         $this->expectException(VersionConflictException::class);
         $this->repository->save($stale);
-    }
-
-    public function testHasActiveVacancyAssignments(): void
-    {
-        $job = Job::create(JobId::generate(), 'Software Engineer');
-        $this->repository->save($job);
-        $this->assertFalse($this->repository->hasActiveVacancyAssignments($job->id()));
-
-        $vacancyId = '66666666-6666-6666-6666-666666666666';
-        $this->insertOpenVacancy($vacancyId);
-        DB::table('vacancy_job_assignments')->insert([
-            'id' => '55555555-5555-5555-5555-555555555555',
-            'vacancy_id' => $vacancyId,
-            'job_id' => $job->id()->value(),
-            'assigned_at' => '2025-01-01 10:00:00',
-            'unassigned_at' => null,
-            'version' => 1,
-        ]);
-
-        $this->assertTrue($this->repository->hasActiveVacancyAssignments($job->id()));
     }
 
     public function testFindByIdReturnsNullWhenMissing(): void
@@ -126,37 +104,6 @@ final class JobEloquentRepositoryTest extends TestCase
         DB::table('requirements')->insert([
             'id' => $id,
             'title' => $title,
-            'created_at' => '2025-01-01 10:00:00',
-            'updated_at' => '2025-01-01 10:00:00',
-        ]);
-    }
-
-    private function insertOpenVacancy(string $id): void
-    {
-        DB::table('employers')->insert([
-            'id' => self::EMPLOYER_ID,
-            'title' => 'Acme',
-            'version' => 1,
-            'created_at' => '2025-01-01 10:00:00',
-            'updated_at' => '2025-01-01 10:00:00',
-        ]);
-
-        DB::table('vacancies')->insert([
-            'id' => $id,
-            'employer_id' => self::EMPLOYER_ID,
-            'title' => 'Role',
-            'description' => null,
-            'min_salary' => 0,
-            'max_salary' => null,
-            'salary_currency' => 'USD',
-            'status' => 'open',
-            'country' => null,
-            'city' => null,
-            'employment_type' => 'full-time',
-            'workplace' => 'remote',
-            'posted_at' => '2025-01-01 10:00:00',
-            'version' => 1,
-            'external_urls' => json_encode([], JSON_THROW_ON_ERROR),
             'created_at' => '2025-01-01 10:00:00',
             'updated_at' => '2025-01-01 10:00:00',
         ]);

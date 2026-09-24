@@ -23,6 +23,10 @@ section 6; keep applying them until the standards land.
 
 - **2.1** Read-model methods live in the repository port; `findById` returns
   the aggregate and is reused inside read methods — 2026-09-21.
+- **2.2** A repository may return Eloquent models and model collections to
+  Application and Presentation; clause 1.2 of `laravel-standards.md`
+  ("repositories never return models or query builders") is deliberately
+  ignored in this project — 2026-09-24.
 
 ## 3. Local environment
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Infrastructure\Eloquents\Models\JobModel;
 use App\Infrastructure\Eloquents\Models\VacancyJobAssignmentModel;
+use App\Presentation\Http\Controllers\GetJobsByIdsController;
 use App\Presentation\Http\Controllers\GetVacanciesByJobIdController;
 use App\Presentation\Http\Controllers\GetVacancyByIdController;
 use Illuminate\Support\Facades\Route;
@@ -14,6 +15,8 @@ Route::prefix('v1')->group(function (): void {
     });
 
     Route::post('/vacancies', GetVacanciesByJobIdController::class);
+
+    Route::post('/jobs', GetJobsByIdsController::class);
 
     Route::get('/vacancy/{id}', GetVacancyByIdController::class);
 

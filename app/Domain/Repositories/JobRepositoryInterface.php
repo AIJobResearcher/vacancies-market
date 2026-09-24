@@ -13,9 +13,16 @@ interface JobRepositoryInterface
     /** @psalm-suppress PossiblyUnusedMethod */
     public function findById(JobId $id): ?Job;
 
-    /** @psalm-suppress PossiblyUnusedMethod */
-    public function save(Job $job): void;
+    /**
+     * @param list<string> $ids
+     * @return array{
+     *     items: list<array<string, mixed>>,
+     *     total: int,
+     * }
+     * @psalm-suppress PossiblyUnusedMethod
+     */
+    public function findPreviewsByIds(array $ids): array;
 
     /** @psalm-suppress PossiblyUnusedMethod */
-    public function hasActiveVacancyAssignments(JobId $jobId): bool;
+    public function save(Job $job): void;
 }

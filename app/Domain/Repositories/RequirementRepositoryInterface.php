@@ -12,6 +12,4 @@ interface RequirementRepositoryInterface
     public function findById(RequirementId $id): ?Requirement;
     public function findByTitleCaseInsensitive(string $title): ?Requirement;
     public function save(Requirement $requirement): void;
-    /** @psalm-suppress PossiblyUnusedMethod */
-    public function isReferencedByActiveVacancyOrJob(RequirementId $requirementId): bool;
 }

@@ -16,7 +16,7 @@ use Override;
 /**
  * @property string $id
  * @property string $title
- * @property string|null $category
+ * @property string $category
  * @property string|null $sub_category
  * @property string|null $parent_job_id
  * @property string|null $description

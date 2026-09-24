@@ -97,25 +97,6 @@ final class VacancyEloquentRepositoryTest extends TestCase
         $this->repository->save($stale);
     }
 
-    public function testFindActiveByJobIdReturnsOnlyOpenAssignments(): void
-    {
-        $this->insertEmployer();
-        $jobId = JobId::generate();
-
-        $open = $this->newVacancy();
-        $open->assignToJob($jobId, 90);
-        $this->repository->save($open);
-
-        $closed = $this->newVacancy('Closed Role');
-        $closed->assignToJob($jobId, 70);
-        $closed->close();
-        $this->repository->save($closed);
-
-        $found = $this->repository->findActiveByJobId($jobId);
-        $this->assertCount(1, $found);
-        $this->assertEquals($open->id()->value(), $found[0]->id()->value());
-    }
-
     public function testReconcileRemovesDeletedRequirementAssignment(): void
     {
         $this->insertEmployer();

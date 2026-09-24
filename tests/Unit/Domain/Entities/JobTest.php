@@ -30,7 +30,7 @@ final class JobTest extends TestCase
     /**
      * @return array<string, array{
      *     0: string,
-     *     1: string|null,
+     *     1: string,
      *     2: string|null,
      *     3: JobId|null,
      *     4: string|null
@@ -40,7 +40,7 @@ final class JobTest extends TestCase
     {
         return [
             'all fields' => ['Software Engineer', 'IT', 'Backend', null, 'Description'],
-            'minimal' => ['Engineer', null, null, null, null],
+            'minimal' => ['Engineer', 'IT', null, null, null],
             'with parent' => ['Junior', 'IT', null, JobId::generate(), null],
         ];
     }
@@ -48,7 +48,7 @@ final class JobTest extends TestCase
     #[DataProvider('validCreateProvider')]
     public function testCreateValid(
         string $title,
-        ?string $category,
+        string $category,
         ?string $subCategory,
         ?JobId $parent,
         ?string $desc
@@ -65,12 +65,12 @@ final class JobTest extends TestCase
     public function testCreateEmptyTitleThrows(): void
     {
         $this->expectException(JobTitleEmptyException::class);
-        Job::create($this->jobId, '');
+        Job::create($this->jobId, '', 'IT');
     }
 
     public function testAddRequirement(): void
     {
-        $job = Job::create($this->jobId, 'Engineer');
+        $job = Job::create($this->jobId, 'Engineer', 'IT');
         $oldVersion = $job->version();
 
         $job->addRequirement($this->reqId);
@@ -79,7 +79,7 @@ final class JobTest extends TestCase
 
     public function testAddDuplicateRequirementThrows(): void
     {
-        $job = Job::create($this->jobId, 'Engineer');
+        $job = Job::create($this->jobId, 'Engineer', 'IT');
         $job->addRequirement($this->reqId);
         $this->expectException(RequirementAlreadyAssignedException::class);
         $job->addRequirement($this->reqId);
@@ -87,7 +87,7 @@ final class JobTest extends TestCase
 
     public function testRemoveRequirement(): void
     {
-        $job = Job::create($this->jobId, 'Engineer');
+        $job = Job::create($this->jobId, 'Engineer', 'IT');
         $job->addRequirement($this->reqId);
         $oldVersion = $job->version();
 
@@ -99,14 +99,14 @@ final class JobTest extends TestCase
 
     public function testRemoveNonExistentRequirementThrows(): void
     {
-        $job = Job::create($this->jobId, 'Engineer');
+        $job = Job::create($this->jobId, 'Engineer', 'IT');
         $this->expectException(RequirementNotAssignedException::class);
         $job->removeRequirement(RequirementId::generate());
     }
 
     public function testSoftDelete(): void
     {
-        $job = Job::create($this->jobId, 'Engineer');
+        $job = Job::create($this->jobId, 'Engineer', 'IT');
         $oldVersion = $job->version();
 
         $job->softDelete();

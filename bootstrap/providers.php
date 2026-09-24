@@ -1,7 +1,9 @@
 <?php
 
-use App\Infrastructure\Providers\AppServiceProvider;
+use App\Infrastructure\Providers\MapperServiceProvider;
+use App\Infrastructure\Providers\RepositoryServiceProvider;
 
 return [
-    AppServiceProvider::class,
+    MapperServiceProvider::class,
+    RepositoryServiceProvider::class,
 ];

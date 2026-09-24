@@ -1,6 +1,6 @@
 # Settled decisions
 
-Status: living · Updated: 2026-09-21 · Owner: engineering
+Status: living · Updated: 2026-09-24 · Owner: engineering
 
 Decisions the agent applies as defaults and never re-opens. Each entry is
 decision — reason — date. A task that contradicts an entry is reported in
@@ -30,3 +30,18 @@ section 6; keep applying them until the standards land.
   port 8001 → container 8000, bind mount `.:/var/www`), database
   `vacancies-market-postgres`; verification goes through `docker exec` with
   `curl` and `psql` — 2026-09-15.
+
+## 4. Service providers
+
+- **4.1** Every service provider implements
+  `Illuminate\Contracts\Support\DeferrableProvider` and lists its bindings in
+  `provides()`, so the container loads it on first use — 2026-09-24.
+- **4.2** `register()` stays side-effect free and an empty `boot()` is
+  removed: a deferred provider is not loaded, and therefore not booted, until
+  one of its services is requested — 2026-09-24.
+- **4.3** Binding lists live in one private constant per provider, reused by
+  both `register()` and `provides()`, so the two can never drift apart —
+  2026-09-24.
+- **4.4** Infrastructure bindings are split by concern (`MapperServiceProvider`,
+  `RepositoryServiceProvider`); a provider left without bindings is deleted
+  rather than kept empty — 2026-09-24.

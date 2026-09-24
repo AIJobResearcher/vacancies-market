@@ -11,12 +11,7 @@ Thumbs.db
 # Dependencies
 # ============================================================
 /vendor/
-/node_modules/
 composer.lock
-package-lock.json
-yarn.lock
-npm-debug.log
-yarn-error.log
 
 # ============================================================
 # Environment

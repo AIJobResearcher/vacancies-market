@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
     PHPUnit configuration for the Vacancies Market service.
-    This file is used for Unit and Feature tests with an in-memory SQLite database.
-    For Integration tests (with real PostgreSQL), see phpunit.integration.xml.
+    This file is used for Unit and Feature tests against the PostgreSQL
+    test database. For Integration tests (also PostgreSQL, separate run),
+    see phpunit.integration.xml.
 -->
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
@@ -49,9 +50,13 @@
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
 
-        <!-- Use SQLite in-memory for Unit and Feature tests (fast) -->
-        <env name="DB_CONNECTION" value="sqlite"/>
-        <env name="DB_DATABASE" value=":memory:"/>
+        <!-- PostgreSQL test database (create it with 'make db-test-prepare') -->
+        <env name="DB_CONNECTION" value="pgsql"/>
+        <env name="DB_HOST" value="postgres"/>
+        <env name="DB_PORT" value="5432"/>
+        <env name="DB_DATABASE" value="vacancies_market_test"/>
+        <env name="DB_USERNAME" value="vacancies_user"/>
+        <env name="DB_PASSWORD" value="secret"/>
         <env name="DB_URL" value=""/>
 
         <!-- Stub values for external services (not used in Unit/Feature) -->

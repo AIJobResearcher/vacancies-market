@@ -30,8 +30,11 @@ Route::prefix('v1')->group(function (): void {
 
         $jobs = JobModel::query()->whereIn('id', $jobIds)
             ->select(['id', 'title', 'category', 'sub_category', 'parent_job_id'])
-            ->get();
+            ->get()
+            ->toArray();
 
-        return $jobs->toArray();
+        $jobs[0] = $jobs[0] + ['parent_job_title'=> 'Parent job title'];
+
+        return ['data' => $jobs];
     });
 });

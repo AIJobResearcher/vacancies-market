@@ -17,11 +17,13 @@ use Illuminate\Support\Str;
 
 final class VacancySeeder extends Seeder
 {
-    private const int TOTAL = 15000;
+    private const int MIN_VACANCIES_PER_JOB = 3;
+
+    private const int MAX_VACANCIES_PER_JOB = 100;
 
     private const int CHUNK = 1000;
 
-    private const int BULK_CHUNK = 5000;
+    private const int BULK_CHUNK = 2000;
 
     /** @var list<string> */
     private const array SOURCE_KEYS = ['linkedin', 'djinni', 'hh', 'indeed', 'stackoverflow'];
@@ -29,32 +31,75 @@ final class VacancySeeder extends Seeder
     public function run(): void
     {
         DB::transaction(function (): void {
-            $employerIds = EmployerModel::query()->pluck('id')->values()->all();
-            $jobIds = JobModel::query()->pluck('id')->values()->all();
+            $employerIds    = EmployerModel::query()->pluck('id')->values()->all();
+            $jobIds         = JobModel::query()->pluck('id')->values()->all();
             $requirementIds = RequirementModel::query()->pluck('id')->values()->all();
 
-            $vacancyIds = $this->createVacancies($employerIds);
-            $assignedAt = now()->toDateTimeString();
+            $vacancyCounts = $this->planVacanciesPerJob($jobIds);
+            $assignedAt    = now()->toDateTimeString();
 
-            $this->createJobAssignments($vacancyIds, $jobIds, $assignedAt);
-            $this->createRequirementAssignments($vacancyIds, $requirementIds, $assignedAt);
-            $this->createSources($vacancyIds, $assignedAt);
+            foreach ($this->createVacancies($employerIds, array_sum($vacancyCounts)) as $chunk) {
+                $chunkCounts = $this->takeVacancyCounts($vacancyCounts, count($chunk));
+
+                $this->createJobAssignments($chunk, $chunkCounts, $assignedAt);
+                $this->createRequirementAssignments($chunk, $requirementIds, $assignedAt);
+                $this->createSources($chunk, $assignedAt);
+            }
         });
+    }
+
+    /**
+     *
+     * @param list<string> $jobIds
+     * @return array<string, int>
+     */
+    private function planVacanciesPerJob(array $jobIds): array
+    {
+        $vacancyCounts = [];
+
+        foreach ($jobIds as $jobId) {
+            $vacancyCounts[$jobId] = random_int(self::MIN_VACANCIES_PER_JOB, self::MAX_VACANCIES_PER_JOB);
+        }
+
+        return $vacancyCounts;
+    }
+
+    private function takeVacancyCounts(array &$vacancyCounts, int $limit): array
+    {
+        $taken = [];
+
+        foreach ($vacancyCounts as $jobId => $count) {
+            if ($limit <= 0) {
+                break;
+            }
+
+            if ($count <= $limit) {
+                $taken[$jobId] = $count;
+                $limit -= $count;
+                unset($vacancyCounts[$jobId]);
+            } else {
+                $taken[$jobId] = $limit;
+                $vacancyCounts[$jobId] = $count - $limit;
+                $limit = 0;
+            }
+        }
+
+        return $taken;
     }
 
     /**
      * @param  list<string>  $employerIds
      * @return list<string>
      */
-    private function createVacancies(array $employerIds): array
+    private function createVacancies(array $employerIds, int $total): \Generator
     {
-        $vacancyIds = [];
         $index = 0;
         $employerCount = count($employerIds);
         $now = now();
 
-        for ($offset = 0; $offset < self::TOTAL; $offset += self::CHUNK) {
-            $size = min(self::CHUNK, self::TOTAL - $offset);
+        for ($offset = 0; $offset < $total; $offset += self::CHUNK) {
+            $size = min(self::CHUNK, $total - $offset);
+
             $vacancies = VacancyModel::factory()
                 ->count($size)
                 ->state(function (array $attributes) use ($employerIds, $employerCount, &$index): array {
@@ -63,42 +108,51 @@ final class VacancySeeder extends Seeder
                 ->make();
 
             $batch = [];
+            $ids = [];
             foreach ($vacancies as $vacancy) {
                 $vacancy->created_at = $now;
                 $vacancy->updated_at = $now;
                 $batch[] = $vacancy->getAttributes();
-                $vacancyIds[] = $vacancy->id;
+                $ids[] = $vacancy->id;
             }
 
             VacancyModel::query()->insert($batch);
-        }
 
-        return $vacancyIds;
+            yield $ids;
+        }
     }
 
     /**
      * @param  list<string>  $vacancyIds
-     * @param  list<string>  $jobIds
+     * @param  array<string, int>  $vacancyCounts
      */
-    private function createJobAssignments(array $vacancyIds, array $jobIds, string $assignedAt): void
+    private function createJobAssignments(array $vacancyIds, array $vacancyCounts, string $assignedAt): void
     {
-        $jobCount = count($jobIds);
         $rows = [];
+        $pointer = 0;
 
-        foreach ($vacancyIds as $index => $vacancyId) {
-            $rows[] = [
-                'id' => (string) Str::uuid(),
-                'vacancy_id' => $vacancyId,
-                'job_id' => $jobIds[$index % $jobCount],
-                'assigned_at' => $assignedAt,
-                'unassigned_at' => null,
-                'relevance_score' => random_int(1, 100),
-                'version' => 1,
-            ];
+        foreach ($vacancyCounts as $jobId => $count) {
+            for ($i = 0; $i < $count; $i++) {
+                $rows[] = [
+                    'id' => (string) Str::uuid(),
+                    'vacancy_id' => $vacancyIds[$pointer],
+                    'job_id' => $jobId,
+                    'assigned_at' => $assignedAt,
+                    'unassigned_at' => null,
+                    'relevance_score' => random_int(1, 100),
+                    'version' => 1,
+                ];
+                $pointer++;
+
+                if (count($rows) === self::BULK_CHUNK) {
+                    VacancyJobAssignmentModel::query()->insert($rows);
+                    $rows = [];
+                }
+            }
         }
 
-        foreach (array_chunk($rows, self::BULK_CHUNK) as $chunk) {
-            VacancyJobAssignmentModel::query()->insert($chunk);
+        if ($rows !== []) {
+            VacancyJobAssignmentModel::query()->insert($rows);
         }
     }
 
@@ -108,27 +162,31 @@ final class VacancySeeder extends Seeder
      */
     private function createRequirementAssignments(array $vacancyIds, array $requirementIds, string $assignedAt): void
     {
-        $requirementCount = count($requirementIds);
-        shuffle($requirementIds);
         $pointer = 0;
         $rows = [];
 
         foreach ($vacancyIds as $vacancyId) {
-            $take = random_int(1, 2);
+            $take = random_int(10, 25);
+
             for ($i = 0; $i < $take; $i++) {
                 $rows[] = [
                     'id' => (string) Str::uuid(),
                     'vacancy_id' => $vacancyId,
-                    'requirement_id' => $requirementIds[$pointer % $requirementCount],
+                    'requirement_id' => $requirementIds === [] ? null : $requirementIds[array_rand($requirementIds)],
                     'assigned_at' => $assignedAt,
                     'version' => 1,
                 ];
                 $pointer++;
+
+                if (count($rows) === self::BULK_CHUNK) {
+                    VacancyRequirementAssignmentModel::query()->insert($rows);
+                    $rows = [];
+                }
             }
         }
 
-        foreach (array_chunk($rows, self::BULK_CHUNK) as $chunk) {
-            VacancyRequirementAssignmentModel::query()->insert($chunk);
+        if ($rows !== []) {
+            VacancyRequirementAssignmentModel::query()->insert($rows);
         }
     }
 
@@ -151,10 +209,15 @@ final class VacancySeeder extends Seeder
                 'closed_at' => null,
                 'is_primary' => true,
             ];
+
+            if (count($rows) === self::BULK_CHUNK) {
+                VacancySourceModel::query()->insert($rows);
+                $rows = [];
+            }
         }
 
-        foreach (array_chunk($rows, self::BULK_CHUNK) as $chunk) {
-            VacancySourceModel::query()->insert($chunk);
+        if ($rows !== []) {
+            VacancySourceModel::query()->insert($rows);
         }
     }
 }

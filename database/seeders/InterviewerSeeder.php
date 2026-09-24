@@ -14,13 +14,15 @@ use Illuminate\Support\Str;
 
 final class InterviewerSeeder extends Seeder
 {
-    private const int TOTAL = 1000;
+    private const int TOTAL = 4000;
 
     private const int CHUNK = 1000;
 
-    private const int BULK_CHUNK = 1000;
+    private const int BULK_CHUNK = 3000;
 
-    private const float ASSIGNED_RATIO = 0.6;
+    private const int MIN_ASSIGNED = 2;
+
+    private const int MUX_ASSIGNED = 4;
 
     public function run(): void
     {
@@ -28,9 +30,18 @@ final class InterviewerSeeder extends Seeder
             $employerIds = EmployerModel::query()->pluck('id')->values()->all();
 
             $interviewerIds = $this->createInterviewers($employerIds);
-            $vacancyIds = VacancyModel::query()->pluck('id')->values()->all();
 
-            $this->createVacancyAssignments($interviewerIds, $vacancyIds);
+            VacancyModel::query()
+                ->select('id')
+                ->chunkById(
+                    self::CHUNK,
+                    fn ($vacancies) => $this->createVacancyAssignments(
+                        $interviewerIds,
+                        $vacancies->pluck('id')->all(),
+                    ),
+                );
+
+
         });
     }
 
@@ -67,24 +78,25 @@ final class InterviewerSeeder extends Seeder
      */
     private function createVacancyAssignments(array $interviewerIds, array $vacancyIds): void
     {
-        shuffle($interviewerIds);
-        $assignedCount = (int) floor(count($interviewerIds) * self::ASSIGNED_RATIO);
-        $assignedInterviewerIds = array_slice($interviewerIds, 0, $assignedCount);
-
-        shuffle($vacancyIds);
-        $vacancyCount = count($vacancyIds);
-        $assignedAt = now()->toDateTimeString();
         $rows = [];
 
-        foreach ($assignedInterviewerIds as $index => $interviewerId) {
-            $rows[] = [
-                'id' => (string) Str::uuid(),
-                'interviewer_id' => $interviewerId,
-                'vacancy_id' => $vacancyIds[$index % $vacancyCount],
-                'assigned_at' => $assignedAt,
-                'unassigned_at' => null,
-                'version' => 1,
-            ];
+        foreach ($vacancyIds as $vacancyId) {
+            shuffle($interviewerIds);
+            $assignedCount = rand(self::MIN_ASSIGNED, self::MUX_ASSIGNED);
+            $assignedInterviewerIds = array_slice($interviewerIds, 0, $assignedCount);
+
+            $assignedAt = now()->toDateTimeString();
+
+            foreach ($assignedInterviewerIds as $interviewerId) {
+                $rows[] = [
+                    'id' => Str::uuid(),
+                    'interviewer_id' => $interviewerId,
+                    'vacancy_id' => $vacancyId,
+                    'assigned_at' => $assignedAt,
+                    'unassigned_at' => null,
+                    'version' => 1,
+                ];
+            }
         }
 
         foreach (array_chunk($rows, self::BULK_CHUNK) as $chunk) {

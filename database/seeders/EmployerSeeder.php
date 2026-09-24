@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 
 final class EmployerSeeder extends Seeder
 {
-    private const int TOTAL = 1000;
+    private const int TOTAL = 3000;
 
     private const int CHUNK = 1000;
 

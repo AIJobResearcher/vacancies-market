@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 
 final class JobSeeder extends Seeder
 {
-    private const int TOTAL = 5000;
+    private const int TOTAL = 2000;
 
     private const int CHUNK = 1000;
 

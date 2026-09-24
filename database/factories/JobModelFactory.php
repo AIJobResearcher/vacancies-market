@@ -24,9 +24,9 @@ final class JobModelFactory extends Factory
         return [
             'id' => (string) Str::uuid(),
             'title' => fake()->jobTitle(),
-            'category' => fake()->optional()->word(),
-            'sub_category' => fake()->optional()->word(),
-            'parent_job_id' => null,
+            'category' => fake()->word() . " Job Category",
+            'sub_category' => fake()->word() . " Job Sub-Category",
+            'parent_job_id' => fake()->optional(0.1)->uuid(),
             'description' => fake()->optional()->paragraph(),
             'version' => 1,
             'deleted_at' => null,

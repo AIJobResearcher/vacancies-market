@@ -13,8 +13,8 @@ return new class extends Migration
             $table->uuid('employer_id');
             $table->string('title');
             $table->text('description')->nullable();
-            $table->integer('salary_min')->default(0);
-            $table->integer('salary_max')->nullable();
+            $table->integer('min_salary')->default(0);
+            $table->integer('max_salary')->nullable();
             $table->string('salary_currency', 3)->default('USD');
             $table->enum('status', ['open', 'closed'])->default('open');
             $table->string('country')->nullable();

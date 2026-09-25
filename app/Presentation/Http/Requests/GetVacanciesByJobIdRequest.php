@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Presentation\Http\Requests;
 
-use App\Application\DTOs\GetVacanciesByJobIdDto;
+use App\Domain\DTOs\GetVacanciesByJobIdFilterDto;
 use App\Domain\Enums\EmploymentTypeEnum;
 use App\Domain\Enums\VacancyStatusEnum;
 use App\Domain\Enums\WorkplaceEnum;
+use App\Domain\ValueObjects\EntityIds\EmployerId;
+use App\Domain\ValueObjects\EntityIds\JobId;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\ValidatedInput;
 use Illuminate\Validation\Rule;
@@ -41,13 +43,13 @@ final class GetVacanciesByJobIdRequest extends FormRequest
         ];
     }
 
-    public function toDto(): GetVacanciesByJobIdDto
+    public function toFilterDto(): GetVacanciesByJobIdFilterDto
     {
         $input = $this->safe();
 
-        return new GetVacanciesByJobIdDto(
-            jobId: $input->string('job_id')->toString(),
-            employerId: $this->nullableString($input, 'employer_id'),
+        return new GetVacanciesByJobIdFilterDto(
+            jobId: JobId::fromString($input->string('job_id')->toString()),
+            employerId: $this->nullableEmployerId($input),
             country: $this->nullableString($input, 'country'),
             city: $this->nullableString($input, 'city'),
             minSalary: $this->nullableInt($input, 'min_salary'),
@@ -57,9 +59,16 @@ final class GetVacanciesByJobIdRequest extends FormRequest
             employmentType: $input->enum('employment_type', EmploymentTypeEnum::class),
             postedFrom: $input->date('posted_from')?->toDateTimeImmutable(),
             postedTo: $input->date('posted_to')?->toDateTimeImmutable(),
-            perPage: $this->nullableInt($input, 'per_page'),
             page: $this->nullableInt($input, 'page'),
+            perPage: $this->nullableInt($input, 'per_page'),
         );
+    }
+
+    private function nullableEmployerId(ValidatedInput $input): ?EmployerId
+    {
+        $value = $input->input('employer_id');
+
+        return is_string($value) ? EmployerId::fromString($value) : null;
     }
 
     private function nullableInt(ValidatedInput $input, string $key): ?int

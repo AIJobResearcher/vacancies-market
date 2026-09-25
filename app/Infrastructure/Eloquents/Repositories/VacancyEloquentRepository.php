@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Eloquents\Repositories;
 
+use App\Domain\DTOs\GetVacanciesByJobIdFilterDto;
 use App\Domain\Entities\Vacancy;
 use App\Domain\Entities\VacancyRequirementAssignment;
 use App\Domain\Exceptions\VersionConflictException;
 use App\Domain\Repositories\VacancyRepositoryInterface;
-use App\Domain\ValueObjects\EntityIds\JobId;
 use App\Domain\ValueObjects\EntityIds\VacancyId;
-use App\Domain\ValueObjects\VacancySearchCriteria;
 use App\Infrastructure\Eloquents\Mappers\VacancyMapper;
 use App\Infrastructure\Eloquents\Models\EmployerModel;
 use App\Infrastructure\Eloquents\Models\InterviewerModel;
@@ -85,7 +84,7 @@ final class VacancyEloquentRepository implements VacancyRepositoryInterface
      */
     #[Override]
     public function searchPreviews(
-        VacancySearchCriteria $criteria,
+        GetVacanciesByJobIdFilterDto $filter,
         int $page,
         int $perPage,
     ): array {
@@ -93,7 +92,7 @@ final class VacancyEloquentRepository implements VacancyRepositoryInterface
             ->join('employers', 'employers.id', '=', 'vacancies.employer_id')
             ->select(self::PREVIEW_COLUMNS);
 
-        $this->applyPreviewFilters($query, $criteria);
+        $this->applyPreviewFilters($query, $filter);
 
         $paginator = $query
             ->orderByDesc('vacancies.posted_at')
@@ -240,7 +239,7 @@ final class VacancyEloquentRepository implements VacancyRepositoryInterface
     }
 
     /** @param Builder<VacancyModel> $query */
-    private function applyPreviewFilters(Builder $query, VacancySearchCriteria $criteria): void
+    private function applyPreviewFilters(Builder $query, GetVacanciesByJobIdFilterDto $filter): void
     {
         $query
             ->join(
@@ -249,47 +248,47 @@ final class VacancyEloquentRepository implements VacancyRepositoryInterface
                 '=',
                 'vacancies.id'
             )
-            ->where('vacancy_job_assignments.job_id', $criteria->jobId->value())
+            ->where('vacancy_job_assignments.job_id', $filter->jobId->value())
             ->whereNull('vacancy_job_assignments.unassigned_at');
 
-        if ($criteria->employerId !== null) {
-            $query->where('vacancies.employer_id', $criteria->employerId->value());
+        if ($filter->employerId !== null) {
+            $query->where('vacancies.employer_id', $filter->employerId->value());
         }
 
-        if ($criteria->country !== null) {
-            $query->where('vacancies.country', $criteria->country);
+        if ($filter->country !== null) {
+            $query->where('vacancies.country', $filter->country);
         }
 
-        if ($criteria->city !== null) {
-            $query->where('vacancies.city', $criteria->city);
+        if ($filter->city !== null) {
+            $query->where('vacancies.city', $filter->city);
         }
 
-        if ($criteria->minSalary !== null) {
-            $query->where('vacancies.min_salary', '>=', $criteria->minSalary);
+        if ($filter->minSalary !== null) {
+            $query->where('vacancies.min_salary', '>=', $filter->minSalary);
         }
 
-        if ($criteria->maxSalary !== null) {
-            $query->where('vacancies.max_salary', '<=', $criteria->maxSalary);
+        if ($filter->maxSalary !== null) {
+            $query->where('vacancies.max_salary', '<=', $filter->maxSalary);
         }
 
-        if ($criteria->status !== null) {
-            $query->where('vacancies.status', $criteria->status->value);
+        if ($filter->status !== null) {
+            $query->where('vacancies.status', $filter->status->value);
         }
 
-        if ($criteria->workplace !== null) {
-            $query->where('vacancies.workplace', $criteria->workplace->value);
+        if ($filter->workplace !== null) {
+            $query->where('vacancies.workplace', $filter->workplace->value);
         }
 
-        if ($criteria->employmentType !== null) {
-            $query->where('vacancies.employment_type', $criteria->employmentType->value);
+        if ($filter->employmentType !== null) {
+            $query->where('vacancies.employment_type', $filter->employmentType->value);
         }
 
-        if ($criteria->postedFrom !== null) {
-            $query->where('vacancies.posted_at', '>=', $criteria->postedFrom);
+        if ($filter->postedFrom !== null) {
+            $query->where('vacancies.posted_at', '>=', $filter->postedFrom);
         }
 
-        if ($criteria->postedTo !== null) {
-            $query->where('vacancies.posted_at', '<=', $criteria->postedTo);
+        if ($filter->postedTo !== null) {
+            $query->where('vacancies.posted_at', '<=', $filter->postedTo);
         }
     }
 

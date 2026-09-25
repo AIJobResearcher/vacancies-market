@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\ValueObjects;
+namespace App\Domain\DTOs;
 
 use App\Domain\Enums\EmploymentTypeEnum;
 use App\Domain\Enums\VacancyStatusEnum;
@@ -11,7 +11,7 @@ use App\Domain\ValueObjects\EntityIds\EmployerId;
 use App\Domain\ValueObjects\EntityIds\JobId;
 use DateTimeImmutable;
 
-final readonly class VacancySearchCriteria
+final readonly class GetVacanciesByJobIdFilterDto
 {
     public function __construct(
         public JobId $jobId,
@@ -25,6 +25,8 @@ final readonly class VacancySearchCriteria
         public ?EmploymentTypeEnum $employmentType = null,
         public ?DateTimeImmutable $postedFrom = null,
         public ?DateTimeImmutable $postedTo = null,
+        public ?int $page = null,
+        public ?int $perPage = null,
     ) {
     }
 }

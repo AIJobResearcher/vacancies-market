@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Domain\Repositories;
 
+use App\Domain\DTOs\GetVacanciesByJobIdFilterDto;
 use App\Domain\Entities\Vacancy;
 use App\Domain\ValueObjects\EntityIds\VacancyId;
-use App\Domain\ValueObjects\VacancySearchCriteria;
 
 interface VacancyRepositoryInterface
 {
@@ -24,7 +24,7 @@ interface VacancyRepositoryInterface
      * @psalm-suppress PossiblyUnusedMethod
      */
     public function searchPreviews(
-        VacancySearchCriteria $criteria,
+        GetVacanciesByJobIdFilterDto $filter,
         int $page,
         int $perPage,
     ): array;

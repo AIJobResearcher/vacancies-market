@@ -17,7 +17,7 @@ final class GetVacanciesByJobIdController extends Controller
 
     public function __invoke(GetVacanciesByJobIdRequest $request): JsonResponse
     {
-        $paginator = $this->getListVacanciesUseCase->handle($request->toDto())
+        $paginator = $this->getListVacanciesUseCase->handle($request->toFilterDto())
             ->withPath($request->url())
             ->appends($request->query());
 

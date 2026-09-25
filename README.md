@@ -59,7 +59,7 @@ Reports are available as HTML in the corresponding directories.
 ## Static Analysis
 
 Code quality is also enforced by **PHPStan**, **Psalm**, **PHP_CodeSniffer**,
-**Deptrac** (architectural dependency rules) and **Markdownlint-cli2**. All run
+**Deptrac** (architectural dependency rules) and **markdownlint-cli2**. All run
 inside the Docker container via `Makefile` targets:
 
 | Command | What it does |

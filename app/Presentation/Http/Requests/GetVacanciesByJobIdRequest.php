@@ -11,7 +11,6 @@ use App\Domain\Enums\WorkplaceEnum;
 use App\Domain\ValueObjects\EntityIds\EmployerId;
 use App\Domain\ValueObjects\EntityIds\JobId;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\ValidatedInput;
 use Illuminate\Validation\Rule;
 use Stringable;
 
@@ -47,41 +46,43 @@ final class GetVacanciesByJobIdRequest extends FormRequest
     {
         $input = $this->safe();
 
+        $country = $this->nullableString($input->input('country'));
+        $city = $this->nullableString($input->input('city'));
+
+        $minSalary = $input->input('min_salary');
+        $maxSalary = $input->input('max_salary');
+        $page = $input->input('page');
+        $perPage = $input->input('per_page');
+
         return new GetVacanciesByJobIdFilterDto(
             jobId: JobId::fromString($input->string('job_id')->toString()),
-            employerId: $this->nullableEmployerId($input),
-            country: $this->nullableString($input, 'country'),
-            city: $this->nullableString($input, 'city'),
-            minSalary: $this->nullableInt($input, 'min_salary'),
-            maxSalary: $this->nullableInt($input, 'max_salary'),
+            employerId: $this->nullableEmployerId(),
+            country: $country,
+            city: $city,
+            minSalary: is_numeric($minSalary) ? (int) $minSalary : null,
+            maxSalary: is_numeric($maxSalary) ? (int) $maxSalary : null,
             status: $input->enum('status', VacancyStatusEnum::class),
             workplace: $input->enum('workplace', WorkplaceEnum::class),
             employmentType: $input->enum('employment_type', EmploymentTypeEnum::class),
             postedFrom: $input->date('posted_from')?->toDateTimeImmutable(),
             postedTo: $input->date('posted_to')?->toDateTimeImmutable(),
-            page: $this->nullableInt($input, 'page'),
-            perPage: $this->nullableInt($input, 'per_page'),
+            page: is_numeric($page) ? (int) $page : null,
+            perPage: is_numeric($perPage) ? (int) $perPage : null,
         );
     }
 
-    private function nullableEmployerId(ValidatedInput $input): ?EmployerId
+    /**
+     * phpstan, without the larastan extension, reads `input()` as `mixed`.
+     */
+    private function nullableString(mixed $value): ?string
     {
-        $value = $input->input('employer_id');
+        return is_string($value) ? $value : null;
+    }
+
+    private function nullableEmployerId(): ?EmployerId
+    {
+        $value = $this->safe()->input('employer_id');
 
         return is_string($value) ? EmployerId::fromString($value) : null;
-    }
-
-    private function nullableInt(ValidatedInput $input, string $key): ?int
-    {
-        $value = $input->input($key);
-
-        return is_numeric($value) ? (int) $value : null;
-    }
-
-    private function nullableString(ValidatedInput $input, string $key): ?string
-    {
-        $value = $input->input($key);
-
-        return is_string($value) ? $value : null;
     }
 }

@@ -9,6 +9,7 @@ use App\Presentation\Http\Requests\GetVacanciesByJobIdRequest;
 use App\Presentation\Http\Resources\GetVacanciesByJobIdCollection;
 use Illuminate\Http\JsonResponse;
 
+/** @psalm-suppress UnusedClass */
 final class GetVacanciesByJobIdController extends Controller
 {
     public function __construct(private readonly GetVacanciesByJobIdUseCase $getListVacanciesUseCase)

@@ -16,6 +16,7 @@ use Override;
 
 final class EmployerEloquentRepository implements EmployerRepositoryInterface
 {
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function __construct(private readonly EmployerMapper $mapper)
     {
     }

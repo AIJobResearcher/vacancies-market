@@ -11,18 +11,22 @@ abstract class ApiCollection extends ResourceCollection
 {
     /**
      * @phpcsSuppress SlevomatCodingStandard.Functions.UnusedParameter
-     * @param array<string, mixed> $paginated
-     * @param array{links: array<string, string|null>, meta: array<string, mixed>} $default
+     * @psalm-suppress PossiblyUnusedMethod, PossiblyUnusedParam
+     * @param array{current_page: int, per_page: int, total: int, last_page: int, ...} $paginated
+     * @param array{
+     *     links: array<string, string|null>,
+     *     meta: array{current_page: int, per_page: int, total: int, last_page: int, ...}
+     * } $default
      * @return array{meta: array{current_page: int, per_page: int, total: int, last_page: int}}
      */
     public function paginationInformation(Request $request, array $paginated, array $default): array
     {
         return [
             'meta' => [
-                'current_page' => (int) $default['meta']['current_page'],
-                'per_page' => (int) $default['meta']['per_page'],
-                'total' => (int) $default['meta']['total'],
-                'last_page' => (int) $default['meta']['last_page'],
+                'current_page' => $default['meta']['current_page'],
+                'per_page' => $default['meta']['per_page'],
+                'total' => $default['meta']['total'],
+                'last_page' => $default['meta']['last_page'],
             ],
         ];
     }

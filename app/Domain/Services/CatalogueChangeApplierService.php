@@ -28,8 +28,8 @@ use DateTimeImmutable;
 use Psr\Log\LoggerInterface;
 
 /**
- * @psalm-suppress PossiblyUndefinedArrayOffset PossiblyNullArrayAccess
- * @psalm-suppress PossiblyNullArgument DocblockTypeContradiction RiskyTruthyFalsyComparison
+ * @psalm-suppress PossiblyUndefinedArrayOffset, PossiblyNullArrayAccess
+ * @psalm-suppress PossiblyNullArgument, DocblockTypeContradiction, RiskyTruthyFalsyComparison
  */
 final readonly class CatalogueChangeApplierService
 {
@@ -520,7 +520,8 @@ final readonly class CatalogueChangeApplierService
      *         title: string,
      *         description?: string,
      *         category?: string
-     *     }>
+     *     }>,
+     *     ...
      * } $canonicalData
      * @return RequirementId[]
      */

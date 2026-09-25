@@ -32,7 +32,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @psalm-suppress InvalidArgument ArgumentTypeCoercion PossiblyNullReference
+ * @psalm-suppress InvalidArgument, ArgumentTypeCoercion, PossiblyNullReference
  */
 final class CatalogueChangeApplierServiceTest extends TestCase
 {

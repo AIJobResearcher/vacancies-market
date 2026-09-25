@@ -18,7 +18,20 @@ interface VacancyRepositoryInterface
 
     /**
      * @return array{
-     *     items: list<array<string, mixed>>,
+     *     items: array<int, array{
+     *         id: string,
+     *         title: string,
+     *         employer_id: string,
+     *         employer_title: string,
+     *         min_salary: int,
+     *         max_salary: int|null,
+     *         country: string|null,
+     *         city: string|null,
+     *         employment_type: string,
+     *         workplace: string,
+     *         status: string,
+     *         posted_at: string,
+     *     }>,
      *     total: int,
      * }
      * @psalm-suppress PossiblyUnusedMethod

@@ -16,6 +16,7 @@ use Override;
 
 final class InterviewerEloquentRepository implements InterviewerRepositoryInterface
 {
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function __construct(private readonly InterviewerMapper $mapper)
     {
     }

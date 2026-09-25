@@ -16,7 +16,14 @@ interface JobRepositoryInterface
     /**
      * @param list<string> $ids
      * @return array{
-     *     items: list<array<string, mixed>>,
+     *     items: array<int, array{
+     *         id: string,
+     *         title: string,
+     *         category: string,
+     *         sub_category: string|null,
+     *         parent_job_id: string|null,
+     *         parent_job_title: string|null,
+     *     }>,
      *     total: int,
      * }
      * @psalm-suppress PossiblyUnusedMethod

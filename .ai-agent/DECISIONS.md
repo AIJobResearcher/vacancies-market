@@ -2,80 +2,214 @@
 
 Status: living · Updated: 2026-09-25 · Owner: engineering
 
-Decisions the agent applies as defaults and never re-opens. Each entry is
-decision — reason — date. A task that contradicts an entry is reported in
-one line and confirmed with the user before any code changes.
-
-Generic conventions (layering, HTTP layer, validation, OpenAPI contracts,
-temporary code, file permissions, decision-file format) moved into proposals
-for the shared standards — see `.ai-agent/user.data/standards-improuvments.md`
-section 6; keep applying them until the standards land.
+Defaults the agent applies without re-opening; entry form is decision —
+reason — date. A task that contradicts an entry is reported in one line and
+confirmed with the user before code changes. Only project-local rules live
+here: the generic conventions (layering, HTTP layer, validation, OpenAPI
+contracts, temporary code, file permissions, this file's format) are proposed
+for the shared standards in `.ai-agent/user.data/standards-improuvments.md`
+section 6 and stay in force until those land.
 
 ## 1. Domain boundaries
 
 - **1.1** `Employer`, `Job`, `Interviewer` are separate root aggregates; the
   `Vacancy` aggregate nests only their ids, never their objects — 2026-09-21.
-- **1.2** When a read response needs data owned by another aggregate, add a
-  repository method; never traverse foreign relations from an aggregate —
-  2026-09-21.
+- **1.2** A read response needing data owned by another aggregate gets a new
+  repository method; an aggregate never traverses foreign relations
+  — 2026-09-21.
 
 ## 2. Read side of the repository
 
 - **2.1** Read-model methods live in the repository port; `findById` returns
-  the aggregate and is reused inside read methods — 2026-09-21.
+  the aggregate and is reused inside them — 2026-09-21.
 - **2.2** A repository may return Eloquent models and model collections to
   Application and Presentation; clause 1.2 of `laravel-standards.md`
   ("repositories never return models or query builders") is deliberately
-  ignored in this project — 2026-09-24.
+  ignored here — 2026-09-24.
 
 ## 3. Local environment
 
-- **3.1** Runtime is the Docker Compose service `vacancies-market-app` (host
-  port 8001 → container 8000, bind mount `.:/var/www`), database
-  `vacancies-market-postgres`; verification goes through `docker exec` with
-  `curl` and `psql` — 2026-09-15.
+- **3.1** Runtime is the Docker Compose service `vacancies-market-app`
+  (host port 8001 → container 8000, bind mount `.:/var/www`), database
+  `vacancies-market-postgres`; verify through `docker exec` with `curl` and
+  `psql`, never a host PHP process — 2026-09-15.
 
 ## 4. Service providers
 
-- **4.1** Every service provider implements
-  `Illuminate\Contracts\Support\DeferrableProvider` and lists its bindings in
-  `provides()`, so the container loads it on first use — 2026-09-24.
+- **4.1** Every provider implements `DeferrableProvider` and lists its
+  bindings in `provides()`, so the container loads it on first use; those
+  bindings live in one private constant reused by `register()` and
+  `provides()`, so the two cannot drift apart — 2026-09-24.
 - **4.2** `register()` stays side-effect free and an empty `boot()` is
-  removed: a deferred provider is not loaded, and therefore not booted, until
-  one of its services is requested — 2026-09-24.
-- **4.3** Binding lists live in one private constant per provider, reused by
-  both `register()` and `provides()`, so the two can never drift apart —
-  2026-09-24.
-- **4.4** Infrastructure bindings are split by concern (`MapperServiceProvider`,
-  `RepositoryServiceProvider`); a provider left without bindings is deleted
-  rather than kept empty — 2026-09-24.
+  removed: a deferred provider is not booted until one of its services is
+  requested — 2026-09-24.
+- **4.3** Infrastructure bindings are split by concern
+  (`MapperServiceProvider`, `RepositoryServiceProvider`); a provider left
+  without bindings is deleted, not kept empty — 2026-09-24.
 
 ## 5. Documentation, Domain and database constraints
 
 - **5.1** Documented requirements are implemented in the Domain; the database
   never becomes their source of truth — 2026-09-25.
-- **5.2** A migration must not contradict the documentation: when a database
+- **5.2** A migration never contradicts the documentation: where a database
   feature (cascade delete, unique, check) would break a documented rule, the
-  documented rule wins and that feature is not used — 2026-09-25.
-- **5.3** Database constraints are a secondary tool — desirable, not
-  mandatory. Use them where they match the documented rules without changing
-  them (`unique`, foreign keys), and choose per situation; judge each case on
-  its own instead of applying a constraint by default — 2026-09-25.
-- **5.4** A database constraint stricter than the documentation is a
-  deliberate, recorded choice, not a default; state the divergence where the
-  constraint is declared — 2026-09-25.
-- **5.5** Case on record: the foreign keys from `job_requirements` and
+  rule wins and that feature is not used — 2026-09-25.
+- **5.3** Database constraints are desirable, not mandatory: use them where
+  they match the documented rules without changing them (`unique`, foreign
+  keys) and judge each case on its own instead of applying one by default; a
+  constraint stricter than the documentation is a deliberate choice stated
+  where the constraint is declared — 2026-09-25.
+- **5.4** On record: the foreign keys from `job_requirements` and
   `vacancy_requirement_assignments` to `requirements` use
   `ON DELETE RESTRICT`, not `cascade`, because
-  `docs/domain/bounded-contexts/vacancies-market.md` 6.7.3 forbids deleting a
-  referenced Requirement — 2026-09-25.
+  `docs/domain/bounded-contexts/vacancies-market.md` 6.7.3 forbids deleting
+  a referenced Requirement — 2026-09-25.
 
 ## 6. Migrations
 
-- **6.1** Migrations run only on an explicit request; the agent never starts
-  them on its own initiative — `migrate`, `migrate:fresh`, `migrate:rollback`
-  and `migrate --pretend` included — because they change shared state and can
-  destroy local data — 2026-09-25.
+- **6.1** Migrations run only on an explicit request — `migrate`,
+  `migrate:fresh`, `migrate:rollback` and `migrate --pretend` included —
+  because they change shared state and can destroy local data — 2026-09-25.
 - **6.2** Applying a schema change, and the `migrate:fresh` it needs when the
   migration was already applied, is confirmed with the user before the run
   — 2026-09-25.
+
+## 7. Validation and static typing
+
+- **7.1** A value validated at the boundary is not validated again deeper in
+  the layers: the `FormRequest` rules are its single guarantee, and repeated
+  checks are dead code — 2026-09-25.
+- **7.2** Where an analyzer cannot infer the type of already validated data
+  (`ValidatedInput::array()` is `array<mixed>`), state it in an inline
+  comment (`/** @var list<string> $jobIds */`), never with a runtime check,
+  a cast or an ignore. The comment is a claim: keep it next to the rule that
+  backs it, so weakening that rule updates both. A cast that truly converts
+  is untouched — an `integer`-ruled field can arrive as a numeric string
+  (`int<0, max>|null|numeric-string`), so
+  `is_numeric($value) ? (int) $value : null` stays — 2026-09-25.
+- **7.3** A wrong or vague type is fixed at its origin, not worked around:
+  correct the declaration closest to where the type is produced — a `@param`
+  on the method that builds the value beats a local `@var` on the line that
+  consumes it — instead of adding a second comment or code that serves only
+  the analyzer — 2026-09-25.
+- **7.4** Where the two analyzers disagree about a field, use the type both
+  accept. A validated field read is the known case: psalm types
+  `ValidatedInput::input('country')` from `rules()` and calls the matching
+  `@var` `UnnecessaryVarAnnotation` (`@var`, `@psalm-var` and `@phpstan-var`
+  merge into one tag, so no variant escapes this), while phpstan, without the
+  larastan extension, sees `mixed`. The answer is a boundary narrowing helper
+  that takes the value and not the key —
+  `nullableString(mixed $value): ?string` called as
+  `$this->nullableString($input->input('country'))`: the native `mixed` hint
+  is invisible to phpcs (`DisallowMixedTypeHint` reads doc comments only),
+  psalm sees no annotation, phpstan gets its `string|null` — 2026-09-25.
+- **7.5** When a `list` is fed into `LengthAwarePaginator`, no single
+  annotation satisfies both analyzers: psalm refines the key to
+  `int<0, max>`, phpstan keeps `int`, and the invariant `TKey` makes the two
+  mutually exclusive. Claim the neutral `array<int, ...>` in the repository
+  and `LengthAwarePaginator<int, ...>` on the use case — less precise than
+  `list<...>`, still true, accepted by both — 2026-09-25.
+- **7.6** Boundary accessors are read with literal keys: the laravel plugin
+  types `ValidatedInput::input('field')` (and `validated()`, `string()`,
+  `integer()`, `enum()`, `date()`) from the request's `rules()` through the
+  generic `TRequest`, but a variable key defeats that lookup and hands back
+  `mixed` (`MixedAssignment`) — so a helper taking `string $key` is wrong by
+  construction. Helpers take no `ValidatedInput` either and call
+  `$this->safe()` themselves: psalm reads the plugin stubs
+  (`ValidatedInput<static>` is invariant) while phpstan sees a non-generic
+  class (`generics.notGeneric` for any annotation), so the generic must never
+  cross a signature — 2026-09-25.
+- **7.7** `mixed` is a last resort, not a default: when the keys and value
+  types are known from the code that produces the value (the `select()`
+  column list, the model's `@property`/`casts`, the resource that reads those
+  keys), write that concrete shape instead of `array<string, mixed>`, taken
+  verbatim from the consumer that already declares it, so a wrong key fails
+  at the contract rather than at runtime. phpcs enforces this
+  (`SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint` fails on `mixed`
+  even inside a docblock). One exception survives: an opaque payload whose
+  shape another part of the system owns — the outbox `payload`, one column
+  holding the JSON of six domain events, written and never read here — keeps
+  `array<string, mixed>` under an explicit `@phpcsSuppress` on the class,
+  because a union of today's event fields is false precision that every new
+  event invalidates — 2026-09-25.
+- **7.8** When the real value carries keys beyond the declared ones, declare
+  an unsealed shape with a trailing `...` (`array{total: int, ...}`, which
+  both analyzers support) instead of a sealed one that denies the extra keys.
+  This also types a framework payload whose tail cannot be written without
+  `mixed` (the paginator array handed to `paginationInformation()`): claim
+  only the keys the code relies on — a bare `array` fails
+  `missingType.iterableValue` even for an unused parameter, and the full shape
+  would need the `mixed` that 7.7 bans. Extra keys are the parameter's
+  problem, not the caller's: when psalm reports `InvalidArgument` or phpstan
+  `argument.type` because a sealed shape receives a wider array, unseal the
+  parameter — never loosen the caller's shape, suppress, or build a trimmed
+  copy — 2026-09-25.
+- **7.9** A type lost by the way we call, not by a missing declaration, is
+  restored by changing the call, not by an `@var`: when a fluent chain goes
+  through `@mixin`/`__call` forwarding, the generic is dropped at the first
+  forwarded method (`Builder<VacancyModel>->join()` gives `Query\Builder`, and
+  `paginate()`/`first()`/`get()` then return `mixed`), so call the typed
+  method on the receiver whose class binds the template — the Eloquent
+  builder, `@use BuildsQueries<TModel>` — and issue the forwarded methods
+  (`join()`, `select()`, `orderByDesc()`) as separate mutating statements.
+  The analyzer reports it as `argument.type` on a callback,
+  `return.unusedType` on the declared type, or `return.type` when the value
+  read off `mixed` degrades to a bare `list`/`array`. An `@var` is left only
+  for what a bare producer declaration cannot express (`Model::toArray()` is
+  `array`) — 2026-09-25.
+- **7.10** A type established at the boundary does not travel with the call,
+  so the consumer restates it as its own contract — `@param list<string>
+  $jobIds` on the use case — in the wording of the boundary accessor that
+  produces it; one such `@param` clears both `missingType.iterableValue` and
+  the `argument.type` on the call. Likewise a payload shape crossing layers
+  is declared identically on the Domain interface, its Infrastructure
+  implementation, the Application use case and the Presentation resource, and
+  changes to it update every declaration at once — a narrower `@return` in an
+  implementation is legal covariance and never flags the mismatch, and a use
+  case that guards `|null` away declares the shape without `null`
+  — 2026-09-25.
+
+## 8. Comments and suppressions
+
+- **8.1** A suppression is the last resort, never the first fix: after an
+  analyzer error, look for a construct both analyzers accept before reaching
+  for a comment (7.4, 7.6, 7.7); only a case neither analyzer can satisfy by
+  code stays suppressed (8.3, 8.4, 8.5), and the reason is what the
+  suppression text states — 2026-09-25.
+- **8.2** Suppressions and comments are re-checked with the code they
+  describe: a `@psalm-suppress`/`@phpcsSuppress` whose condition no longer
+  holds — most often because the symbol is now used — and a docblock, `@var`
+  or inline note that stopped matching are deleted or corrected in the same
+  change, never left for a later pass. Neither psalm
+  (`findUnusedPsalmSuppress` is off here) nor phpcs reports a stale one, and
+  an obsolete suppression silently hides the next real error — 2026-09-25.
+- **8.3** Container-resolved collaborators are the canonical
+  `PossiblyUnusedMethod` case: a constructor the Laravel container
+  instantiates has no visible `new` — use cases, and every Infrastructure
+  implementation bound to a Domain interface in `RepositoryServiceProvider`
+  (`EmployerEloquentRepository` is built from
+  `EmployerRepositoryInterface::class`) — so it carries a bare
+  `/** @psalm-suppress PossiblyUnusedMethod */` directly above it, one per
+  constructor rather than at class level, for all such classes in the same
+  change — 2026-09-25.
+- **8.4** Framework hooks are suppressed on the method, not at class level: a
+  method the framework invokes dynamically (`paginationInformation()`, found
+  with `method_exists` in `PaginatedResourceResponse`) looks unused and its
+  parameter list is dictated by that call, so it carries
+  `@psalm-suppress PossiblyUnusedMethod, PossiblyUnusedParam` in its docblock
+  next to the `@phpcsSuppress` for the same parameters — 2026-09-25.
+- **8.5** Route-referenced classes are taken as used: an invokable controller
+  is named only in `routes/api.php`, which psalm does not analyse, so the
+  class carries `/** @psalm-suppress UnusedClass */` above the declaration —
+  class level, because the whole class is what looks unused (the middleware
+  and event classes already do) — 2026-09-25.
+- **8.6** A pasted analyzer report is checked against the current file before
+  acting: when the message quotes a declaration the file no longer has (a
+  shape already unsealed, an `@var` already rewritten), the report is stale —
+  the fix is in place, and the answer is "already fixed" plus a re-run, never
+  a second edit — 2026-09-25.
+- **8.7** `@psalm-suppress` takes a comma-separated list: psalm parses the
+  first issue name, further names after commas, and anything after a space as
+  a free-text description — so `@psalm-suppress A B` silences only `A` and
+  the rest is decoration (three such lines lived in this codebase). Write
+  `A, B, C` — 2026-09-25.

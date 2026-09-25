@@ -13,6 +13,7 @@ use Override;
 
 final class RequirementEloquentRepository implements RequirementRepositoryInterface
 {
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function __construct(private readonly RequirementMapper $mapper)
     {
     }

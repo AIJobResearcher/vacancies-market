@@ -13,10 +13,8 @@ final class GetJobsByIdsRequest extends FormRequest
      */
     public function id(): array
     {
-        $jobIds = [];
-        foreach ($this->safe()->array('job_ids') as $jobId) {
-            $jobIds[] = (string) $jobId;
-        }
+        /** @var list<string> $jobIds */
+        $jobIds = $this->safe()->array('job_ids');
 
         return $jobIds;
     }

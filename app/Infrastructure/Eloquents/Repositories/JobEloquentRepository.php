@@ -16,6 +16,7 @@ use Override;
 
 final class JobEloquentRepository implements JobRepositoryInterface
 {
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function __construct(private readonly JobMapper $mapper)
     {
     }
@@ -33,7 +34,14 @@ final class JobEloquentRepository implements JobRepositoryInterface
     /**
      * @param list<string> $ids
      * @return array{
-     *     items: list<array<string, mixed>>,
+     *     items: array<int, array{
+     *         id: string,
+     *         title: string,
+     *         category: string,
+     *         sub_category: string|null,
+     *         parent_job_id: string|null,
+     *         parent_job_title: string|null,
+     *     }>,
      *     total: int,
      * }
      */
@@ -44,7 +52,14 @@ final class JobEloquentRepository implements JobRepositoryInterface
             return ['items' => [], 'total' => 0];
         }
 
-        /** @var list<array<string, mixed>> $jobs */
+        /** @var array<int, array{
+         *     id: string,
+         *     title: string,
+         *     category: string,
+         *     sub_category: string|null,
+         *     parent_job_id: string|null,
+         *     parent_job_title: string|null,
+         * }> $jobs */
         $jobs = JobModel::query()
             ->leftJoin(
                 'jobs as parent_jobs',

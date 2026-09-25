@@ -40,6 +40,7 @@ final class VacancyEloquentRepository implements VacancyRepositoryInterface
         'vacancies.posted_at',
     ];
 
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function __construct(private readonly VacancyMapper $mapper)
     {
     }
@@ -78,7 +79,20 @@ final class VacancyEloquentRepository implements VacancyRepositoryInterface
 
     /**
      * @return array{
-     *     items: list<array<string, mixed>>,
+     *     items: array<int, array{
+     *         id: string,
+     *         title: string,
+     *         employer_id: string,
+     *         employer_title: string,
+     *         min_salary: int,
+     *         max_salary: int|null,
+     *         country: string|null,
+     *         city: string|null,
+     *         employment_type: string,
+     *         workplace: string,
+     *         status: string,
+     *         posted_at: string,
+     *     }>,
      *     total: int,
      * }
      */
@@ -88,23 +102,40 @@ final class VacancyEloquentRepository implements VacancyRepositoryInterface
         int $page,
         int $perPage,
     ): array {
-        $query = VacancyModel::query()
-            ->join('employers', 'employers.id', '=', 'vacancies.employer_id')
-            ->select(self::PREVIEW_COLUMNS);
+        $query = VacancyModel::query();
 
         $this->applyPreviewFilters($query, $filter);
 
-        $paginator = $query
-            ->orderByDesc('vacancies.posted_at')
-            ->orderBy('vacancies.id')
-            ->paginate($perPage, ['*'], 'page', $page);
+        $query->join('employers', 'employers.id', '=', 'vacancies.employer_id')
+            ->select(self::PREVIEW_COLUMNS);
+
+        $query->orderByDesc('vacancies.posted_at')
+            ->orderBy('vacancies.id');
+
+        $paginator = $query->paginate($perPage, ['*'], 'page', $page);
+
+        /** @var array<int, array{
+         *     id: string,
+         *     title: string,
+         *     employer_id: string,
+         *     employer_title: string,
+         *     min_salary: int,
+         *     max_salary: int|null,
+         *     country: string|null,
+         *     city: string|null,
+         *     employment_type: string,
+         *     workplace: string,
+         *     status: string,
+         *     posted_at: string,
+         * }> $items */
+        $items = array_values(
+            $paginator->getCollection()
+                ->map(static fn (VacancyModel $vacancy): array => $vacancy->toArray())
+                ->all()
+        );
 
         return [
-            'items' => array_values(
-                $paginator->getCollection()
-                    ->map(static fn (VacancyModel $vacancy): array => $vacancy->toArray())
-                    ->all()
-            ),
+            'items' => $items,
             'total' => $paginator->total(),
         ];
     }
@@ -201,17 +232,19 @@ final class VacancyEloquentRepository implements VacancyRepositoryInterface
 
     private function findActiveInterviewer(string $vacancyId): ?InterviewerModel
     {
-        return InterviewerModel::query()
-            ->join(
-                'interviewer_vacancy_assignments',
-                'interviewer_vacancy_assignments.interviewer_id',
-                '=',
-                'interviewers.id'
-            )
+        $query = InterviewerModel::query();
+
+        $query->join(
+            'interviewer_vacancy_assignments',
+            'interviewer_vacancy_assignments.interviewer_id',
+            '=',
+            'interviewers.id'
+        )
             ->where('interviewer_vacancy_assignments.vacancy_id', $vacancyId)
             ->whereNull('interviewer_vacancy_assignments.unassigned_at')
-            ->orderByDesc('interviewer_vacancy_assignments.assigned_at')
-            ->first(['interviewers.*']);
+            ->orderByDesc('interviewer_vacancy_assignments.assigned_at');
+
+        return $query->first(['interviewers.*']);
     }
 
     /**
@@ -225,10 +258,12 @@ final class VacancyEloquentRepository implements VacancyRepositoryInterface
             $requirementIds[] = $assignment->getRequirementId()->value();
         }
 
-        $requirements = RequirementModel::query()
-            ->whereIn('id', $requirementIds)
-            ->orderBy('title')
-            ->get();
+        $query = RequirementModel::query();
+
+        $query->whereIn('id', $requirementIds)
+            ->orderBy('title');
+
+        $requirements = $query->get();
 
         $titles = [];
         foreach ($requirements as $requirement) {

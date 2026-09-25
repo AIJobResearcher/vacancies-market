@@ -14,12 +14,26 @@ final class GetVacanciesByJobIdUseCase
 
     private const DEFAULT_PER_PAGE = 20;
 
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function __construct(private readonly VacancyRepositoryInterface $vacancyRepository)
     {
     }
 
     /**
-     * @return LengthAwarePaginator<int, array<string, mixed>>
+     * @return LengthAwarePaginator<int, array{
+     *     id: string,
+     *     title: string,
+     *     employer_id: string,
+     *     employer_title: string,
+     *     min_salary: int,
+     *     max_salary: int|null,
+     *     country: string|null,
+     *     city: string|null,
+     *     employment_type: string,
+     *     workplace: string,
+     *     status: string,
+     *     posted_at: string,
+     * }>
      */
     public function handle(GetVacanciesByJobIdFilterDto $filter): LengthAwarePaginator
     {

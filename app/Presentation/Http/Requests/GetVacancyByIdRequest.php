@@ -25,11 +25,14 @@ final class GetVacancyByIdRequest extends FormRequest
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array{id: string|null}
      */
     #[Override]
     public function validationData(): array
     {
-        return ['id' => $this->route('id')];
+        /** @var string|null $id */
+        $id = $this->route('id');
+
+        return ['id' => $id];
     }
 }

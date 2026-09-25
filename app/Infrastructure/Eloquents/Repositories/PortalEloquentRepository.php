@@ -14,6 +14,7 @@ use Override;
 
 final class PortalEloquentRepository implements PortalRepositoryInterface
 {
+    /** @psalm-suppress PossiblyUnusedMethod */
     public function __construct(private readonly PortalMapper $mapper)
     {
     }

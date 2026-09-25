@@ -165,14 +165,22 @@ final class VacancySeeder extends Seeder
         $pointer = 0;
         $rows = [];
 
-        foreach ($vacancyIds as $vacancyId) {
-            $take = random_int(10, 25);
+        if ($requirementIds === []) {
+            return;
+        }
 
-            for ($i = 0; $i < $take; $i++) {
+        foreach ($vacancyIds as $vacancyId) {
+            $take = min(random_int(10, 25), count($requirementIds));
+            $pickedIds = array_map(
+                static fn (int $key): string => $requirementIds[$key],
+                (array) array_rand($requirementIds, $take)
+            );
+
+            foreach ($pickedIds as $requirementId) {
                 $rows[] = [
                     'id' => (string) Str::uuid(),
                     'vacancy_id' => $vacancyId,
-                    'requirement_id' => $requirementIds === [] ? null : $requirementIds[array_rand($requirementIds)],
+                    'requirement_id' => $requirementId,
                     'assigned_at' => $assignedAt,
                     'version' => 1,
                 ];

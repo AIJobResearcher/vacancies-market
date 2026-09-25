@@ -21,6 +21,7 @@ return new class extends Migration
                 ->onDelete('cascade');
 
             $table->index('requirement_id');
+            $table->unique(['vacancy_id', 'requirement_id'], 'vacancy_requirement_unique');
         });
     }
 

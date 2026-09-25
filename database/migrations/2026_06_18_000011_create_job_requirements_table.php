@@ -20,7 +20,7 @@ return new class extends Migration
             $table->foreign('requirement_id')
                 ->references('id')
                 ->on('requirements')
-                ->onDelete('cascade');
+                ->onDelete('restrict');
 
             $table->primary(['job_id', 'requirement_id']);
         });

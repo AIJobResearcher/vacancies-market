@@ -261,6 +261,13 @@ final class Vacancy
         $this->workplace = $other->workplace;
         $this->externalUrls = $other->externalUrls;
         $this->internalUrl = $other->internalUrl;
+
+        foreach ($other->requirementAssignments as $assignment) {
+            if (!$this->hasRequirement($assignment->getRequirementId())) {
+                $this->attachRequirement($assignment->getRequirementId());
+            }
+        }
+
         $this->updatedAt = new DateTimeImmutable();
         $this->version++;
         $this->recordEvent(
@@ -275,18 +282,11 @@ final class Vacancy
 
     public function addRequirement(RequirementId $requirementId): void
     {
-        foreach ($this->requirementAssignments as $assignment) {
-            if ($assignment->getRequirementId()->equals($requirementId)) {
-                throw new RequirementAlreadyAssignedException($requirementId->value());
-            }
+        if ($this->hasRequirement($requirementId)) {
+            throw new RequirementAlreadyAssignedException($requirementId->value());
         }
-        $assignment = new VacancyRequirementAssignment(
-            VacancyRequirementAssignmentId::generate(),
-            $this->id,
-            $requirementId,
-            new DateTimeImmutable(),
-        );
-        $this->requirementAssignments[] = $assignment;
+
+        $this->attachRequirement($requirementId);
         $this->updatedAt = new DateTimeImmutable();
         $this->version++;
     }
@@ -305,6 +305,28 @@ final class Vacancy
         }
 
         throw new RequirementNotAssignedException($requirementId->value());
+    }
+
+    /** @param RequirementId[] $requirementIds */
+    public function syncRequirements(array $requirementIds): void
+    {
+        $targetIds = [];
+        foreach ($requirementIds as $requirementId) {
+            $targetIds[$requirementId->value()] = $requirementId;
+        }
+
+        foreach ($this->requirementAssignments as $assignment) {
+            $assignedId = $assignment->getRequirementId();
+            if (!isset($targetIds[$assignedId->value()])) {
+                $this->removeRequirement($assignedId);
+            }
+        }
+
+        foreach ($targetIds as $requirementId) {
+            if (!$this->hasRequirement($requirementId)) {
+                $this->addRequirement($requirementId);
+            }
+        }
     }
 
     public function assignToJob(JobId $jobId, ?int $relevanceScore = null): void
@@ -520,6 +542,27 @@ final class Vacancy
         $this->events = [];
 
         return $events;
+    }
+
+    private function attachRequirement(RequirementId $requirementId): void
+    {
+        $this->requirementAssignments[] = new VacancyRequirementAssignment(
+            VacancyRequirementAssignmentId::generate(),
+            $this->id,
+            $requirementId,
+            new DateTimeImmutable(),
+        );
+    }
+
+    private function hasRequirement(RequirementId $requirementId): bool
+    {
+        foreach ($this->requirementAssignments as $assignment) {
+            if ($assignment->getRequirementId()->equals($requirementId)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function recordEvent(DomainEvent $event): void

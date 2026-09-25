@@ -21,19 +21,23 @@ final class GetVacanciesByJobIdRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'city' => ['nullable', 'string', 'max:255'],
-            'country' => ['nullable', 'string', 'max:255'],
-            'employer_id' => ['nullable', 'uuid'],
-            'employment_type' => ['nullable', Rule::enum(EmploymentTypeEnum::class)],
             'job_id' => ['required', 'uuid'],
+
             'max_salary' => ['nullable', 'integer', 'min:0'],
             'min_salary' => ['nullable', 'integer', 'min:0'],
-            'page' => ['nullable', 'integer', 'min:1'],
-            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
             'posted_from' => ['nullable', 'date'],
             'posted_to' => ['nullable', 'date'],
+
+            'city' => ['nullable', 'string', 'max:255'],
+            'country' => ['nullable', 'string', 'max:255'],
+
+            'employer_id' => ['nullable', 'uuid'],
+            'employment_type' => ['nullable', Rule::enum(EmploymentTypeEnum::class)],
             'status' => ['nullable', Rule::enum(VacancyStatusEnum::class)],
             'workplace' => ['nullable', Rule::enum(WorkplaceEnum::class)],
+
+            'page' => ['nullable', 'integer', 'min:1'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ];
     }
 

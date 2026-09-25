@@ -1,6 +1,6 @@
 # Settled decisions
 
-Status: living · Updated: 2026-09-24 · Owner: engineering
+Status: living · Updated: 2026-09-25 · Owner: engineering
 
 Decisions the agent applies as defaults and never re-opens. Each entry is
 decision — reason — date. A task that contradicts an entry is reported in
@@ -49,3 +49,23 @@ section 6; keep applying them until the standards land.
 - **4.4** Infrastructure bindings are split by concern (`MapperServiceProvider`,
   `RepositoryServiceProvider`); a provider left without bindings is deleted
   rather than kept empty — 2026-09-24.
+
+## 5. Documentation, Domain and database constraints
+
+- **5.1** Documented requirements are implemented in the Domain; the database
+  never becomes their source of truth — 2026-09-25.
+- **5.2** A migration must not contradict the documentation: when a database
+  feature (cascade delete, unique, check) would break a documented rule, the
+  documented rule wins and that feature is not used — 2026-09-25.
+- **5.3** Database constraints are a secondary tool — desirable, not
+  mandatory. Use them where they match the documented rules without changing
+  them (`unique`, foreign keys), and choose per situation; judge each case on
+  its own instead of applying a constraint by default — 2026-09-25.
+- **5.4** A database constraint stricter than the documentation is a
+  deliberate, recorded choice, not a default; state the divergence where the
+  constraint is declared — 2026-09-25.
+- **5.5** Case on record: the foreign keys from `job_requirements` and
+  `vacancy_requirement_assignments` to `requirements` use
+  `ON DELETE RESTRICT`, not `cascade`, because
+  `docs/domain/bounded-contexts/vacancies-market.md` 6.7.3 forbids deleting a
+  referenced Requirement — 2026-09-25.

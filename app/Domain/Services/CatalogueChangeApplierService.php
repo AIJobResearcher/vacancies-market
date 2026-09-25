@@ -25,6 +25,7 @@ use App\Domain\ValueObjects\EntityIds\VacancySourceId;
 use App\Domain\ValueObjects\ExternalUrls;
 use App\Domain\ValueObjects\Salary;
 use DateTimeImmutable;
+use Psr\Log\LoggerInterface;
 
 /**
  * @psalm-suppress PossiblyUndefinedArrayOffset PossiblyNullArrayAccess
@@ -37,6 +38,7 @@ final readonly class CatalogueChangeApplierService
         private VacancyRepositoryInterface $vacancyRepository,
         private RequirementRepositoryInterface $requirementRepository,
         private RequirementUniquenessCheckerService $uniquenessChecker,
+        private ?LoggerInterface $logger = null,
     ) {
     }
 
@@ -184,27 +186,7 @@ final readonly class CatalogueChangeApplierService
             $this->employerRepository->save($employer);
         }
 
-        $requirementIds = [];
-        foreach ($canonicalData['requirements'] ?? [] as $reqData) {
-            if (isset($reqData['id'])) {
-                $reqId = RequirementId::fromString($reqData['id']);
-                $requirement = $this->requirementRepository->findById($reqId);
-                if ($requirement === null) {
-                    throw new RequirementNotFoundException($reqId->value());
-                }
-            } else {
-                $this->uniquenessChecker->ensureUnique($reqData['title'], null);
-                $reqId = RequirementId::generate();
-                $requirement = Requirement::create(
-                    $reqId,
-                    $reqData['title'],
-                    $reqData['description'] ?? null,
-                    $reqData['category'] ?? null
-                );
-                $this->requirementRepository->save($requirement);
-            }
-            $requirementIds[] = $reqId;
-        }
+        $requirementIds = $this->resolveRequirementIds($canonicalData, $correlationId);
 
         $vacancyId = isset($data['aggregate_id'])
             ? VacancyId::fromString($data['aggregate_id'])
@@ -333,6 +315,12 @@ final readonly class CatalogueChangeApplierService
             isset($canonicalData['external_urls']) ? new ExternalUrls($canonicalData['external_urls']) : null,
             $canonicalData['internal_url'] ?? null
         );
+
+        if (array_key_exists('requirements', $canonicalData)) {
+            $vacancy->syncRequirements(
+                $this->resolveRequirementIds($canonicalData, $data['correlation_id'] ?? null)
+            );
+        }
 
         if (isset($data['source_provenance'])) {
             $sp = $data['source_provenance'];
@@ -523,5 +511,78 @@ final readonly class CatalogueChangeApplierService
             null,
             $provenance['is_primary'] ?? false
         );
+    }
+
+    /**
+     * @param array{
+     *     requirements?: array<int, array{
+     *         id?: string,
+     *         title: string,
+     *         description?: string,
+     *         category?: string
+     *     }>
+     * } $canonicalData
+     * @return RequirementId[]
+     */
+    private function resolveRequirementIds(array $canonicalData, ?string $correlationId): array
+    {
+        $requirementIds = [];
+        $seenIds = [];
+        $seenTitles = [];
+
+        foreach ($canonicalData['requirements'] ?? [] as $reqData) {
+            if (isset($reqData['id'])) {
+                $reqId = RequirementId::fromString($reqData['id']);
+                if (isset($seenIds[$reqId->value()])) {
+                    $this->logSkippedDuplicateRequirement($reqId->value(), null, $correlationId);
+
+                    continue;
+                }
+                $seenIds[$reqId->value()] = true;
+
+                if ($this->requirementRepository->findById($reqId) === null) {
+                    throw new RequirementNotFoundException($reqId->value());
+                }
+
+                $requirementIds[] = $reqId;
+
+                continue;
+            }
+
+            $title = $reqData['title'];
+            $titleKey = mb_strtolower($title);
+            if (isset($seenTitles[$titleKey])) {
+                $this->logSkippedDuplicateRequirement(null, $title, $correlationId);
+
+                continue;
+            }
+            $seenTitles[$titleKey] = true;
+
+            $this->uniquenessChecker->ensureUnique($title, null);
+            $reqId = RequirementId::generate();
+            $this->requirementRepository->save(
+                Requirement::create(
+                    $reqId,
+                    $title,
+                    $reqData['description'] ?? null,
+                    $reqData['category'] ?? null
+                )
+            );
+            $requirementIds[] = $reqId;
+        }
+
+        return $requirementIds;
+    }
+
+    private function logSkippedDuplicateRequirement(
+        ?string $requirementId,
+        ?string $title,
+        ?string $correlationId
+    ): void {
+        $this->logger?->warning('Requirement duplicate skipped in vacancy command', [
+            'requirement_id' => $requirementId,
+            'title' => $title,
+            'correlation_id' => $correlationId,
+        ]);
     }
 }

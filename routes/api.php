@@ -23,7 +23,7 @@ Route::prefix('v1')->group(function (): void {
     // TEMPORARY HACK: top-3 jobs by the number of vacancies assigned to them.
     // Must live only until the endpoint is implemented in the researcher-crm service,
     // then this route must be removed and the frontend switched to that service.
-    Route::get('/jobs', function (): array {
+    Route::get('/researcher', function (): array {
         $jobIds = VacancyJobAssignmentModel::query()
             ->whereNull('unassigned_at')
             ->groupBy('job_id')
@@ -32,12 +32,17 @@ Route::prefix('v1')->group(function (): void {
             ->pluck('job_id');
 
         $jobs = JobModel::query()->whereIn('id', $jobIds)
-            ->select(['id', 'title', 'category', 'sub_category', 'parent_job_id'])
+            ->select(['id'])
             ->get()
-            ->toArray();
+            ->pluck('id');
 
-        $jobs[0] = $jobs[0] + ['parent_job_title'=> 'Parent job title'];
-
-        return ['data' => $jobs];
+        return [
+            'data' => [
+                'id' => Str::uuid()->toString(),
+                'created_at' => now()->toDateTimeString(),
+                'updated_at' => now()->toDateTimeString(),
+                'jobs' => $jobs
+            ]
+        ];
     });
 });

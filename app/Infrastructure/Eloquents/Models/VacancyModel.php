@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 use Override;
 
 /**
@@ -135,17 +136,21 @@ final class VacancyModel extends Model
     }
 
     /**
-     * @return BelongsToMany<RequirementModel,$this>
+     * @return BelongsToMany<RequirementModel,$this,Pivot,'pivot'>
      * @psalm-suppress PossiblyUnusedReturnValue
      */
     public function requirements(): BelongsToMany
     {
-        return $this->belongsToMany(
+        $relation = $this->belongsToMany(
             RequirementModel::class,
             'vacancy_requirement_assignments',
             'vacancy_id',
             'requirement_id',
-        )->orderBy('requirements.title');
+        );
+
+        $relation->orderBy('requirements.title');
+
+        return $relation;
     }
 
     /**
@@ -154,8 +159,11 @@ final class VacancyModel extends Model
      */
     public function activeAssignment(): HasOne
     {
-        return $this->hasOne(InterviewerVacancyAssignmentModel::class, 'vacancy_id')
-            ->whereNull('unassigned_at')
-            ->orderByDesc('assigned_at');
+        $relation = $this->hasOne(InterviewerVacancyAssignmentModel::class, 'vacancy_id');
+
+        $relation->whereNull('unassigned_at');
+        $relation->orderByDesc('assigned_at');
+
+        return $relation;
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Eloquents\Repositories;
 
+use App\Domain\DTOs\JobPreviewDto;
 use App\Domain\Entities\Job;
 use App\Domain\Exceptions\VersionConflictException;
 use App\Domain\Repositories\JobRepositoryInterface;
@@ -33,53 +34,43 @@ final class JobEloquentRepository implements JobRepositoryInterface
 
     /**
      * @param list<string> $ids
-     * @return array{
-     *     items: array<int, array{
-     *         id: string,
-     *         title: string,
-     *         category: string,
-     *         sub_category: string|null,
-     *         parent_job_id: string|null,
-     *         parent_job_title: string|null,
-     *     }>,
-     *     total: int,
-     * }
+     * @return list<JobPreviewDto>
      */
     #[Override]
     public function findPreviewsByIds(array $ids): array
     {
         if ($ids === []) {
-            return ['items' => [], 'total' => 0];
+            return [];
         }
 
-        /** @var array<int, array{
-         *     id: string,
-         *     title: string,
-         *     category: string,
-         *     sub_category: string|null,
-         *     parent_job_id: string|null,
-         *     parent_job_title: string|null,
-         * }> $jobs */
-        $jobs = JobModel::query()
-            ->leftJoin(
-                'jobs as parent_jobs',
-                'parent_jobs.id',
-                '=',
-                'jobs.parent_job_id'
-            )
-            ->whereIn('jobs.id', $ids)
-            ->whereNull('jobs.deleted_at')
-            ->get([
-                'jobs.id',
-                'jobs.title',
-                'jobs.category',
-                'jobs.sub_category',
-                'jobs.parent_job_id',
-                'parent_jobs.title as parent_job_title',
-            ])
-            ->toArray();
+        $query = JobModel::query();
 
-        return ['items' => $jobs, 'total' => count($jobs)];
+        $query->leftJoin(
+            'jobs as parent_jobs',
+            'parent_jobs.id',
+            '=',
+            'jobs.parent_job_id'
+        );
+
+        $query->whereIn('jobs.id', $ids)
+            ->whereNull('jobs.deleted_at');
+
+        $jobs = $query->get([
+            'jobs.id',
+            'jobs.title',
+            'jobs.category',
+            'jobs.sub_category',
+            'jobs.parent_job_id',
+            'parent_jobs.title as parent_job_title',
+        ]);
+
+        $previews = [];
+
+        foreach ($jobs as $job) {
+            $previews[] = $this->mapper->toPreviewDto($job);
+        }
+
+        return $previews;
     }
 
     #[Override]

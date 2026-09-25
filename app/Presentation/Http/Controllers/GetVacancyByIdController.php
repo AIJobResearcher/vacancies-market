@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Presentation\Http\Controllers;
 
 use App\Application\UseCases\GetVacancyByIdUseCase;
+use App\Domain\Exceptions\EntityNotFoundException\VacancyNotFoundException;
 use App\Presentation\Http\Requests\GetVacancyByIdRequest;
 use App\Presentation\Http\Resources\GetVacancyByIdResource;
 use Illuminate\Http\JsonResponse;
@@ -18,7 +19,12 @@ final class GetVacancyByIdController extends Controller
 
     public function __invoke(GetVacancyByIdRequest $request): JsonResponse
     {
-        return (new GetVacancyByIdResource($this->getVacancyByIdUseCase->handle($request->id())))
-            ->response($request);
+        try {
+            $vacancy = $this->getVacancyByIdUseCase->handle($request->id());
+        } catch (VacancyNotFoundException $exception) {
+            return new JsonResponse(['message' => $exception->getMessage()], 404);
+        }
+
+        return (new GetVacancyByIdResource($vacancy))->response($request);
     }
 }

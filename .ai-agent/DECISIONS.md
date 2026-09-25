@@ -109,9 +109,13 @@ section 6 and stay in force until those land.
 - **7.5** When a `list` is fed into `LengthAwarePaginator`, no single
   annotation satisfies both analyzers: psalm refines the key to
   `int<0, max>`, phpstan keeps `int`, and the invariant `TKey` makes the two
-  mutually exclusive. Claim the neutral `array<int, ...>` in the repository
-  and `LengthAwarePaginator<int, ...>` on the use case — less precise than
-  `list<...>`, still true, accepted by both — 2026-09-25.
+  mutually exclusive. Claim the neutral `array<int, ...>` at the boundary —
+  the port's `@return` and the page DTO's `$items` — and
+  `LengthAwarePaginator<int, ...>` on the use case: less precise than
+  `list<...>`, still true, accepted by both. The implementation keeps its own
+  narrower `list<...>` (legal covariance), and the neutral key must sit on the
+  type the use case reads, otherwise psalm infers `int<0, max>` from a `list`
+  and reports `InvalidReturnType` — 2026-09-25.
 - **7.6** Boundary accessors are read with literal keys: the laravel plugin
   types `ValidatedInput::input('field')` (and `validated()`, `string()`,
   `integer()`, `enum()`, `date()`) from the request's `rules()` through the
@@ -155,11 +159,14 @@ section 6 and stay in force until those land.
   method on the receiver whose class binds the template — the Eloquent
   builder, `@use BuildsQueries<TModel>` — and issue the forwarded methods
   (`join()`, `select()`, `orderByDesc()`) as separate mutating statements.
-  The analyzer reports it as `argument.type` on a callback,
-  `return.unusedType` on the declared type, or `return.type` when the value
-  read off `mixed` degrades to a bare `list`/`array`. An `@var` is left only
-  for what a bare producer declaration cannot express (`Model::toArray()` is
-  `array`) — 2026-09-25.
+  A relation is the same case (7.11).
+  The analyzer reports it as `argument.type` on a callback or on a mapper
+  call that receives `stdClass` instead of the model
+  (`Model::query()->leftJoin(...)->get()` is a `Query\Builder` chain, so its
+  rows are `stdClass`), `return.unusedType` on the declared type, or
+  `return.type` when the value read off `mixed` degrades to a bare
+  `list`/`array`. An `@var` is left only for what a bare producer declaration
+  cannot express (`Model::toArray()` is `array`) — 2026-09-25.
 - **7.10** A type established at the boundary does not travel with the call,
   so the consumer restates it as its own contract — `@param list<string>
   $jobIds` on the use case — in the wording of the boundary accessor that
@@ -170,6 +177,38 @@ section 6 and stay in force until those land.
   changes to it update every declaration at once — a narrower `@return` in an
   implementation is legal covariance and never flags the mismatch, and a use
   case that guards `|null` away declares the shape without `null`
+  — 2026-09-25.
+- **7.11** Write a relation that carries ordering or extra constraints as a
+  variable that is mutated and then returned, never as a chained `return`:
+
+  ```php
+  $relation = $this->belongsToMany(
+      RequirementModel::class,
+      'vacancy_requirement_assignments',
+      'vacancy_id',
+      'requirement_id',
+  );
+
+  $relation->orderBy('requirements.title');
+
+  return $relation;
+  ```
+
+  `Relation` is `@mixin Builder<TRelatedModel>` (`Relation.php:22`), so every
+  forwarded method used in a chain (`orderBy()`, `whereNull()`, `where()`,
+  `limit()`) replaces the relation type with `Builder`, and phpstan answers
+  `return.type`: "should return `BelongsToMany<…>` but returns
+  `Illuminate\Database\Query\Builder`". The variable keeps the declared
+  `BelongsToMany`/`HasOne`/`HasMany`/`BelongsTo` intact, and the mutation
+  still lands on the same query. A declared relation method is the better
+  choice where one exists — `wherePivotNull()`, `orderByPivot()`,
+  `orderByPivotDesc()` are `@return $this` and may stay in the chain.
+- **7.12** The `@return` of a relation spells out every template parameter the
+  class declares: `BelongsToMany` takes four
+  (`BelongsToMany<RequirementModel,$this,Pivot,'pivot'>` — psalm reports
+  `MissingTemplateParam` for the two-parameter form), while `HasOne`,
+  `HasMany` and `BelongsTo` take two (`HasOne<Model,$this>`). The pivot pair
+  stays `Pivot`/`'pivot'` unless `using()` names a custom pivot model
   — 2026-09-25.
 
 ## 8. Comments and suppressions
@@ -238,11 +277,12 @@ section 6 and stay in force until those land.
   value is typed for the mapper — 2026-09-25.
 - **9.3** A read model crosses the port as a Domain DTO built by the
   Infrastructure mapper from the loaded models: `VacancyPreviewPageDto`
-  (`list<VacancyPreviewDto>` + `total`) for a list read, `VacancyDetailDto`
-  (with `EmployerSummaryDto` / `InterviewerSummaryDto`) for a detail read —
-  so Presentation formats an object and each response shape (7.10) is
-  declared once, in its Resource. `JobRepositoryInterface::findPreviewsByIds`
-  still returns arrays and is the remaining case to migrate — 2026-09-25.
+  (`list<VacancyPreviewDto>` + `total`) for a paginated list read,
+  `VacancyDetailDto` (with `EmployerSummaryDto` / `InterviewerSummaryDto`)
+  for a detail read, `list<JobPreviewDto>` for a list read whose total is
+  only `count($items)` — the use case derives it there, so no page wrapper
+  is declared — and Presentation formats an object, each response shape
+  (7.10) declared once, in its Resource — 2026-09-25.
 - **9.4** Eloquent is not swapped for a raw query builder to avoid hydrating
   models: hydration applies the casts the response depends on (`posted_at` →
   ISO-8601 through `immutable_datetime`, `min_salary` → `int`), while the
@@ -268,3 +308,30 @@ section 6 and stay in force until those land.
   makes the first consumer's contract untrue; a key is added to a shared DTO
   only when the consumers already using it need that key too
   — 2026-09-25.
+
+## 10. Error handling
+
+- **10.1** Standard (framework) exceptions are handled centrally in
+  `bootstrap/app.php` (`withExceptions`): JSON rendering for `api/*`
+  (`shouldRenderJsonWhen`) plus the framework's own mapping — Laravel's
+  `ValidationException` → 422, `ModelNotFoundException` → 404,
+  `QueryException` and any other framework throwable → 500. A controller
+  never wraps these — 2026-09-25.
+- **10.2** A domain exception is caught in the controller, and only as the
+  exact class that endpoint expects — the detail route catches
+  `VacancyNotFoundException` and answers
+  `return new JsonResponse(['message' => $exception->getMessage()], 404)`,
+  while a route whose use case cannot fail this way has no `try` at all.
+  There is no catch-all: `catch (DomainException)`, `catch (\Exception)`,
+  `catch (Throwable)` and any shared exception helper are forbidden (10.4),
+  because an unexpected class is a bug and must surface as the framework's
+  500 instead of being answered as if it were expected — 2026-09-25.
+- **10.3** A validated uuid cannot reach `EntityId::fromString()`: the `uuid`
+  rule is stricter than `Ramsey\Uuid\Uuid::isValid` (it rejects `{uuid}` and
+  `urn:uuid:…`, the VO accepts them), so `InvalidUuidFormatException` stays a
+  422 from the FormRequest and 10.2 needs it only if that rule is ever
+  loosened — 2026-09-25.
+- **10.4** The response is written inline in the `catch` block — one
+  `new JsonResponse(['message' => $exception->getMessage()], $status)` per
+  expected exception, no shared responder — so the status of every failure
+  mode of an endpoint is visible where it is caught — 2026-09-25.

@@ -7,7 +7,7 @@ namespace App\Domain\DTOs;
 final readonly class VacancyPreviewPageDto
 {
     /**
-     * @param list<VacancyPreviewDto> $items
+     * @param array<int, VacancyPreviewDto> $items
      */
     public function __construct(
         public array $items,

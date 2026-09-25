@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\UseCases;
 
+use App\Domain\DTOs\JobPreviewDto;
 use App\Domain\Repositories\JobRepositoryInterface;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -16,19 +17,13 @@ final class GetJobsByIdsUseCase
 
     /**
      * @param list<string> $jobIds
-     * @return LengthAwarePaginator<int, array{
-     *     id: string,
-     *     title: string,
-     *     category: string,
-     *     sub_category: string|null,
-     *     parent_job_id: string|null,
-     *     parent_job_title: string|null,
-     * }>
+     * @return LengthAwarePaginator<int, JobPreviewDto>
      */
     public function handle(array $jobIds): LengthAwarePaginator
     {
-        $result = $this->jobRepository->findPreviewsByIds($jobIds);
+        $items = $this->jobRepository->findPreviewsByIds($jobIds);
+        $total = count($items);
 
-        return new LengthAwarePaginator($result['items'], $result['total'], max($result['total'], 1), 1);
+        return new LengthAwarePaginator($items, $total, max($total, 1), 1);
     }
 }

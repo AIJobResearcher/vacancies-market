@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Eloquents\Mappers;
 
+use App\Domain\DTOs\JobPreviewDto;
 use App\Domain\Entities\Job;
 use App\Domain\ValueObjects\EntityIds\JobId;
 use App\Domain\ValueObjects\EntityIds\RequirementId;
@@ -45,6 +46,22 @@ final class JobMapper extends AbstractMapper
             version: $model->version,
             deletedAt: $model->deleted_at,
             requirementIds: $requirementIds,
+        );
+    }
+
+    /**
+     * Builds the preview read model from a model selected through the alias
+     * list in `JobEloquentRepository::findPreviewsByIds()`.
+     */
+    public function toPreviewDto(JobModel $model): JobPreviewDto
+    {
+        return new JobPreviewDto(
+            id: $model->id,
+            title: $model->title,
+            category: $model->category,
+            subCategory: $model->sub_category,
+            parentJobId: $model->parent_job_id,
+            parentJobTitle: $model->parent_job_title,
         );
     }
 

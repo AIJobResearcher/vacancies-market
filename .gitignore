@@ -30,7 +30,10 @@ Homestead.json
 # ============================================================
 # Cache / Logs
 # ============================================================
-storage/
+storage/*
+!storage/app/
+!storage/framework/
+!storage/logs/
 app/storage/
 storage/*.key
 /storage/pail

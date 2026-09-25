@@ -25,6 +25,8 @@ use Override;
  * @property DateTimeImmutable $created_at
  * @property DateTimeImmutable $updated_at
  * @property-read Collection<int, JobRequirementModel> $requirements
+ * @property-read string|null $parent_job_title Present when the query selects
+ *     it through the `parent_jobs.title as parent_job_title` alias (9.2)
  */
 final class JobModel extends Model
 {

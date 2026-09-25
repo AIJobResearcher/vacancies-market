@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Application\UseCases;
 
 use App\Domain\DTOs\GetVacanciesByJobIdFilterDto;
+use App\Domain\DTOs\VacancyPreviewDto;
 use App\Domain\Repositories\VacancyRepositoryInterface;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -20,20 +21,7 @@ final class GetVacanciesByJobIdUseCase
     }
 
     /**
-     * @return LengthAwarePaginator<int, array{
-     *     id: string,
-     *     title: string,
-     *     employer_id: string,
-     *     employer_title: string,
-     *     min_salary: int,
-     *     max_salary: int|null,
-     *     country: string|null,
-     *     city: string|null,
-     *     employment_type: string,
-     *     workplace: string,
-     *     status: string,
-     *     posted_at: string,
-     * }>
+     * @return LengthAwarePaginator<int, VacancyPreviewDto>
      */
     public function handle(GetVacanciesByJobIdFilterDto $filter): LengthAwarePaginator
     {
@@ -42,6 +30,6 @@ final class GetVacanciesByJobIdUseCase
 
         $result = $this->vacancyRepository->searchPreviews($filter, $page, $perPage);
 
-        return new LengthAwarePaginator($result['items'], $result['total'], $perPage, $page);
+        return new LengthAwarePaginator($result->items, $result->total, $perPage, $page);
     }
 }

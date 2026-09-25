@@ -22,10 +22,13 @@ section 6 and stay in force until those land.
 
 - **2.1** Read-model methods live in the repository port; `findById` returns
   the aggregate and is reused inside them — 2026-09-21.
-- **2.2** A repository may return Eloquent models and model collections to
-  Application and Presentation; clause 1.2 of `laravel-standards.md`
-  ("repositories never return models or query builders") is deliberately
-  ignored here — 2026-09-24.
+- **2.2** Eloquent models stay an Infrastructure detail even though a
+  repository method may return them internally: clause 1.2 of
+  `laravel-standards.md` ("repositories never return models or query
+  builders") is deliberately ignored here, but no port or outer-layer
+  signature may name a model — deptrac allows Domain only `External`
+  (`skip_violations` is empty) and canonical DDD keeps the ORM out of the web
+  layer — so a port exposes arrays or Domain DTOs (9.3) — 2026-09-24.
 
 ## 3. Local environment
 
@@ -213,3 +216,55 @@ section 6 and stay in force until those land.
   a free-text description — so `@psalm-suppress A B` silences only `A` and
   the rest is decoration (three such lines lived in this codebase). Write
   `A, B, C` — 2026-09-25.
+
+## 9. Performance and data access
+
+- **9.1** No redundant work in the request path: every pass, copy or
+  conversion over a result set must earn its place, because the service runs
+  under load. A plain `foreach` beats the collection method that wraps it:
+  `array_values()` after `paginate()` is a no-op copy, `map(...)->all()` and
+  `Collection::toArray()` allocate an intermediate collection and a closure
+  call per item, while the loop writes straight into the result array (0.05
+  against 0.08 µs per item, measured) — so build a result array with a loop
+  wherever the loop stays as readable, and keep the row shape on the row
+  local (7.2), leaving the accumulator inferred as a `list` of that shape.
+  The ban on code that serves only the analyzer (7.3) extends to code that
+  serves nothing — 2026-09-25.
+- **9.2** Select only the columns the response needs; a value taken from a join
+  has no model property, so it is selected under its own alias
+  (`employers.title as employer_title`) and declared on the model
+  (`@property-read string $employer_title`, marked select-dependent) — the
+  read stays one round-trip without re-loading the row as a relation, and the
+  value is typed for the mapper — 2026-09-25.
+- **9.3** A read model crosses the port as a Domain DTO built by the
+  Infrastructure mapper from the loaded models: `VacancyPreviewPageDto`
+  (`list<VacancyPreviewDto>` + `total`) for a list read, `VacancyDetailDto`
+  (with `EmployerSummaryDto` / `InterviewerSummaryDto`) for a detail read —
+  so Presentation formats an object and each response shape (7.10) is
+  declared once, in its Resource. `JobRepositoryInterface::findPreviewsByIds`
+  still returns arrays and is the remaining case to migrate — 2026-09-25.
+- **9.4** Eloquent is not swapped for a raw query builder to avoid hydrating
+  models: hydration applies the casts the response depends on (`posted_at` →
+  ISO-8601 through `immutable_datetime`, `min_salary` → `int`), while the
+  builder would leak the database format into the API — 2026-09-25.
+- **9.5** A "latest of many" relation is `hasOne(...)->orderByDesc($column)`,
+  never `latestOfMany()`/`ofMany()`: the one-of-many subquery aggregates the
+  primary key with `MAX(...)`, which PostgreSQL rejects for uuid keys
+  (`function max(uuid) does not exist`). The ordered `hasOne` keeps the
+  intended semantics — one model, and the eager-load matcher takes the first
+  row of the ordered set per parent — 2026-09-25.
+- **9.5a** Dates cross the layers as `DateTimeImmutable` and are formatted once
+  in the Resource with `->format(DATE_ATOM)`; Carbon's `toJSON()`
+  (`2026-05-24T13:33:59.000000Z`) is not used, so every endpoint emits the
+  same `+00:00` form and the preview/detail formats cannot drift — 2026-09-25.
+- **9.6** A DTO is named for the representation it carries, never for the
+  route or method that returns it (`EmployerSummaryDto`, not
+  `GetVacancyByIdEmployerDto`), and it is reused wherever that exact shape is
+  needed: the same representation declared once per endpoint would drift,
+  which 7.10 forbids. Reuse is decided by the field set, not by the number of
+  consumers — as soon as one consumer needs one key more or one key less,
+  that is a second DTO, never an extra nullable field on the shared one,
+  because a shape widened to fit one more caller serves two masters (SRP) and
+  makes the first consumer's contract untrue; a key is added to a shared DTO
+  only when the consumers already using it need that key too
+  — 2026-09-25.

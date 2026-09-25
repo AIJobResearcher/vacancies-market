@@ -9,6 +9,7 @@ use DateTimeImmutable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Override;
 
 /**
@@ -18,6 +19,7 @@ use Override;
  * @property DateTimeImmutable $assigned_at
  * @property DateTimeImmutable|null $unassigned_at
  * @property int $version
+ * @property-read InterviewerModel $interviewer
  */
 final class InterviewerVacancyAssignmentModel extends Model
 {
@@ -59,5 +61,14 @@ final class InterviewerVacancyAssignmentModel extends Model
     protected static function newFactory(): InterviewerVacancyAssignmentModelFactory
     {
         return InterviewerVacancyAssignmentModelFactory::new();
+    }
+
+    /**
+     * @return BelongsTo<InterviewerModel,$this>
+     * @psalm-suppress PossiblyUnusedReturnValue
+     */
+    public function interviewer(): BelongsTo
+    {
+        return $this->belongsTo(InterviewerModel::class, 'interviewer_id');
     }
 }

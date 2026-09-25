@@ -10,7 +10,10 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Override;
 
 /**
@@ -36,6 +39,11 @@ use Override;
  * @property-read Collection<int, VacancyRequirementAssignmentModel> $requirementAssignments
  * @property-read Collection<int, VacancyJobAssignmentModel> $jobAssignments
  * @property-read Collection<int, VacancySourceModel> $sources
+ * @property-read EmployerModel $employer
+ * @property-read Collection<int, RequirementModel> $requirements
+ * @property-read InterviewerVacancyAssignmentModel|null $activeAssignment
+ * @property-read string $employer_title Present when the query selects it
+ *     through the `employers.title as employer_title` alias (9.2)
  */
 final class VacancyModel extends Model
 {
@@ -115,5 +123,39 @@ final class VacancyModel extends Model
     public function sources(): HasMany
     {
         return $this->hasMany(VacancySourceModel::class, 'vacancy_id');
+    }
+
+    /**
+     * @return BelongsTo<EmployerModel,$this>
+     * @psalm-suppress PossiblyUnusedReturnValue
+     */
+    public function employer(): BelongsTo
+    {
+        return $this->belongsTo(EmployerModel::class, 'employer_id');
+    }
+
+    /**
+     * @return BelongsToMany<RequirementModel,$this>
+     * @psalm-suppress PossiblyUnusedReturnValue
+     */
+    public function requirements(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            RequirementModel::class,
+            'vacancy_requirement_assignments',
+            'vacancy_id',
+            'requirement_id',
+        )->orderBy('requirements.title');
+    }
+
+    /**
+     * @return HasOne<InterviewerVacancyAssignmentModel,$this>
+     * @psalm-suppress PossiblyUnusedReturnValue
+     */
+    public function activeAssignment(): HasOne
+    {
+        return $this->hasOne(InterviewerVacancyAssignmentModel::class, 'vacancy_id')
+            ->whereNull('unassigned_at')
+            ->orderByDesc('assigned_at');
     }
 }

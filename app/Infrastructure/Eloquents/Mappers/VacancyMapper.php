@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Eloquents\Mappers;
 
+use App\Domain\DTOs\EmployerSummaryDto;
+use App\Domain\DTOs\InterviewerSummaryDto;
+use App\Domain\DTOs\VacancyDetailDto;
+use App\Domain\DTOs\VacancyPreviewDto;
 use App\Domain\Entities\Vacancy;
 use App\Domain\Entities\VacancyJobAssignment;
 use App\Domain\Entities\VacancyRequirementAssignment;
@@ -197,5 +201,78 @@ final class VacancyMapper extends AbstractMapper
             'external_urls' => array_values($entity->externalUrls()->toArray()),
             'internal_url' => $entity->internalUrl(),
         ];
+    }
+
+    /**
+     * Builds the preview read model from a model selected through
+     * `VacancyEloquentRepository::PREVIEW_COLUMNS`.
+     */
+    public function toPreviewDto(VacancyModel $model): VacancyPreviewDto
+    {
+        return new VacancyPreviewDto(
+            id: $model->id,
+            title: $model->title,
+            employerId: $model->employer_id,
+            employerTitle: $model->employer_title,
+            minSalary: $model->min_salary,
+            maxSalary: $model->max_salary,
+            country: $model->country,
+            city: $model->city,
+            employmentType: $model->employment_type,
+            workplace: $model->workplace,
+            status: $model->status,
+            postedAt: $model->posted_at,
+        );
+    }
+
+    /**
+     * Builds the detail read model from a model whose `employer`,
+     * `requirements` and `activeAssignment.interviewer` relations are loaded.
+     */
+    public function toDetailDto(VacancyModel $model): VacancyDetailDto
+    {
+        $requirements = [];
+        foreach ($model->requirements as $requirement) {
+            $requirements[] = $requirement->title;
+        }
+
+        $assignment = $model->activeAssignment;
+        $interviewer = $assignment === null ? null : $assignment->interviewer;
+
+        return new VacancyDetailDto(
+            id: $model->id,
+            title: $model->title,
+            employer: new EmployerSummaryDto(
+                id: $model->employer->id,
+                title: $model->employer->title,
+                description: $model->employer->description,
+                website: $model->employer->website,
+                email: $model->employer->email,
+                phone: $model->employer->phone,
+                logoUrl: $model->employer->logo_url,
+            ),
+            minSalary: $model->min_salary,
+            maxSalary: $model->max_salary,
+            country: $model->country,
+            city: $model->city,
+            employmentType: $model->employment_type,
+            workplace: $model->workplace,
+            status: $model->status,
+            postedAt: $model->posted_at,
+            description: $model->description,
+            requirements: $requirements,
+            internalUrl: $model->internal_url,
+            externalUrls: $model->external_urls,
+            interviewer: $interviewer === null ? null : new InterviewerSummaryDto(
+                id: $interviewer->id,
+                fullName: $interviewer->full_name,
+                position: $interviewer->position,
+                profileUrls: $interviewer->profile_urls,
+            ),
+            closedAt: $model->closed_at,
+            createdAt: $model->created_at,
+            updatedAt: $model->updated_at,
+            version: $model->version,
+        );
     }
 }

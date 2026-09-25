@@ -25,7 +25,8 @@ logs:
 
 # Runs all test suites and all static analysis tools.
 # Integration tests require the test database to be prepared (see db-test-prepare).
-# Markdown lint runs separately: `make test-md` (and as its own CI step).
+# Markdown lint is not part of this target: run `make test-md` (or `make test-static`,
+# which includes it) — it also runs as its own CI step.
 test: test-unit test-feature test-phpstan test-psalm test-phpcs test-deptrac
 	@echo "✅ All tests and static analysis checks passed"
 
@@ -77,7 +78,7 @@ test-deptrac:
 	docker-compose exec app vendor/bin/deptrac analyse
 
 # Run all static analysis tools together (optional convenience)
-test-static: test-phpstan test-psalm test-phpcs test-deptrac
+test-static: test-phpstan test-psalm test-phpcs test-deptrac test-md
 	@echo "✅ All static analysis checks passed"
 
 # ===== Markdown (documentation) linting =====

@@ -5,16 +5,14 @@ declare(strict_types=1);
 namespace App\Infrastructure\Eloquents\Repositories;
 
 use App\Domain\DTOs\GetVacanciesByJobIdFilterDto;
+use App\Domain\DTOs\VacancyDetailDto;
+use App\Domain\DTOs\VacancyPreviewPageDto;
 use App\Domain\Entities\Vacancy;
-use App\Domain\Entities\VacancyRequirementAssignment;
 use App\Domain\Exceptions\VersionConflictException;
 use App\Domain\Repositories\VacancyRepositoryInterface;
 use App\Domain\ValueObjects\EntityIds\VacancyId;
 use App\Infrastructure\Eloquents\Mappers\VacancyMapper;
-use App\Infrastructure\Eloquents\Models\EmployerModel;
-use App\Infrastructure\Eloquents\Models\InterviewerModel;
 use App\Infrastructure\Eloquents\Models\OutboxMessageModel;
-use App\Infrastructure\Eloquents\Models\RequirementModel;
 use App\Infrastructure\Eloquents\Models\VacancyJobAssignmentModel;
 use App\Infrastructure\Eloquents\Models\VacancyModel;
 use App\Infrastructure\Eloquents\Models\VacancyRequirementAssignmentModel;
@@ -77,31 +75,12 @@ final class VacancyEloquentRepository implements VacancyRepositoryInterface
         });
     }
 
-    /**
-     * @return array{
-     *     items: array<int, array{
-     *         id: string,
-     *         title: string,
-     *         employer_id: string,
-     *         employer_title: string,
-     *         min_salary: int,
-     *         max_salary: int|null,
-     *         country: string|null,
-     *         city: string|null,
-     *         employment_type: string,
-     *         workplace: string,
-     *         status: string,
-     *         posted_at: string,
-     *     }>,
-     *     total: int,
-     * }
-     */
     #[Override]
     public function searchPreviews(
         GetVacanciesByJobIdFilterDto $filter,
         int $page,
         int $perPage,
-    ): array {
+    ): VacancyPreviewPageDto {
         $query = VacancyModel::query();
 
         $this->applyPreviewFilters($query, $filter);
@@ -114,163 +93,23 @@ final class VacancyEloquentRepository implements VacancyRepositoryInterface
 
         $paginator = $query->paginate($perPage, ['*'], 'page', $page);
 
-        /** @var array<int, array{
-         *     id: string,
-         *     title: string,
-         *     employer_id: string,
-         *     employer_title: string,
-         *     min_salary: int,
-         *     max_salary: int|null,
-         *     country: string|null,
-         *     city: string|null,
-         *     employment_type: string,
-         *     workplace: string,
-         *     status: string,
-         *     posted_at: string,
-         * }> $items */
-        $items = array_values(
-            $paginator->getCollection()
-                ->map(static fn (VacancyModel $vacancy): array => $vacancy->toArray())
-                ->all()
-        );
+        $items = [];
 
-        return [
-            'items' => $items,
-            'total' => $paginator->total(),
-        ];
+        foreach ($paginator->getCollection() as $vacancy) {
+            $items[] = $this->mapper->toPreviewDto($vacancy);
+        }
+
+        return new VacancyPreviewPageDto($items, $paginator->total());
     }
 
-    /**
-     * @return array{
-     *     id: string,
-     *     title: string,
-     *     employer_id: string,
-     *     employer_title: string,
-     *     min_salary: int,
-     *     max_salary: int|null,
-     *     country: string|null,
-     *     city: string|null,
-     *     employment_type: string,
-     *     workplace: string,
-     *     status: string,
-     *     posted_at: string,
-     *     description: string|null,
-     *     requirements: list<string>,
-     *     internal_url: string|null,
-     *     external_urls: string[],
-     *     employer: array{
-     *         id: string,
-     *         title: string,
-     *         description: string|null,
-     *         website: string|null,
-     *         email: string|null,
-     *         phone: string|null,
-     *         logo_url: string|null,
-     *     },
-     *     interviewer: array{
-     *         id: string,
-     *         full_name: string,
-     *         position: string|null,
-     *         profile_urls: array<string, string>|null,
-     *     }|null,
-     *     closed_at: string|null,
-     *     created_at: string,
-     *     updated_at: string,
-     *     version: int,
-     * }|null
-     */
     #[Override]
-    public function findDetailById(VacancyId $id): ?array
+    public function findDetailById(VacancyId $id): ?VacancyDetailDto
     {
-        $vacancy = $this->findById($id);
+        $vacancy = VacancyModel::query()
+            ->with(['employer', 'requirements', 'activeAssignment.interviewer'])
+            ->find($id->value());
 
-        if ($vacancy === null) {
-            return null;
-        }
-
-        $employer = EmployerModel::query()->findOrFail($vacancy->employerId()->value());
-        $interviewer = $this->findActiveInterviewer($id->value());
-
-        return [
-            'id' => $vacancy->id()->value(),
-            'title' => $vacancy->title(),
-            'employer_id' => $vacancy->employerId()->value(),
-            'employer_title' => $employer->title,
-            'min_salary' => $vacancy->salary()->min(),
-            'max_salary' => $vacancy->salary()->max(),
-            'country' => $vacancy->country(),
-            'city' => $vacancy->city(),
-            'employment_type' => $vacancy->employmentType()->value,
-            'workplace' => $vacancy->workplace()->value,
-            'status' => $vacancy->status(),
-            'posted_at' => $vacancy->postedAt()->format(DATE_ATOM),
-            'description' => $vacancy->description(),
-            'requirements' => $this->findRequirementTitles($vacancy->requirementAssignments()),
-            'internal_url' => $vacancy->internalUrl(),
-            'external_urls' => $vacancy->externalUrls()->toArray(),
-            'employer' => [
-                'id' => $employer->id,
-                'title' => $employer->title,
-                'description' => $employer->description,
-                'website' => $employer->website,
-                'email' => $employer->email,
-                'phone' => $employer->phone,
-                'logo_url' => $employer->logo_url,
-            ],
-            'interviewer' => $interviewer === null ? null : [
-                'id' => $interviewer->id,
-                'full_name' => $interviewer->full_name,
-                'position' => $interviewer->position,
-                'profile_urls' => $interviewer->profile_urls,
-            ],
-            'closed_at' => $vacancy->closedAt()?->format(DATE_ATOM),
-            'created_at' => $vacancy->createdAt()->format(DATE_ATOM),
-            'updated_at' => $vacancy->updatedAt()->format(DATE_ATOM),
-            'version' => $vacancy->version(),
-        ];
-    }
-
-    private function findActiveInterviewer(string $vacancyId): ?InterviewerModel
-    {
-        $query = InterviewerModel::query();
-
-        $query->join(
-            'interviewer_vacancy_assignments',
-            'interviewer_vacancy_assignments.interviewer_id',
-            '=',
-            'interviewers.id'
-        )
-            ->where('interviewer_vacancy_assignments.vacancy_id', $vacancyId)
-            ->whereNull('interviewer_vacancy_assignments.unassigned_at')
-            ->orderByDesc('interviewer_vacancy_assignments.assigned_at');
-
-        return $query->first(['interviewers.*']);
-    }
-
-    /**
-     * @param VacancyRequirementAssignment[] $assignments
-     * @return list<string>
-     */
-    private function findRequirementTitles(array $assignments): array
-    {
-        $requirementIds = [];
-        foreach ($assignments as $assignment) {
-            $requirementIds[] = $assignment->getRequirementId()->value();
-        }
-
-        $query = RequirementModel::query();
-
-        $query->whereIn('id', $requirementIds)
-            ->orderBy('title');
-
-        $requirements = $query->get();
-
-        $titles = [];
-        foreach ($requirements as $requirement) {
-            $titles[] = $requirement->title;
-        }
-
-        return $titles;
+        return $vacancy === null ? null : $this->mapper->toDetailDto($vacancy);
     }
 
     /** @param Builder<VacancyModel> $query */

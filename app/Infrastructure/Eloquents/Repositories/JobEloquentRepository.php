@@ -47,19 +47,19 @@ final class JobEloquentRepository implements JobRepositoryInterface
         /** @var list<array<string, mixed>> $jobs */
         $jobs = JobModel::query()
             ->leftJoin(
-                'job_catalogue as parent_jobs',
+                'jobs as parent_jobs',
                 'parent_jobs.id',
                 '=',
-                'job_catalogue.parent_job_id'
+                'jobs.parent_job_id'
             )
-            ->whereIn('job_catalogue.id', $ids)
-            ->whereNull('job_catalogue.deleted_at')
+            ->whereIn('jobs.id', $ids)
+            ->whereNull('jobs.deleted_at')
             ->get([
-                'job_catalogue.id',
-                'job_catalogue.title',
-                'job_catalogue.category',
-                'job_catalogue.sub_category',
-                'job_catalogue.parent_job_id',
+                'jobs.id',
+                'jobs.title',
+                'jobs.category',
+                'jobs.sub_category',
+                'jobs.parent_job_id',
                 'parent_jobs.title as parent_job_title',
             ])
             ->toArray();

@@ -49,10 +49,6 @@
             "Composer\\Config::disableProcessTimeout",
             "php artisan pail --timeout=0"
         ],
-        "dev:queue": [
-            "Composer\\Config::disableProcessTimeout",
-            "php artisan queue:listen --tries=1 --timeout=0"
-        ],
         "dev:serve": [
             "Composer\\Config::disableProcessTimeout",
             "php artisan serve"

@@ -69,3 +69,13 @@ section 6; keep applying them until the standards land.
   `ON DELETE RESTRICT`, not `cascade`, because
   `docs/domain/bounded-contexts/vacancies-market.md` 6.7.3 forbids deleting a
   referenced Requirement — 2026-09-25.
+
+## 6. Migrations
+
+- **6.1** Migrations run only on an explicit request; the agent never starts
+  them on its own initiative — `migrate`, `migrate:fresh`, `migrate:rollback`
+  and `migrate --pretend` included — because they change shared state and can
+  destroy local data — 2026-09-25.
+- **6.2** Applying a schema change, and the `migrate:fresh` it needs when the
+  migration was already applied, is confirmed with the user before the run
+  — 2026-09-25.

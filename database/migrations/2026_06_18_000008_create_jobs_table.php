@@ -8,8 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Named "job_catalogue": Laravel reserves the "jobs" table for its queue.
-        Schema::create('job_catalogue', function (Blueprint $table): void {
+        Schema::create('jobs', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->string('title');
             $table->string('category');
@@ -27,6 +26,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('job_catalogue');
+        Schema::dropIfExists('jobs');
     }
 };

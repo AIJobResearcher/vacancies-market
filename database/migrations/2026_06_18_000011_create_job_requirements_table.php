@@ -14,7 +14,7 @@ return new class extends Migration
 
             $table->foreign('job_id')
                 ->references('id')
-                ->on('job_catalogue')
+                ->on('jobs')
                 ->onDelete('cascade');
 
             $table->foreign('requirement_id')

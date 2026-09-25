@@ -33,7 +33,7 @@ final class JobModel extends Model
     use HasUuids;
 
     /** @phpcsSuppress SlevomatCodingStandard.TypeHints.PropertyTypeHint */
-    protected $table = 'job_catalogue';
+    protected $table = 'jobs';
 
     /** @phpcsSuppress SlevomatCodingStandard.TypeHints.PropertyTypeHint */
     public $incrementing = false;

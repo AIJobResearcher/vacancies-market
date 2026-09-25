@@ -1,9 +1,13 @@
+# Agent Instructions
+
 ## 1. General
+
 - **Stack:** PHP 8.5, Laravel 13, PostgreSQL 16, Redis.
 - **Approaches:** Clean Architecture (DDD, event-driven, CQRS); GRASP, SOLID,
   YAGNI, KISS.
 
 ## 2. Documentation
+
 - Docs are not gospel; report contradictions to the user.
 - Key files (reference and Ubiquitous Language):
   `docs/domain/bounded-contexts/vacancies-market.md`,
@@ -15,6 +19,7 @@
   ask which side is authoritative before writing code.
 
 ## 3. Technical Requirements
+
 - Use current stack features (see 1), avoid outdated approaches; code must
   pass strict static analysis (phpcs PSR-12+Slevomat, phpstan 10, psalm 1).
 - Dependency direction: Presentation → Application → Domain; Domain must not
@@ -33,12 +38,14 @@
   fails with "Permission denied".
 
 ## 4. Code Quality
+
 - Before editing or writing any file, load and strictly obey its standard:
-   - Laravel code → `.ai-agent/standards/laravel-standards.md`
-   - PHP code → `.ai-agent/standards/php-standards.md`
-   - Text in `*.md` files → `.ai-agent/standards/md-files-standards.md`
+  - Laravel code → `.ai-agent/standards/laravel-standards.md`
+  - PHP code → `.ai-agent/standards/php-standards.md`
+  - Text in `*.md` files → `.ai-agent/standards/md-files-standards.md`
 
 ## 5. Token Efficiency
+
 - Ambiguous scope or design decision: ask at most one round, with options and
   a recommended default. Before changing code, state goal, affected
   files/layers, and chosen approach in at most five short bullets.
@@ -56,8 +63,8 @@
   framework source; prefer one search with up to four queries over repeated
   single searches; cap `web_fetch` to pages you will actually use and save
   conclusions, never raw page text, under `.ai-agent/artifacts/`.
-- Reply in a single short line: "Done — <files>" or "Done — <file>: <2-3
-  words>". Return diff hunks only. No explanations, rationale, summaries, or
+- Reply in a single short line: `Done — <files>` or `Done — <file>: <2-3
+  words>`. Return diff hunks only. No explanations, rationale, summaries, or
   restating; nothing else unless asked.
 - Do not generate tests, migrations, factories, docs, or extra code without
   explicit request. When tests are requested, follow patterns in `tests/`.
@@ -73,11 +80,13 @@
   `.ai-agent/artifacts/` and continue in a fresh session.
 
 ## 5a. Definition of done
+
 - A task is done only when its requested scope is fully addressed — no
   partial hand-offs expecting a follow-up. Ask on genuine blockers; otherwise
   complete it and report per Token Efficiency (see 5).
 
 ## 6. Limitations
+
 - Only the Vacancies Market service. Do not change API, architecture,
   existing files, configs (`phpcs.xml.dist`, `phpstan.neon`, `psalm.xml`,
   `composer.json`, etc.), dependencies, or documentation without explicit

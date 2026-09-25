@@ -1,6 +1,7 @@
 .PHONY: build up down exec logs test test-unit test-feature test-integration \
         test-coverage test-coverage-integration db-test-prepare \
-        test-phpstan test-psalm test-phpcs test-phpcbf test-deptrac test-static
+        test-phpstan test-psalm test-phpcs test-phpcbf test-deptrac test-static \
+        test-md
 
 # ===== Infrastructure =====
 
@@ -24,6 +25,7 @@ logs:
 
 # Runs all test suites and all static analysis tools.
 # Integration tests require the test database to be prepared (see db-test-prepare).
+# Markdown lint runs separately: `make test-md` (and as its own CI step).
 test: test-unit test-feature test-phpstan test-psalm test-phpcs test-deptrac
 	@echo "✅ All tests and static analysis checks passed"
 
@@ -77,3 +79,14 @@ test-deptrac:
 # Run all static analysis tools together (optional convenience)
 test-static: test-phpstan test-psalm test-phpcs test-deptrac
 	@echo "✅ All static analysis checks passed"
+
+# ===== Markdown (documentation) linting =====
+
+# Lints every Markdown file tracked by git; rules live in .markdownlint.json.
+MD_CONFIG ?= .markdownlint.json
+MD_FILES := $(shell git ls-files '*.md')
+MARKDOWNLINT ?= npx --yes markdownlint-cli2@0.23.3
+
+test-md:
+	$(MARKDOWNLINT) --config $(MD_CONFIG) $(MD_FILES)
+	@echo "✅ Markdown lint passed"

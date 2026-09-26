@@ -7,6 +7,7 @@ namespace App\Infrastructure\Providers;
 use App\Infrastructure\Eloquents\Mappers\EmployerMapper;
 use App\Infrastructure\Eloquents\Mappers\InterviewerMapper;
 use App\Infrastructure\Eloquents\Mappers\JobMapper;
+use App\Infrastructure\Eloquents\Mappers\LocationMapper;
 use App\Infrastructure\Eloquents\Mappers\PortalMapper;
 use App\Infrastructure\Eloquents\Mappers\RequirementMapper;
 use App\Infrastructure\Eloquents\Mappers\VacancyMapper;
@@ -24,6 +25,7 @@ final class MapperServiceProvider extends ServiceProvider implements DeferrableP
         RequirementMapper::class,
         InterviewerMapper::class,
         PortalMapper::class,
+        LocationMapper::class,
     ];
 
     /** @return list<class-string> */

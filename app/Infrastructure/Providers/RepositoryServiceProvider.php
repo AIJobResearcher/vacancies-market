@@ -7,12 +7,14 @@ namespace App\Infrastructure\Providers;
 use App\Domain\Repositories\EmployerRepositoryInterface;
 use App\Domain\Repositories\InterviewerRepositoryInterface;
 use App\Domain\Repositories\JobRepositoryInterface;
+use App\Domain\Repositories\LocationRepositoryInterface;
 use App\Domain\Repositories\PortalRepositoryInterface;
 use App\Domain\Repositories\RequirementRepositoryInterface;
 use App\Domain\Repositories\VacancyRepositoryInterface;
 use App\Infrastructure\Eloquents\Repositories\EmployerEloquentRepository;
 use App\Infrastructure\Eloquents\Repositories\InterviewerEloquentRepository;
 use App\Infrastructure\Eloquents\Repositories\JobEloquentRepository;
+use App\Infrastructure\Eloquents\Repositories\LocationEloquentRepository;
 use App\Infrastructure\Eloquents\Repositories\PortalEloquentRepository;
 use App\Infrastructure\Eloquents\Repositories\RequirementEloquentRepository;
 use App\Infrastructure\Eloquents\Repositories\VacancyEloquentRepository;
@@ -30,6 +32,7 @@ final class RepositoryServiceProvider extends ServiceProvider implements Deferra
         RequirementRepositoryInterface::class => RequirementEloquentRepository::class,
         InterviewerRepositoryInterface::class => InterviewerEloquentRepository::class,
         PortalRepositoryInterface::class => PortalEloquentRepository::class,
+        LocationRepositoryInterface::class => LocationEloquentRepository::class,
     ];
 
     /** @return list<class-string> */

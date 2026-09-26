@@ -76,6 +76,15 @@ section 6 and stay in force until those land.
 - **6.2** Applying a schema change, and the `migrate:fresh` it needs when the
   migration was already applied, is confirmed with the user before the run
   — 2026-09-25.
+- **6.3** A primary key comes from an incrementing column — `$table->id()` or
+  `$table->increments('id')`, which PostgreSQL renders `id serial primary key`
+  — or, for a key the application supplies, from the blueprint command
+  `$table->primary('id')`. Never from the column modifier
+  (`$table->unsignedInteger('id')->primary()`): the PostgreSQL grammar inlines
+  `primary key` only for auto-increment serial columns
+  (`PostgresGrammar::modifyIncrement()`), so the modifier leaves the table
+  without a PK and a `foreign()` in the same closure fails with "there is no
+  unique constraint matching given keys for referenced table" — 2026-09-25.
 
 ## 7. Validation and static typing
 

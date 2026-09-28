@@ -9,7 +9,7 @@ use App\Domain\ValueObjects\EntityIds\JobId;
 use App\Domain\ValueObjects\EntityIds\RequirementId;
 use App\Infrastructure\Eloquents\Mappers\JobMapper;
 use App\Infrastructure\Eloquents\Models\JobModel;
-use App\Infrastructure\Eloquents\Models\JobRequirementModel;
+use App\Infrastructure\Eloquents\Models\RequirementModel;
 use DateTimeImmutable;
 use Illuminate\Support\Collection;
 use Tests\TestCase;
@@ -35,7 +35,7 @@ final class JobMapperTest extends TestCase
     public function testToDomainRestoresRequirementIdsFromLoadedRelation(): void
     {
         $model = $this->model();
-        $model->setRelation('requirements', new Collection([$this->requirementRow($model)]));
+        $model->setRelation('requirements', new Collection([$this->requirementRow()]));
 
         $job = (new JobMapper())->toDomain($model);
 
@@ -87,11 +87,10 @@ final class JobMapperTest extends TestCase
         return $model;
     }
 
-    private function requirementRow(JobModel $model): JobRequirementModel
+    private function requirementRow(): RequirementModel
     {
-        $row = new JobRequirementModel();
-        $row->job_id = $model->id;
-        $row->requirement_id = '44444444-4444-4444-4444-444444444444';
+        $row = new RequirementModel();
+        $row->id = '44444444-4444-4444-4444-444444444444';
 
         return $row;
     }

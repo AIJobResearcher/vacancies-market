@@ -21,9 +21,8 @@ final class GetJobsByIdsUseCase
      */
     public function handle(array $jobIds): LengthAwarePaginator
     {
-        $items = $this->jobRepository->findPreviewsByIds($jobIds);
-        $total = count($items);
+        $page = $this->jobRepository->findPreviewsByIds($jobIds);
 
-        return new LengthAwarePaginator($items, $total, max($total, 1), 1);
+        return new LengthAwarePaginator($page->items, $page->total, max($page->total, 1), 1);
     }
 }

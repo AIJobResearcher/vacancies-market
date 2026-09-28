@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Eloquents\Repositories;
 
-use App\Domain\Entities\Location;
 use App\Domain\Repositories\LocationRepositoryInterface;
 use App\Infrastructure\Eloquents\Mappers\LocationMapper;
 use App\Infrastructure\Eloquents\Models\LocationModel;
@@ -32,22 +31,5 @@ final class LocationEloquentRepository implements LocationRepositoryInterface
         }
 
         return $result;
-    }
-
-    #[Override]
-    public function findById(int $id): ?Location
-    {
-        $model = LocationModel::query()->find($id);
-
-        return $model === null ? null : $this->mapper->toDomain($model);
-    }
-
-    #[Override]
-    public function save(Location $location): void
-    {
-        LocationModel::query()->updateOrCreate(
-            ['id' => $location->id()],
-            $this->mapper->toPersistenceState($location),
-        );
     }
 }

@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Providers;
 
-use App\Infrastructure\Eloquents\Mappers\EmployerMapper;
+use App\Infrastructure\Eloquents\Mappers\ContentMapper;
 use App\Infrastructure\Eloquents\Mappers\InterviewerMapper;
 use App\Infrastructure\Eloquents\Mappers\JobMapper;
 use App\Infrastructure\Eloquents\Mappers\LocationMapper;
 use App\Infrastructure\Eloquents\Mappers\PortalMapper;
 use App\Infrastructure\Eloquents\Mappers\RequirementMapper;
+use App\Infrastructure\Eloquents\Mappers\SourceMapper;
 use App\Infrastructure\Eloquents\Mappers\VacancyMapper;
 use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Support\ServiceProvider;
@@ -20,12 +21,13 @@ final class MapperServiceProvider extends ServiceProvider implements DeferrableP
     /** @var list<class-string> */
     private const array MAPPERS = [
         VacancyMapper::class,
-        EmployerMapper::class,
         JobMapper::class,
         RequirementMapper::class,
         InterviewerMapper::class,
         PortalMapper::class,
         LocationMapper::class,
+        SourceMapper::class,
+        ContentMapper::class,
     ];
 
     /** @return list<class-string> */

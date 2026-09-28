@@ -7,204 +7,175 @@ namespace App\Domain\Entities;
 use App\Domain\Enums\EmploymentTypeEnum;
 use App\Domain\Enums\VacancyStatusEnum;
 use App\Domain\Enums\WorkplaceEnum;
-use App\Domain\Events\DomainEvent;
-use App\Domain\Events\VacancyClosedEvent;
-use App\Domain\Events\VacancyImportedEvent;
-use App\Domain\Events\VacancyMergedEvent;
-use App\Domain\Events\VacancyUpdatedEvent;
 use App\Domain\Exceptions\StateConflictException\JobAlreadyAssignedException;
 use App\Domain\Exceptions\StateConflictException\JobNotAssignedException;
 use App\Domain\Exceptions\StateConflictException\RequirementAlreadyAssignedException;
 use App\Domain\Exceptions\StateConflictException\RequirementNotAssignedException;
+use App\Domain\Exceptions\StateConflictException\SourceNotAssignedException;
 use App\Domain\Exceptions\StateConflictException\VacancyAlreadyClosedException;
 use App\Domain\Exceptions\StateConflictException\VacancyAlreadyOpenException;
+use App\Domain\Exceptions\ValidationException\SalaryMaxLessThanMinException;
+use App\Domain\Exceptions\ValidationException\SalaryMaxNegativeException;
+use App\Domain\Exceptions\ValidationException\SalaryMinNegativeException;
+use App\Domain\Exceptions\ValidationException\VacancyRequiresSourceException;
 use App\Domain\Exceptions\ValidationException\VacancyTitleEmptyException;
 use App\Domain\ValueObjects\EntityIds\EmployerId;
 use App\Domain\ValueObjects\EntityIds\JobId;
 use App\Domain\ValueObjects\EntityIds\RequirementId;
+use App\Domain\ValueObjects\EntityIds\SourceId;
 use App\Domain\ValueObjects\EntityIds\VacancyId;
-use App\Domain\ValueObjects\EntityIds\VacancyJobAssignmentId;
-use App\Domain\ValueObjects\EntityIds\VacancyRequirementAssignmentId;
-use App\Domain\ValueObjects\ExternalUrls;
-use App\Domain\ValueObjects\Salary;
 use DateTimeImmutable;
 
 final class Vacancy
 {
-    /** @var DomainEvent[] */
-    private array $events = [];
-
+    /**
+     * @param list<EmploymentTypeEnum> $employmentTypes
+     * @param list<WorkplaceEnum> $workplaces
+     * @param list<int> $researcherLocationIds
+     * @param list<RequirementId> $requirementIds
+     * @param list<JobId> $jobIds
+     * @param list<Source> $sources
+     */
     private function __construct(
         private readonly VacancyId $id,
         private readonly EmployerId $employerId,
         private string $title,
-        private ?string $description,
-        private Salary $salary,
+        private int $minSalary,
+        private ?int $maxSalary,
         private VacancyStatusEnum $status,
-        private ?string $country,
-        private ?string $city,
-        private EmploymentTypeEnum $employmentType,
-        private WorkplaceEnum $workplace,
-        private DateTimeImmutable $postedAt,
+        private array $employmentTypes,
+        private array $workplaces,
+        private array $researcherLocationIds,
         private DateTimeImmutable $createdAt,
         private DateTimeImmutable $updatedAt,
         private ?DateTimeImmutable $closedAt,
         private int $version,
-        private ExternalUrls $externalUrls,
-        private ?string $internalUrl = null,
-        /** @var VacancyRequirementAssignment[] */
-        private array $requirementAssignments = [],
-        /** @var VacancyJobAssignment[] */
-        private array $jobAssignments = [],
-        /** @var VacancySource[] */
+        private array $requirementIds = [],
+        private array $jobIds = [],
         private array $sources = []
     ) {
     }
 
     /**
      * Hydration entry point: restores a persisted aggregate as-is.
-     * Does NOT run business validation, does NOT apply creation defaults,
-     * and does NOT record any domain event. Infrastructure mappers are the
-     * only intended callers.
+     * Does NOT run business validation and does NOT apply creation defaults.
+     * Infrastructure mappers are the only intended callers.
      *
-     * @param VacancyRequirementAssignment[] $requirementAssignments
-     * @param VacancyJobAssignment[] $jobAssignments
-     * @param VacancySource[] $sources
+     * @param list<EmploymentTypeEnum> $employmentTypes
+     * @param list<WorkplaceEnum> $workplaces
+     * @param list<int> $researcherLocationIds
+     * @param list<RequirementId> $requirementIds
+     * @param list<JobId> $jobIds
+     * @param list<Source> $sources
      */
     public static function reconstitute(
         VacancyId $id,
         EmployerId $employerId,
         string $title,
-        ?string $description,
-        Salary $salary,
+        int $minSalary,
+        ?int $maxSalary,
         VacancyStatusEnum $status,
-        ?string $country,
-        ?string $city,
-        EmploymentTypeEnum $employmentType,
-        WorkplaceEnum $workplace,
-        DateTimeImmutable $postedAt,
+        array $employmentTypes,
+        array $workplaces,
+        array $researcherLocationIds,
         DateTimeImmutable $createdAt,
         DateTimeImmutable $updatedAt,
         ?DateTimeImmutable $closedAt,
         int $version,
-        ExternalUrls $externalUrls,
-        ?string $internalUrl = null,
-        array $requirementAssignments = [],
-        array $jobAssignments = [],
+        array $requirementIds = [],
+        array $jobIds = [],
         array $sources = []
     ): self {
         return new self(
             $id,
             $employerId,
             $title,
-            $description,
-            $salary,
+            $minSalary,
+            $maxSalary,
             $status,
-            $country,
-            $city,
-            $employmentType,
-            $workplace,
-            $postedAt,
+            $employmentTypes,
+            $workplaces,
+            $researcherLocationIds,
             $createdAt,
             $updatedAt,
             $closedAt,
             $version,
-            $externalUrls,
-            $internalUrl,
-            $requirementAssignments,
-            $jobAssignments,
+            $requirementIds,
+            $jobIds,
             $sources
         );
     }
 
+    /**
+     * @param list<EmploymentTypeEnum> $employmentTypes
+     * @param list<WorkplaceEnum> $workplaces
+     * @param list<int> $researcherLocationIds
+     */
     public static function create(
         VacancyId $id,
         EmployerId $employerId,
         string $title,
-        string $description,
-        Salary $salary,
-        ?string $country,
-        ?string $city,
-        EmploymentTypeEnum $employmentType,
-        WorkplaceEnum $workplace,
-        DateTimeImmutable $postedAt,
-        ExternalUrls $externalUrls,
-        ?string $internalUrl = null,
-        ?string $correlationId = null
+        int $minSalary = 0,
+        ?int $maxSalary = null,
+        array $employmentTypes = [],
+        array $workplaces = [],
+        array $researcherLocationIds = [],
     ): self {
         if (trim($title) === '') {
             throw new VacancyTitleEmptyException();
         }
 
+        self::assertSalary($minSalary, $maxSalary);
+
         $now = new DateTimeImmutable();
-        $vacancy = new self(
+
+        return new self(
             $id,
             $employerId,
             trim($title),
-            $description,
-            $salary,
+            $minSalary,
+            $maxSalary,
             VacancyStatusEnum::OPEN,
-            $country,
-            $city,
-            $employmentType,
-            $workplace,
-            $postedAt,
+            $employmentTypes,
+            $workplaces,
+            $researcherLocationIds,
             $now,
             $now,
             null,
-            1,
-            $externalUrls,
-            $internalUrl
+            1
         );
-        $vacancy->recordEvent(
-            new VacancyImportedEvent(
-                $id->value(),
-                $now,
-                $correlationId,
-                $vacancy->toArray()
-            )
-        );
-
-        return $vacancy;
     }
 
+    /**
+     * @param list<EmploymentTypeEnum>|null $employmentTypes
+     * @param list<WorkplaceEnum>|null $workplaces
+     * @param list<int>|null $researcherLocationIds
+     */
     public function updateDetails(
         ?string $title = null,
-        ?string $description = null,
-        ?Salary $salary = null,
-        ?string $country = null,
-        ?string $city = null,
-        ?EmploymentTypeEnum $employmentType = null,
-        ?WorkplaceEnum $workplace = null,
-        ?DateTimeImmutable $postedAt = null,
-        ?ExternalUrls $externalUrls = null,
-        ?string $internalUrl = null
+        ?int $minSalary = null,
+        ?int $maxSalary = null,
+        ?array $employmentTypes = null,
+        ?array $workplaces = null,
+        ?array $researcherLocationIds = null
     ): void {
         if ($title !== null && trim($title) === '') {
             throw new VacancyTitleEmptyException();
         }
 
+        $minSalary ??= $this->minSalary;
+        $maxSalary ??= $this->maxSalary;
+        self::assertSalary($minSalary, $maxSalary);
+
         $this->title = $title !== null ? trim($title) : $this->title;
-        $this->description = $description ?? $this->description;
-        $this->salary = $salary ?? $this->salary;
-        $this->country = $country ?? $this->country;
-        $this->city = $city ?? $this->city;
-        $this->employmentType = $employmentType ?? $this->employmentType;
-        $this->workplace = $workplace ?? $this->workplace;
-        $this->postedAt = $postedAt ?? $this->postedAt;
-        $this->externalUrls = $externalUrls ?? $this->externalUrls;
-        $this->internalUrl = $internalUrl ?? $this->internalUrl;
+        $this->minSalary = $minSalary;
+        $this->maxSalary = $maxSalary;
+        $this->employmentTypes = $employmentTypes ?? $this->employmentTypes;
+        $this->workplaces = $workplaces ?? $this->workplaces;
+        $this->researcherLocationIds = $researcherLocationIds ?? $this->researcherLocationIds;
 
         $this->updatedAt = new DateTimeImmutable();
         $this->version++;
-        $this->recordEvent(
-            new VacancyUpdatedEvent(
-                $this->id->value(),
-                $this->updatedAt,
-                null, // correlationId can be passed if needed
-                $this->toArray()
-            )
-        );
     }
 
     public function close(): void
@@ -216,18 +187,11 @@ final class Vacancy
         $this->closedAt = new DateTimeImmutable();
         $this->updatedAt = $this->closedAt;
         $this->version++;
-        $this->recordEvent(
-            new VacancyClosedEvent(
-                $this->id->value(),
-                $this->closedAt,
-                null
-            )
-        );
     }
 
     /**
-     * Reopens a closed vacancy. Only an approved external change (VacancyUpdated)
-     * may trigger this; it is never invoked by a local command of this context.
+     * Reopens a closed vacancy. Only an approved external change may
+     * trigger this; it is never invoked by a local command of this context.
      */
     public function reopen(): void
     {
@@ -238,46 +202,26 @@ final class Vacancy
         $this->closedAt = null;
         $this->updatedAt = new DateTimeImmutable();
         $this->version++;
-        $this->recordEvent(
-            new VacancyUpdatedEvent(
-                $this->id->value(),
-                $this->updatedAt,
-                null,
-                $this->toArray()
-            )
-        );
     }
 
-    /** @param string[] $mergedIds */
-    public function mergeFrom(Vacancy $other, array $mergedIds): void
+    public function mergeFrom(Vacancy $other): void
     {
         // Take canonical fields from $other (the source of truth after merge)
         $this->title = $other->title;
-        $this->description = $other->description;
-        $this->salary = $other->salary;
-        $this->country = $other->country;
-        $this->city = $other->city;
-        $this->employmentType = $other->employmentType;
-        $this->workplace = $other->workplace;
-        $this->externalUrls = $other->externalUrls;
-        $this->internalUrl = $other->internalUrl;
+        $this->minSalary = $other->minSalary;
+        $this->maxSalary = $other->maxSalary;
+        $this->employmentTypes = $other->employmentTypes;
+        $this->workplaces = $other->workplaces;
+        $this->researcherLocationIds = $other->researcherLocationIds;
 
-        foreach ($other->requirementAssignments as $assignment) {
-            if (!$this->hasRequirement($assignment->getRequirementId())) {
-                $this->attachRequirement($assignment->getRequirementId());
+        foreach ($other->requirementIds as $requirementId) {
+            if (! $this->hasRequirement($requirementId)) {
+                $this->attachRequirement($requirementId);
             }
         }
 
         $this->updatedAt = new DateTimeImmutable();
         $this->version++;
-        $this->recordEvent(
-            new VacancyMergedEvent(
-                $this->id->value(),
-                $this->updatedAt,
-                null,
-                $mergedIds
-            )
-        );
     }
 
     public function addRequirement(RequirementId $requirementId): void
@@ -293,10 +237,10 @@ final class Vacancy
 
     public function removeRequirement(RequirementId $requirementId): void
     {
-        foreach ($this->requirementAssignments as $key => $assignment) {
-            if ($assignment->getRequirementId()->equals($requirementId)) {
-                unset($this->requirementAssignments[$key]);
-                $this->requirementAssignments = array_values($this->requirementAssignments);
+        foreach ($this->requirementIds as $key => $assignedId) {
+            if ($assignedId->equals($requirementId)) {
+                unset($this->requirementIds[$key]);
+                $this->requirementIds = array_values($this->requirementIds);
                 $this->updatedAt = new DateTimeImmutable();
                 $this->version++;
 
@@ -307,69 +251,39 @@ final class Vacancy
         throw new RequirementNotAssignedException($requirementId->value());
     }
 
-    /** @param RequirementId[] $requirementIds */
-    public function syncRequirements(array $requirementIds): void
+    public function assignToJob(JobId $jobId): void
     {
-        $targetIds = [];
-        foreach ($requirementIds as $requirementId) {
-            $targetIds[$requirementId->value()] = $requirementId;
+        if ($this->hasJob($jobId)) {
+            throw new JobAlreadyAssignedException($jobId->value());
         }
 
-        foreach ($this->requirementAssignments as $assignment) {
-            $assignedId = $assignment->getRequirementId();
-            if (!isset($targetIds[$assignedId->value()])) {
-                $this->removeRequirement($assignedId);
-            }
-        }
-
-        foreach ($targetIds as $requirementId) {
-            if (!$this->hasRequirement($requirementId)) {
-                $this->addRequirement($requirementId);
-            }
-        }
-    }
-
-    public function assignToJob(JobId $jobId, ?int $relevanceScore = null): void
-    {
-        foreach ($this->jobAssignments as $assignment) {
-            if ($assignment->jobId()->equals($jobId) && $assignment->isActive()) {
-                throw new JobAlreadyAssignedException($jobId->value());
-            }
-        }
-        $assignment = new VacancyJobAssignment(
-            VacancyJobAssignmentId::generate(),
-            $this->id,
-            $jobId,
-            new DateTimeImmutable(),
-            $relevanceScore
-        );
-        $this->jobAssignments[] = $assignment;
+        $this->jobIds[] = $jobId;
         $this->updatedAt = new DateTimeImmutable();
         $this->version++;
     }
 
     public function unassignFromJob(JobId $jobId): void
     {
-        foreach ($this->jobAssignments as $assignment) {
-            if ($assignment->jobId()->equals($jobId) && $assignment->isActive()) {
-                $assignment->deactivate();
+        foreach ($this->jobIds as $key => $assignedId) {
+            if ($assignedId->equals($jobId)) {
+                unset($this->jobIds[$key]);
+                $this->jobIds = array_values($this->jobIds);
                 $this->updatedAt = new DateTimeImmutable();
                 $this->version++;
 
                 return;
             }
         }
+
         throw new JobNotAssignedException($jobId->value());
     }
 
-    public function addSource(VacancySource $source): void
+    public function addSource(Source $source): void
     {
         foreach ($this->sources as $existing) {
-            if (
-                $existing->sourceKey() === $source->sourceKey()
-                && $existing->externalVacancyId() === $source->externalVacancyId()
-            ) {
-                $existing->updateLastSeenAt(new DateTimeImmutable());
+            if ($existing->externalUrl() === $source->externalUrl()) {
+                $existing->refresh($source->portalId(), $source->title(), $source->postedAt());
+                $this->updatedAt = new DateTimeImmutable();
                 $this->version++;
 
                 return;
@@ -378,6 +292,40 @@ final class Vacancy
         $this->sources[] = $source;
         $this->updatedAt = new DateTimeImmutable();
         $this->version++;
+    }
+
+    public function updateSource(Source $source): void
+    {
+        foreach ($this->sources as $key => $existing) {
+            if ($existing->id()->equals($source->id())) {
+                $this->sources[$key] = $source;
+                $this->updatedAt = new DateTimeImmutable();
+                $this->version++;
+
+                return;
+            }
+        }
+
+        throw new SourceNotAssignedException($source->id()->value());
+    }
+
+    public function removeSource(SourceId $sourceId): void
+    {
+        foreach ($this->sources as $key => $existing) {
+            if ($existing->id()->equals($sourceId)) {
+                if (count($this->sources) === 1) {
+                    throw new VacancyRequiresSourceException($this->id->value());
+                }
+                unset($this->sources[$key]);
+                $this->sources = array_values($this->sources);
+                $this->updatedAt = new DateTimeImmutable();
+                $this->version++;
+
+                return;
+            }
+        }
+
+        throw new SourceNotAssignedException($sourceId->value());
     }
 
     public function id(): VacancyId
@@ -405,39 +353,32 @@ final class Vacancy
         return $this->title;
     }
 
-    public function description(): ?string
+    public function minSalary(): int
     {
-        return $this->description;
+        return $this->minSalary;
     }
 
-    public function salary(): Salary
+    public function maxSalary(): ?int
     {
-        return $this->salary;
+        return $this->maxSalary;
     }
 
-    public function country(): ?string
+    /** @return list<EmploymentTypeEnum> */
+    public function employmentTypes(): array
     {
-        return $this->country;
+        return $this->employmentTypes;
     }
 
-    public function city(): ?string
+    /** @return list<WorkplaceEnum> */
+    public function workplaces(): array
     {
-        return $this->city;
+        return $this->workplaces;
     }
 
-    public function employmentType(): EmploymentTypeEnum
+    /** @return list<int> */
+    public function researcherLocationIds(): array
     {
-        return $this->employmentType;
-    }
-
-    public function workplace(): WorkplaceEnum
-    {
-        return $this->workplace;
-    }
-
-    public function postedAt(): DateTimeImmutable
-    {
-        return $this->postedAt;
+        return $this->researcherLocationIds;
     }
 
     public function createdAt(): DateTimeImmutable
@@ -455,29 +396,19 @@ final class Vacancy
         return $this->closedAt;
     }
 
-    public function externalUrls(): ExternalUrls
+    /** @return list<RequirementId> */
+    public function requirementIds(): array
     {
-        return $this->externalUrls;
+        return $this->requirementIds;
     }
 
-    public function internalUrl(): ?string
+    /** @return list<JobId> */
+    public function jobIds(): array
     {
-        return $this->internalUrl;
+        return $this->jobIds;
     }
 
-    /** @return VacancyRequirementAssignment[] */
-    public function requirementAssignments(): array
-    {
-        return $this->requirementAssignments;
-    }
-
-    /** @return VacancyJobAssignment[] */
-    public function jobAssignments(): array
-    {
-        return $this->jobAssignments;
-    }
-
-    /** @return VacancySource[] */
+    /** @return list<Source> */
     public function sources(): array
     {
         return $this->sources;
@@ -488,22 +419,27 @@ final class Vacancy
      *     id: string,
      *     employer_id: string,
      *     title: string,
-     *     description: string|null,
-     *     salary: array{min: int, max: int|null, currency: string},
+     *     min_salary: int,
+     *     max_salary: int|null,
      *     status: string,
-     *     country: string|null,
-     *     city: string|null,
-     *     employment_type: string,
-     *     workplace: string,
-     *     posted_at: string,
+     *     employment_types: list<string>,
+     *     workplaces: list<string>,
+     *     researcher_location_ids: list<int>,
      *     created_at: string,
      *     updated_at: string,
      *     closed_at: string|null,
      *     version: int,
-     *     external_urls: string[],
-     *     internal_url: string|null,
      *     requirements: string[],
-     *     jobs: string[]
+     *     jobs: string[],
+     *     sources: list<array{
+     *         id: string,
+     *         portal_id: string,
+     *         external_vacancy_id: string|null,
+     *         external_url: string,
+     *         title: string,
+     *         posted_at: string,
+     *         contents: list<array{id: string, type: string, value: string}>
+     *     }>
      * }
      */
     public function toArray(): array
@@ -512,52 +448,65 @@ final class Vacancy
             'id' => $this->id->value(),
             'employer_id' => $this->employerId->value(),
             'title' => $this->title,
-            'description' => $this->description,
-            'salary' => [
-                'min' => $this->salary->min(),
-                'max' => $this->salary->max(),
-                'currency' => $this->salary->currency(),
-            ],
+            'min_salary' => $this->minSalary,
+            'max_salary' => $this->maxSalary,
             'status' => $this->status->value,
-            'country' => $this->country,
-            'city' => $this->city,
-            'employment_type' => $this->employmentType->value,
-            'workplace' => $this->workplace->value,
-            'posted_at' => $this->postedAt->format(DATE_ATOM),
+            'employment_types' => array_map(
+                static fn (EmploymentTypeEnum $type): string => $type->value,
+                $this->employmentTypes,
+            ),
+            'workplaces' => array_map(
+                static fn (WorkplaceEnum $workplace): string => $workplace->value,
+                $this->workplaces,
+            ),
+            'researcher_location_ids' => $this->researcherLocationIds,
             'created_at' => $this->createdAt->format(DATE_ATOM),
             'updated_at' => $this->updatedAt->format(DATE_ATOM),
             'closed_at' => $this->closedAt?->format(DATE_ATOM),
             'version' => $this->version,
-            'external_urls' => $this->externalUrls->toArray(),
-            'internal_url' => $this->internalUrl,
-            'requirements' => array_map(fn ($a) => $a->getRequirementId()->value(), $this->requirementAssignments),
-            'jobs' => array_map(fn ($a) => $a->jobId()->value(), $this->jobAssignments),
+            'requirements' => array_map(
+                static fn (RequirementId $requirementId): string => $requirementId->value(),
+                $this->requirementIds,
+            ),
+            'jobs' => array_map(
+                static fn (JobId $jobId): string => $jobId->value(),
+                $this->jobIds,
+            ),
+            'sources' => array_map(
+                static fn (Source $source): array => $source->toArray(),
+                $this->sources,
+            ),
         ];
     }
 
-    /** @return DomainEvent[] */
-    public function releaseEvents(): array
+    private static function assertSalary(int $minSalary, ?int $maxSalary): void
     {
-        $events = $this->events;
-        $this->events = [];
+        if ($minSalary < 0) {
+            throw new SalaryMinNegativeException($minSalary);
+        }
 
-        return $events;
+        if ($maxSalary === null) {
+            return;
+        }
+
+        if ($maxSalary < 0) {
+            throw new SalaryMaxNegativeException($maxSalary);
+        }
+
+        if ($maxSalary < $minSalary) {
+            throw new SalaryMaxLessThanMinException($maxSalary, $minSalary);
+        }
     }
 
     private function attachRequirement(RequirementId $requirementId): void
     {
-        $this->requirementAssignments[] = new VacancyRequirementAssignment(
-            VacancyRequirementAssignmentId::generate(),
-            $this->id,
-            $requirementId,
-            new DateTimeImmutable(),
-        );
+        $this->requirementIds[] = $requirementId;
     }
 
     private function hasRequirement(RequirementId $requirementId): bool
     {
-        foreach ($this->requirementAssignments as $assignment) {
-            if ($assignment->getRequirementId()->equals($requirementId)) {
+        foreach ($this->requirementIds as $assignedId) {
+            if ($assignedId->equals($requirementId)) {
                 return true;
             }
         }
@@ -565,8 +514,14 @@ final class Vacancy
         return false;
     }
 
-    private function recordEvent(DomainEvent $event): void
+    private function hasJob(JobId $jobId): bool
     {
-        $this->events[] = $event;
+        foreach ($this->jobIds as $assignedId) {
+            if ($assignedId->equals($jobId)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

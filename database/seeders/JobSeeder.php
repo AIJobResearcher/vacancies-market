@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Infrastructure\Eloquents\Models\JobModel;
-use App\Infrastructure\Eloquents\Models\JobRequirementModel;
 use App\Infrastructure\Eloquents\Models\RequirementModel;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -42,7 +41,7 @@ final class JobSeeder extends Seeder
             }
 
             foreach (array_chunk($rows, self::BULK_CHUNK) as $chunk) {
-                JobRequirementModel::query()->insert($chunk);
+                DB::table('job_requirements')->insert($chunk);
             }
         });
     }

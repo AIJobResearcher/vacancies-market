@@ -12,15 +12,13 @@ use Illuminate\Http\JsonResponse;
 /** @psalm-suppress UnusedClass */
 final class GetVacanciesByJobIdController extends Controller
 {
-    public function __construct(private readonly GetVacanciesByJobIdUseCase $getListVacanciesUseCase)
+    public function __construct(private readonly GetVacanciesByJobIdUseCase $getVacanciesByJobIdUseCase)
     {
     }
 
     public function __invoke(GetVacanciesByJobIdRequest $request): JsonResponse
     {
-        $paginator = $this->getListVacanciesUseCase->handle($request->toFilterDto())
-            ->withPath($request->url())
-            ->appends($request->query());
+        $paginator = $this->getVacanciesByJobIdUseCase->handle($request->toFilterDto());
 
         return (new GetVacanciesByJobIdCollection($paginator))->response($request);
     }

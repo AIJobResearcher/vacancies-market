@@ -129,7 +129,7 @@ final class Job
     /**
      * Soft delete the Job.
      *
-     * Active VacancyJobAssignment references must be validated by the application layer before calling.
+     * Active Vacancy assignments must be validated by the application layer before calling.
      */
     public function softDelete(): void
     {

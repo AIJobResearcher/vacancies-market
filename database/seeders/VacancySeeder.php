@@ -6,11 +6,10 @@ namespace Database\Seeders;
 
 use App\Infrastructure\Eloquents\Models\EmployerModel;
 use App\Infrastructure\Eloquents\Models\JobModel;
+use App\Infrastructure\Eloquents\Models\PortalModel;
 use App\Infrastructure\Eloquents\Models\RequirementModel;
-use App\Infrastructure\Eloquents\Models\VacancyJobAssignmentModel;
+use App\Infrastructure\Eloquents\Models\SourceModel;
 use App\Infrastructure\Eloquents\Models\VacancyModel;
-use App\Infrastructure\Eloquents\Models\VacancyRequirementAssignmentModel;
-use App\Infrastructure\Eloquents\Models\VacancySourceModel;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -26,7 +25,7 @@ final class VacancySeeder extends Seeder
     private const int BULK_CHUNK = 2000;
 
     /** @var list<string> */
-    private const array SOURCE_KEYS = ['linkedin', 'djinni', 'hh', 'indeed', 'stackoverflow'];
+    private const array SOURCE_CODES = ['linkedin', 'djinni', 'hh', 'indeed', 'stackoverflow'];
 
     public function run(): void
     {
@@ -34,6 +33,8 @@ final class VacancySeeder extends Seeder
             $employerIds    = EmployerModel::query()->pluck('id')->values()->all();
             $jobIds         = JobModel::query()->pluck('id')->values()->all();
             $requirementIds = RequirementModel::query()->pluck('id')->values()->all();
+            /** @var array<string, string> $portalIds */
+            $portalIds      = PortalModel::query()->pluck('id', 'code')->all();
 
             $vacancyCounts = $this->planVacanciesPerJob($jobIds);
             $assignedAt    = now()->toDateTimeString();
@@ -41,9 +42,9 @@ final class VacancySeeder extends Seeder
             foreach ($this->createVacancies($employerIds, array_sum($vacancyCounts)) as $chunk) {
                 $chunkCounts = $this->takeVacancyCounts($vacancyCounts, count($chunk));
 
-                $this->createJobAssignments($chunk, $chunkCounts, $assignedAt);
-                $this->createRequirementAssignments($chunk, $requirementIds, $assignedAt);
-                $this->createSources($chunk, $assignedAt);
+                $this->createJobAssignments($chunk, $chunkCounts);
+                $this->createRequirementAssignments($chunk, $requirementIds);
+                $this->createSources($chunk, $portalIds, $assignedAt);
             }
         });
     }
@@ -126,7 +127,7 @@ final class VacancySeeder extends Seeder
      * @param  list<string>  $vacancyIds
      * @param  array<string, int>  $vacancyCounts
      */
-    private function createJobAssignments(array $vacancyIds, array $vacancyCounts, string $assignedAt): void
+    private function createJobAssignments(array $vacancyIds, array $vacancyCounts): void
     {
         $rows = [];
         $pointer = 0;
@@ -134,25 +135,20 @@ final class VacancySeeder extends Seeder
         foreach ($vacancyCounts as $jobId => $count) {
             for ($i = 0; $i < $count; $i++) {
                 $rows[] = [
-                    'id' => (string) Str::uuid(),
                     'vacancy_id' => $vacancyIds[$pointer],
                     'job_id' => $jobId,
-                    'assigned_at' => $assignedAt,
-                    'unassigned_at' => null,
-                    'relevance_score' => random_int(1, 100),
-                    'version' => 1,
                 ];
                 $pointer++;
 
                 if (count($rows) === self::BULK_CHUNK) {
-                    VacancyJobAssignmentModel::query()->insert($rows);
+                    DB::table('vacancy_job_assignments')->insert($rows);
                     $rows = [];
                 }
             }
         }
 
         if ($rows !== []) {
-            VacancyJobAssignmentModel::query()->insert($rows);
+            DB::table('vacancy_job_assignments')->insert($rows);
         }
     }
 
@@ -160,7 +156,7 @@ final class VacancySeeder extends Seeder
      * @param  list<string>  $vacancyIds
      * @param  list<string>  $requirementIds
      */
-    private function createRequirementAssignments(array $vacancyIds, array $requirementIds, string $assignedAt): void
+    private function createRequirementAssignments(array $vacancyIds, array $requirementIds): void
     {
         $pointer = 0;
         $rows = [];
@@ -178,54 +174,59 @@ final class VacancySeeder extends Seeder
 
             foreach ($pickedIds as $requirementId) {
                 $rows[] = [
-                    'id' => (string) Str::uuid(),
                     'vacancy_id' => $vacancyId,
                     'requirement_id' => $requirementId,
-                    'assigned_at' => $assignedAt,
-                    'version' => 1,
                 ];
                 $pointer++;
 
                 if (count($rows) === self::BULK_CHUNK) {
-                    VacancyRequirementAssignmentModel::query()->insert($rows);
+                    DB::table('vacancy_requirement_assignments')->insert($rows);
                     $rows = [];
                 }
             }
         }
 
         if ($rows !== []) {
-            VacancyRequirementAssignmentModel::query()->insert($rows);
+            DB::table('vacancy_requirement_assignments')->insert($rows);
         }
     }
 
-    /** @param  list<string>  $vacancyIds */
-    private function createSources(array $vacancyIds, string $assignedAt): void
+    /**
+     * @param  list<string>  $vacancyIds
+     * @param  array<string, string>  $portalIds
+     */
+    private function createSources(array $vacancyIds, array $portalIds, string $assignedAt): void
     {
-        $sourceKeyCount = count(self::SOURCE_KEYS);
+        if ($portalIds === []) {
+            return;
+        }
+
+        $portalCodes = array_keys($portalIds);
+        $portalCount = count($portalCodes);
         $rows = [];
 
         foreach ($vacancyIds as $index => $vacancyId) {
-            $sourceKey = self::SOURCE_KEYS[$index % $sourceKeyCount];
+            $portalCode = $portalCodes[$index % $portalCount];
             $rows[] = [
                 'id' => (string) Str::uuid(),
                 'vacancy_id' => $vacancyId,
-                'source_key' => $sourceKey,
+                'portal_id' => $portalIds[$portalCode],
                 'external_vacancy_id' => (string) Str::uuid(),
-                'external_url' => 'https://' . $sourceKey . '.example.com/vacancies/' . $vacancyId,
-                'first_seen_at' => $assignedAt,
-                'last_seen_at' => $assignedAt,
-                'closed_at' => null,
-                'is_primary' => true,
+                'external_url' => 'https://' . $portalCode . '.example.com/vacancies/' . $vacancyId,
+                'title' => fake()->jobTitle(),
+                'posted_at' => $assignedAt,
+                'created_at' => $assignedAt,
+                'updated_at' => $assignedAt,
             ];
 
             if (count($rows) === self::BULK_CHUNK) {
-                VacancySourceModel::query()->insert($rows);
+                SourceModel::query()->insert($rows);
                 $rows = [];
             }
         }
 
         if ($rows !== []) {
-            VacancySourceModel::query()->insert($rows);
+            SourceModel::query()->insert($rows);
         }
     }
 }

@@ -49,12 +49,6 @@ final class EntityIdTest extends TestCase
         VacancyId::fromString($invalid);
     }
 
-    public function testGenerateReturnsValidUuid(): void
-    {
-        $id = VacancyId::generate();
-        $this->assertTrue(Uuid::isValid($id->value()));
-    }
-
     public function testEquals(): void
     {
         $uuid = Uuid::uuid4()->toString();

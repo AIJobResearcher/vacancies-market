@@ -15,10 +15,9 @@ use Override;
  * @property string $id
  * @property string $title
  * @property string|null $description
- * @property string|null $website
- * @property string|null $email
- * @property string|null $phone
+ * @property list<array{type: string, value: string}>|null $contacts
  * @property string|null $logo_url
+ * @property list<int> $location_ids
  * @property int $version
  * @property DateTimeImmutable $created_at
  * @property DateTimeImmutable $updated_at
@@ -43,10 +42,9 @@ final class EmployerModel extends Model
         'id',
         'title',
         'description',
-        'website',
-        'email',
-        'phone',
+        'contacts',
         'logo_url',
+        'location_ids',
         'version',
     ];
 
@@ -59,6 +57,8 @@ final class EmployerModel extends Model
     protected function casts(): array
     {
         return [
+            'contacts' => 'array',
+            'location_ids' => 'array',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];

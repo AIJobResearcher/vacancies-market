@@ -21,13 +21,11 @@ final class PortalMapper extends AbstractMapper
 
         return Portal::reconstitute(
             id: PortalId::fromString($model->id),
+            code: $model->code,
             name: $model->name,
             baseUrl: $model->base_url,
-            apiEndpoint: $model->api_endpoint,
-            crawlDelaySeconds: $model->crawl_delay_seconds,
             createdAt: $model->created_at,
             updatedAt: $model->updated_at,
-            version: $model->version,
         );
     }
 
@@ -40,11 +38,9 @@ final class PortalMapper extends AbstractMapper
 
         $model = new PortalModel();
         $model->id = $entity->id()->value();
+        $model->code = $entity->code();
         $model->name = $entity->name();
         $model->base_url = $entity->baseUrl();
-        $model->api_endpoint = $entity->apiEndpoint();
-        $model->crawl_delay_seconds = $entity->crawlDelaySeconds();
-        $model->version = $entity->version();
 
         return $model;
     }
@@ -52,22 +48,18 @@ final class PortalMapper extends AbstractMapper
     /**
      * @return array{
      *     id: string,
+     *     code: string,
      *     name: string,
-     *     base_url: string,
-     *     api_endpoint: string|null,
-     *     crawl_delay_seconds: int,
-     *     version: int
+     *     base_url: string|null
      * }
      */
     public function toPersistenceState(Portal $entity): array
     {
         return [
             'id' => $entity->id()->value(),
+            'code' => $entity->code(),
             'name' => $entity->name(),
             'base_url' => $entity->baseUrl(),
-            'api_endpoint' => $entity->apiEndpoint(),
-            'crawl_delay_seconds' => $entity->crawlDelaySeconds(),
-            'version' => $entity->version(),
         ];
     }
 }

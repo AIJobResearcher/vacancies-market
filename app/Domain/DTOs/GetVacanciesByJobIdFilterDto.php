@@ -13,16 +13,21 @@ use DateTimeImmutable;
 
 final readonly class GetVacanciesByJobIdFilterDto
 {
+    /**
+     * @param list<EmployerId> $employerIds
+     * @param list<int> $locationIds
+     * @param list<WorkplaceEnum> $workplaces
+     * @param list<EmploymentTypeEnum> $employmentTypes
+     */
     public function __construct(
         public JobId $jobId,
-        public ?EmployerId $employerId = null,
-        public ?string $country = null,
-        public ?string $city = null,
+        public array $employerIds = [],
+        public array $locationIds = [],
         public ?int $minSalary = null,
         public ?int $maxSalary = null,
         public ?VacancyStatusEnum $status = null,
-        public ?WorkplaceEnum $workplace = null,
-        public ?EmploymentTypeEnum $employmentType = null,
+        public array $workplaces = [],
+        public array $employmentTypes = [],
         public ?DateTimeImmutable $postedFrom = null,
         public ?DateTimeImmutable $postedTo = null,
         public ?int $page = null,

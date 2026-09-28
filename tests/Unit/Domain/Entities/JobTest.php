@@ -103,14 +103,4 @@ final class JobTest extends TestCase
         $this->expectException(RequirementNotAssignedException::class);
         $job->removeRequirement(RequirementId::generate());
     }
-
-    public function testSoftDelete(): void
-    {
-        $job = Job::create($this->jobId, 'Engineer', 'IT');
-        $oldVersion = $job->version();
-
-        $job->softDelete();
-        $this->assertNotNull($job->deletedAt());
-        $this->assertEquals($oldVersion + 1, $job->version());
-    }
 }

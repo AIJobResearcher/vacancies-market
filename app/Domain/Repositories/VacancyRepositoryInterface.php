@@ -7,17 +7,10 @@ namespace App\Domain\Repositories;
 use App\Domain\DTOs\GetVacanciesByJobIdFilterDto;
 use App\Domain\DTOs\VacancyDetailDto;
 use App\Domain\DTOs\VacancyPreviewPageDto;
-use App\Domain\Entities\Vacancy;
 use App\Domain\ValueObjects\EntityIds\VacancyId;
 
 interface VacancyRepositoryInterface
 {
-    /** @psalm-suppress PossiblyUnusedMethod */
-    public function findById(VacancyId $id): ?Vacancy;
-
-    /** @psalm-suppress PossiblyUnusedMethod */
-    public function save(Vacancy $vacancy): void;
-
     /**
      * @psalm-suppress PossiblyUnusedMethod
      */

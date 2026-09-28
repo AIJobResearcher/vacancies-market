@@ -6,11 +6,9 @@ namespace App\Infrastructure\Eloquents\Models;
 
 use Database\Factories\InterviewerModelFactory;
 use DateTimeImmutable;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Override;
 
 /**
@@ -18,13 +16,13 @@ use Override;
  * @property string $employer_id
  * @property string $full_name
  * @property string|null $position
- * @property array<string, string>|null $profile_urls
+ * @property list<array{type: string, value: string}>|null $contacts
+ * @property string|null $avatar_url
  * @property bool $is_active
  * @property int $version
  * @property DateTimeImmutable|null $deleted_at
  * @property DateTimeImmutable $created_at
  * @property DateTimeImmutable $updated_at
- * @property-read Collection<int, InterviewerVacancyAssignmentModel> $vacancyAssignments
  */
 final class InterviewerModel extends Model
 {
@@ -47,7 +45,8 @@ final class InterviewerModel extends Model
         'employer_id',
         'full_name',
         'position',
-        'profile_urls',
+        'contacts',
+        'avatar_url',
         'is_active',
         'version',
         'deleted_at',
@@ -62,20 +61,11 @@ final class InterviewerModel extends Model
     protected function casts(): array
     {
         return [
-            'profile_urls' => 'array',
+            'contacts' => 'array',
             'is_active' => 'boolean',
             'deleted_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];
-    }
-
-    /**
-     * @return HasMany<InterviewerVacancyAssignmentModel,$this>
-     * @psalm-suppress PossiblyUnusedReturnValue
-     */
-    public function vacancyAssignments(): HasMany
-    {
-        return $this->hasMany(InterviewerVacancyAssignmentModel::class, 'interviewer_id');
     }
 }

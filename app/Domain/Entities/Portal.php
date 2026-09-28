@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Entities;
 
 use App\Domain\Exceptions\ValidationException\PortalBaseUrlEmptyException;
+use App\Domain\Exceptions\ValidationException\PortalCodeEmptyException;
 use App\Domain\Exceptions\ValidationException\PortalNameEmptyException;
 use App\Domain\ValueObjects\EntityIds\PortalId;
 use DateTimeImmutable;
@@ -13,14 +14,16 @@ final class Portal
 {
     private function __construct(
         private readonly PortalId $id,
+        private string $code,
         private string $name,
-        private string $baseUrl,
-        private ?string $apiEndpoint,
-        private int $crawlDelaySeconds,
+        private ?string $baseUrl,
         private DateTimeImmutable $createdAt,
         private DateTimeImmutable $updatedAt,
-        private int $version,
     ) {
+        if ($code === '') {
+            throw new PortalCodeEmptyException();
+        }
+
         if ($name === '') {
             throw new PortalNameEmptyException();
         }
@@ -33,14 +36,13 @@ final class Portal
     /** @psalm-suppress PossiblyUnusedMethod */
     public static function create(
         PortalId $id,
+        string $code,
         string $name,
-        string $baseUrl,
-        ?string $apiEndpoint = null,
-        int $crawlDelaySeconds = 0,
+        ?string $baseUrl = null,
     ): self {
         $now = new DateTimeImmutable();
 
-        return new self($id, $name, $baseUrl, $apiEndpoint, $crawlDelaySeconds, $now, $now, 1);
+        return new self($id, $code, $name, $baseUrl, $now, $now);
     }
 
     /**
@@ -48,15 +50,37 @@ final class Portal
      */
     public static function reconstitute(
         PortalId $id,
+        string $code,
         string $name,
-        string $baseUrl,
-        ?string $apiEndpoint,
-        int $crawlDelaySeconds,
+        ?string $baseUrl,
         DateTimeImmutable $createdAt,
         DateTimeImmutable $updatedAt,
-        int $version,
     ): self {
-        return new self($id, $name, $baseUrl, $apiEndpoint, $crawlDelaySeconds, $createdAt, $updatedAt, $version);
+        return new self($id, $code, $name, $baseUrl, $createdAt, $updatedAt);
+    }
+
+    /** @psalm-suppress PossiblyUnusedMethod */
+    public function update(
+        ?string $code = null,
+        ?string $name = null,
+        ?string $baseUrl = null,
+    ): void {
+        if ($code !== null && $code === '') {
+            throw new PortalCodeEmptyException();
+        }
+
+        if ($name !== null && $name === '') {
+            throw new PortalNameEmptyException();
+        }
+
+        if ($baseUrl !== null && $baseUrl === '') {
+            throw new PortalBaseUrlEmptyException();
+        }
+
+        $this->code = $code ?? $this->code;
+        $this->name = $name ?? $this->name;
+        $this->baseUrl = $baseUrl ?? $this->baseUrl;
+        $this->updatedAt = new DateTimeImmutable();
     }
 
     public function id(): PortalId
@@ -64,24 +88,19 @@ final class Portal
         return $this->id;
     }
 
+    public function code(): string
+    {
+        return $this->code;
+    }
+
     public function name(): string
     {
         return $this->name;
     }
 
-    public function baseUrl(): string
+    public function baseUrl(): ?string
     {
         return $this->baseUrl;
-    }
-
-    public function apiEndpoint(): ?string
-    {
-        return $this->apiEndpoint;
-    }
-
-    public function crawlDelaySeconds(): int
-    {
-        return $this->crawlDelaySeconds;
     }
 
     /** @psalm-suppress PossiblyUnusedMethod */
@@ -94,34 +113,5 @@ final class Portal
     public function updatedAt(): DateTimeImmutable
     {
         return $this->updatedAt;
-    }
-
-    /** @psalm-suppress PossiblyUnusedMethod */
-    public function version(): int
-    {
-        return $this->version;
-    }
-
-    /** @psalm-suppress PossiblyUnusedMethod */
-    public function updateConfig(
-        ?string $name = null,
-        ?string $baseUrl = null,
-        ?string $apiEndpoint = null,
-        ?int $crawlDelaySeconds = null,
-    ): void {
-        if ($name !== null && $name === '') {
-            throw new PortalNameEmptyException();
-        }
-
-        if ($baseUrl !== null && $baseUrl === '') {
-            throw new PortalBaseUrlEmptyException();
-        }
-
-        $this->name = $name ?? $this->name;
-        $this->baseUrl = $baseUrl ?? $this->baseUrl;
-        $this->apiEndpoint = $apiEndpoint ?? $this->apiEndpoint;
-        $this->crawlDelaySeconds = $crawlDelaySeconds ?? $this->crawlDelaySeconds;
-        $this->updatedAt = new DateTimeImmutable();
-        $this->version++;
     }
 }

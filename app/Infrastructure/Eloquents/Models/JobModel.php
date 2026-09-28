@@ -10,7 +10,8 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 use Override;
 
 /**
@@ -24,7 +25,7 @@ use Override;
  * @property DateTimeImmutable|null $deleted_at
  * @property DateTimeImmutable $created_at
  * @property DateTimeImmutable $updated_at
- * @property-read Collection<int, JobRequirementModel> $requirements
+ * @property-read Collection<int, RequirementModel> $requirements
  * @property-read string|null $parent_job_title Present when the query selects
  *     it through the `parent_jobs.title as parent_job_title` alias (9.2)
  */
@@ -71,11 +72,16 @@ final class JobModel extends Model
     }
 
     /**
-     * @return HasMany<JobRequirementModel,$this>
+     * @return BelongsToMany<RequirementModel,$this,Pivot,'pivot'>
      * @psalm-suppress PossiblyUnusedReturnValue
      */
-    public function requirements(): HasMany
+    public function requirements(): BelongsToMany
     {
-        return $this->hasMany(JobRequirementModel::class, 'job_id');
+        return $this->belongsToMany(
+            RequirementModel::class,
+            'job_requirements',
+            'job_id',
+            'requirement_id',
+        );
     }
 }

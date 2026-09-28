@@ -23,11 +23,9 @@ final class PortalModelFactory extends Factory
     {
         return [
             'id' => (string) Str::uuid(),
+            'code' => fake()->unique()->slug(2),
             'name' => fake()->unique()->company(),
             'base_url' => fake()->url(),
-            'api_endpoint' => fake()->optional()->url(),
-            'crawl_delay_seconds' => fake()->numberBetween(1, 30),
-            'version' => 1,
         ];
     }
 }

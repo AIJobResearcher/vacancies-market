@@ -4,29 +4,19 @@ declare(strict_types=1);
 
 namespace App\Domain\Entities;
 
-use App\Domain\Exceptions\OwnershipException\InterviewerVacancyEmployerMismatchException;
-use App\Domain\Exceptions\StateConflictException\InterviewerAlreadyAssignedException;
-use App\Domain\Exceptions\StateConflictException\InterviewerIsNotActiveException;
-use App\Domain\Exceptions\StateConflictException\NoActiveAssignmentException;
 use App\Domain\Exceptions\ValidationException\InterviewerFullNameEmptyException;
-use App\Domain\ValueObjects\EntityIds\EmployerId;
 use App\Domain\ValueObjects\EntityIds\InterviewerId;
-use App\Domain\ValueObjects\EntityIds\InterviewerVacancyAssignmentId;
+use App\Domain\ValueObjects\InterviewerContacts;
 use DateTimeImmutable;
 
 final class Interviewer
 {
-    /** @var InterviewerVacancyAssignment[] */
-    private array $vacancyAssignments = [];
-
-    /** @param array<string, string>|null $profileUrls */
     private function __construct(
         private readonly InterviewerId $id,
-        private readonly EmployerId $employerId,
         private string $fullName,
         private ?string $position,
-        private ?array $profileUrls,
-        private bool $isActive,
+        private ?InterviewerContacts $contacts,
+        private ?string $avatarUrl,
         private DateTimeImmutable $createdAt,
         private DateTimeImmutable $updatedAt,
         private int $version,
@@ -36,15 +26,14 @@ final class Interviewer
 
     /**
      * @phpcsSuppress SlevomatCodingStandard.Functions.UnusedParameter
-     * @param array<string, string>|null $profileUrls
      * @psalm-suppress UnusedParam
      */
     public static function create(
         InterviewerId $id,
-        EmployerId $employerId,
         string $fullName,
         ?string $position = null,
-        ?array $profileUrls = null,
+        ?InterviewerContacts $contacts = null,
+        ?string $avatarUrl = null,
         ?string $correlationId = null
     ): self {
         if (trim($fullName) === '') {
@@ -55,11 +44,10 @@ final class Interviewer
 
         return new self(
             $id,
-            $employerId,
             trim($fullName),
             $position,
-            $profileUrls,
-            true,
+            $contacts,
+            $avatarUrl,
             $now,
             $now,
             1
@@ -68,97 +56,50 @@ final class Interviewer
 
     /**
      * Restores an Interviewer from persisted state without validation or events.
-     *
-     * @param array<string, string>|null $profileUrls
-     * @param InterviewerVacancyAssignment[] $vacancyAssignments
      */
     public static function reconstitute(
         InterviewerId $id,
-        EmployerId $employerId,
         string $fullName,
         ?string $position,
-        ?array $profileUrls,
-        bool $isActive,
+        ?InterviewerContacts $contacts,
+        ?string $avatarUrl,
         DateTimeImmutable $createdAt,
         DateTimeImmutable $updatedAt,
         int $version,
         ?DateTimeImmutable $deletedAt = null,
-        array $vacancyAssignments = [],
     ): self {
-        $interviewer = new self(
+        return new self(
             $id,
-            $employerId,
             $fullName,
             $position,
-            $profileUrls,
-            $isActive,
+            $contacts,
+            $avatarUrl,
             $createdAt,
             $updatedAt,
             $version,
             $deletedAt,
         );
-        $interviewer->vacancyAssignments = $vacancyAssignments;
-
-        return $interviewer;
     }
 
-    public function assignToVacancy(Vacancy $vacancy): void
-    {
-        if (!$this->isActive) {
-            throw new InterviewerIsNotActiveException($this->id->value());
-        }
-
-        if (!$vacancy->employerId()->equals($this->employerId)) {
-            throw new InterviewerVacancyEmployerMismatchException();
-        }
-
-        foreach ($this->vacancyAssignments as $assignment) {
-            if ($assignment->vacancyId()->equals($vacancy->id()) && $assignment->isActive()) {
-                throw new InterviewerAlreadyAssignedException($this->id->value());
-            }
-        }
-
-        $assignment = new InterviewerVacancyAssignment(
-            InterviewerVacancyAssignmentId::generate(),
-            $this->id,
-            $vacancy->id(),
-            new DateTimeImmutable(),
-        );
-        $this->vacancyAssignments[] = $assignment;
-        $this->updatedAt = new DateTimeImmutable();
-        $this->version++;
-    }
-
-    public function unassignFromVacancy(Vacancy $vacancy): void
-    {
-        foreach ($this->vacancyAssignments as $assignment) {
-            if ($assignment->vacancyId()->equals($vacancy->id()) && $assignment->isActive()) {
-                $assignment->deactivate();
-                $this->updatedAt = new DateTimeImmutable();
-                $this->version++;
-                return;
-            }
-        }
-
-        throw new NoActiveAssignmentException($vacancy->id()->value());
-    }
-
-    /** @param array<string, string>|null $profileUrls */
-    public function updateProfile(?string $fullName = null, ?string $position = null, ?array $profileUrls = null): void
-    {
+    public function updateProfile(
+        ?string $fullName = null,
+        ?string $position = null,
+        ?InterviewerContacts $contacts = null,
+        ?string $avatarUrl = null
+    ): void {
         if ($fullName !== null && trim($fullName) === '') {
             throw new InterviewerFullNameEmptyException();
         }
         $this->fullName = $fullName !== null ? trim($fullName) : $this->fullName;
         $this->position = $position ?? $this->position;
-        $this->profileUrls = $profileUrls ?? $this->profileUrls;
+        $this->contacts = $contacts ?? $this->contacts;
+        $this->avatarUrl = $avatarUrl ?? $this->avatarUrl;
         $this->updatedAt = new DateTimeImmutable();
         $this->version++;
     }
 
     public function softDelete(): void
     {
-        $this->isActive = false;
         $this->deletedAt = new DateTimeImmutable();
         $this->version++;
     }
@@ -166,11 +107,6 @@ final class Interviewer
     public function id(): InterviewerId
     {
         return $this->id;
-    }
-
-    public function employerId(): EmployerId
-    {
-        return $this->employerId;
     }
 
     public function fullName(): string
@@ -183,15 +119,19 @@ final class Interviewer
         return $this->position;
     }
 
-    /** @return array<string, string>|null */
-    public function profileUrls(): ?array
+    public function contacts(): ?InterviewerContacts
     {
-        return $this->profileUrls;
+        return $this->contacts;
+    }
+
+    public function avatarUrl(): ?string
+    {
+        return $this->avatarUrl;
     }
 
     public function isActive(): bool
     {
-        return $this->isActive;
+        return $this->deletedAt === null;
     }
 
     /** @psalm-suppress PossiblyUnusedMethod */
@@ -214,11 +154,5 @@ final class Interviewer
     public function deletedAt(): ?DateTimeImmutable
     {
         return $this->deletedAt;
-    }
-
-    /** @return InterviewerVacancyAssignment[] */
-    public function getVacancyAssignments(): array
-    {
-        return $this->vacancyAssignments;
     }
 }

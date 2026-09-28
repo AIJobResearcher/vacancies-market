@@ -26,20 +26,18 @@ final class VacancyModelFactory extends Factory
             'id' => (string) Str::uuid(),
             'employer_id' => EmployerModel::factory(),
             'title' => fake()->jobTitle(),
-            'description' => fake()->paragraph(rand(3, 8)),
             'min_salary' => fake()->numberBetween(0, 5000),
             'max_salary' => fake()->optional(0.6)->numberBetween(3001, 10000),
-            'salary_currency' => 'USD',
             'status' => 'open',
-            'country' => fake()->optional()->country(),
-            'city' => fake()->optional()->city(),
-            'employment_type' => fake()->randomElement(['part-time', 'contract', 'internship', 'full-time', 'volunteer']),
-            'workplace' => fake()->randomElement(['remote', 'on-site', 'hybrid']),
-            'posted_at' => fake()->dateTime(),
+            'employment_types' => [
+                fake()->randomElement(['part-time', 'contract', 'internship', 'full-time', 'volunteer']),
+            ],
+            'workplaces' => [
+                fake()->randomElement(['remote', 'on-site', 'hybrid']),
+            ],
+            'researcher_location_ids' => [],
             'closed_at' => null,
             'version' => 1,
-            'external_urls' => [fake()->url()],
-            'internal_url' => fake()->optional()->url(),
         ];
     }
 }

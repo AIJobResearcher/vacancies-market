@@ -22,23 +22,29 @@ final class GetVacanciesByJobIdRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'job_id' => ['required', 'uuid'],
+            'job_id' => ['required', 'string', 'uuid'],
 
-            'max_salary' => ['nullable', 'integer', 'min:0'],
+            'employer_ids' => ['nullable', 'array'],
+            'employer_ids.*' => ['string', 'uuid'],
+
+            'location_ids' => ['nullable', 'array'],
+            'location_ids.*' => ['integer'],
+
             'min_salary' => ['nullable', 'integer', 'min:0'],
+            'max_salary' => ['nullable', 'integer', 'min:0'],
+            'status' => ['nullable', Rule::enum(VacancyStatusEnum::class)],
+
+            'workplaces' => ['nullable', 'array'],
+            'workplaces.*' => ['string', Rule::enum(WorkplaceEnum::class)],
+
+            'employment_types' => ['nullable', 'array'],
+            'employment_types.*' => ['string', Rule::enum(EmploymentTypeEnum::class)],
+
             'posted_from' => ['nullable', 'date'],
             'posted_to' => ['nullable', 'date'],
 
-            'city' => ['nullable', 'string', 'max:255'],
-            'country' => ['nullable', 'string', 'max:255'],
-
-            'employer_id' => ['nullable', 'uuid'],
-            'employment_type' => ['nullable', Rule::enum(EmploymentTypeEnum::class)],
-            'status' => ['nullable', Rule::enum(VacancyStatusEnum::class)],
-            'workplace' => ['nullable', Rule::enum(WorkplaceEnum::class)],
-
-            'page' => ['nullable', 'integer', 'min:1'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'page' => ['nullable', 'integer', 'min:1'],
         ];
     }
 
@@ -46,43 +52,71 @@ final class GetVacanciesByJobIdRequest extends FormRequest
     {
         $input = $this->safe();
 
-        $country = $this->nullableString($input->input('country'));
-        $city = $this->nullableString($input->input('city'));
-
-        $minSalary = $input->input('min_salary');
-        $maxSalary = $input->input('max_salary');
-        $page = $input->input('page');
-        $perPage = $input->input('per_page');
-
         return new GetVacanciesByJobIdFilterDto(
             jobId: JobId::fromString($input->string('job_id')->toString()),
-            employerId: $this->nullableEmployerId(),
-            country: $country,
-            city: $city,
-            minSalary: is_numeric($minSalary) ? (int) $minSalary : null,
-            maxSalary: is_numeric($maxSalary) ? (int) $maxSalary : null,
+            employerIds: $this->employerIds(),
+            locationIds: $this->locationIds(),
+            minSalary: $this->nullableInt($input->input('min_salary')),
+            maxSalary: $this->nullableInt($input->input('max_salary')),
             status: $input->enum('status', VacancyStatusEnum::class),
-            workplace: $input->enum('workplace', WorkplaceEnum::class),
-            employmentType: $input->enum('employment_type', EmploymentTypeEnum::class),
+            workplaces: $this->workplaces(),
+            employmentTypes: $this->employmentTypes(),
             postedFrom: $input->date('posted_from')?->toDateTimeImmutable(),
             postedTo: $input->date('posted_to')?->toDateTimeImmutable(),
-            page: is_numeric($page) ? (int) $page : null,
-            perPage: is_numeric($perPage) ? (int) $perPage : null,
+            page: $this->nullableInt($input->input('page')),
+            perPage: $this->nullableInt($input->input('per_page')),
         );
+    }
+
+    /**
+     * @return list<EmployerId>
+     */
+    private function employerIds(): array
+    {
+        /** @var list<string> $values */
+        $values = $this->safe()->array('employer_ids');
+
+        return array_map(static fn (string $value): EmployerId => EmployerId::fromString($value), $values);
+    }
+
+    /**
+     * @return list<EmploymentTypeEnum>
+     */
+    private function employmentTypes(): array
+    {
+        /** @var list<string> $values */
+        $values = $this->safe()->array('employment_types');
+
+        return array_map(static fn (string $value): EmploymentTypeEnum => EmploymentTypeEnum::from($value), $values);
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function locationIds(): array
+    {
+        /** @var list<int|string> $values */
+        $values = $this->safe()->array('location_ids');
+
+        return array_map(static fn (int|string $value): int => (int) $value, $values);
     }
 
     /**
      * phpstan, without the larastan extension, reads `input()` as `mixed`.
      */
-    private function nullableString(mixed $value): ?string
+    private function nullableInt(mixed $value): ?int
     {
-        return is_string($value) ? $value : null;
+        return is_numeric($value) ? (int) $value : null;
     }
 
-    private function nullableEmployerId(): ?EmployerId
+    /**
+     * @return list<WorkplaceEnum>
+     */
+    private function workplaces(): array
     {
-        $value = $this->safe()->input('employer_id');
+        /** @var list<string> $values */
+        $values = $this->safe()->array('workplaces');
 
-        return is_string($value) ? EmployerId::fromString($value) : null;
+        return array_map(static fn (string $value): WorkplaceEnum => WorkplaceEnum::from($value), $values);
     }
 }

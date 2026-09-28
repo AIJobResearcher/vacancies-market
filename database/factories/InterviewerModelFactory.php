@@ -27,9 +27,10 @@ final class InterviewerModelFactory extends Factory
             'employer_id' => EmployerModel::factory(),
             'full_name' => fake()->name(),
             'position' => fake()->jobTitle(),
-            'profile_urls' => [
-                'Linkedin' => fake()->url(),
+            'contacts' => [
+                ['type' => 'profile_urls', 'value' => fake()->url()],
             ],
+            'avatar_url' => fake()->imageUrl(),
             'is_active' => true,
             'version' => 1,
             'deleted_at' => null,

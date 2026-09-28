@@ -13,10 +13,4 @@ interface LocationRepositoryInterface
      * @return list<Location>
      */
     public function findAll(): array;
-
-    /** @psalm-suppress PossiblyUnusedMethod */
-    public function findById(int $id): ?Location;
-
-    /** @psalm-suppress PossiblyUnusedMethod */
-    public function save(Location $location): void;
 }

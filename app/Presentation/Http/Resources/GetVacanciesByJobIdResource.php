@@ -16,16 +16,13 @@ final class GetVacanciesByJobIdResource extends JsonResource
      * @return array{
      *     id: string,
      *     title: string,
-     *     employer_id: string,
-     *     employer_title: string,
+     *     employer: array{employer_id: string, employer_title: string},
      *     min_salary: int,
      *     max_salary: int|null,
-     *     country: string|null,
-     *     city: string|null,
-     *     employment_type: string,
-     *     workplace: string,
+     *     researcher_location_ids: list<int>,
+     *     employment_types: list<string>,
+     *     workplaces: list<string>,
      *     status: string,
-     *     posted_at: string,
      * }
      */
     #[Override]
@@ -37,16 +34,16 @@ final class GetVacanciesByJobIdResource extends JsonResource
         return [
             'id' => $preview->id,
             'title' => $preview->title,
-            'employer_id' => $preview->employerId,
-            'employer_title' => $preview->employerTitle,
+            'employer' => [
+                'employer_id' => $preview->employerId,
+                'employer_title' => $preview->employerTitle,
+            ],
             'min_salary' => $preview->minSalary,
             'max_salary' => $preview->maxSalary,
-            'country' => $preview->country,
-            'city' => $preview->city,
-            'employment_type' => $preview->employmentType,
-            'workplace' => $preview->workplace,
+            'researcher_location_ids' => $preview->researcherLocationIds,
+            'employment_types' => $preview->employmentTypes,
+            'workplaces' => $preview->workplaces,
             'status' => $preview->status,
-            'posted_at' => $preview->postedAt->format(DATE_ATOM),
         ];
     }
 }

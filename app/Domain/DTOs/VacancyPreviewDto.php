@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Domain\DTOs;
 
-use DateTimeImmutable;
-
 final readonly class VacancyPreviewDto
 {
+    /**
+     * @param list<int> $researcherLocationIds
+     * @param list<string> $employmentTypes
+     * @param list<string> $workplaces
+     */
     public function __construct(
         public string $id,
         public string $title,
@@ -15,12 +18,10 @@ final readonly class VacancyPreviewDto
         public string $employerTitle,
         public int $minSalary,
         public ?int $maxSalary,
-        public ?string $country,
-        public ?string $city,
-        public string $employmentType,
-        public string $workplace,
+        public array $researcherLocationIds,
+        public array $employmentTypes,
+        public array $workplaces,
         public string $status,
-        public DateTimeImmutable $postedAt,
     ) {
     }
 }

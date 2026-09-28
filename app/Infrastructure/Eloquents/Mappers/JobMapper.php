@@ -9,7 +9,7 @@ use App\Domain\Entities\Job;
 use App\Domain\ValueObjects\EntityIds\JobId;
 use App\Domain\ValueObjects\EntityIds\RequirementId;
 use App\Infrastructure\Eloquents\Models\JobModel;
-use App\Infrastructure\Eloquents\Models\JobRequirementModel;
+use App\Infrastructure\Eloquents\Models\RequirementModel;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use Override;
@@ -27,8 +27,8 @@ final class JobMapper extends AbstractMapper
         if ($model->relationLoaded('requirements')) {
             $requirementIds = $model->requirements
                 ->map(
-                    static fn(JobRequirementModel $row): RequirementId => RequirementId::fromString(
-                        $row->requirement_id
+                    static fn(RequirementModel $row): RequirementId => RequirementId::fromString(
+                        $row->id
                     ),
                 )
                 ->all();

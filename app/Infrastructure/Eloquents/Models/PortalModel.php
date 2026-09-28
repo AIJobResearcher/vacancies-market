@@ -13,11 +13,9 @@ use Override;
 
 /**
  * @property string $id
+ * @property string $code
  * @property string $name
- * @property string $base_url
- * @property string|null $api_endpoint
- * @property int $crawl_delay_seconds
- * @property int $version
+ * @property string|null $base_url
  * @property DateTimeImmutable $created_at
  * @property DateTimeImmutable $updated_at
  */
@@ -39,11 +37,9 @@ final class PortalModel extends Model
     /** @phpcsSuppress SlevomatCodingStandard.TypeHints.PropertyTypeHint */
     protected $fillable = [
         'id',
+        'code',
         'name',
         'base_url',
-        'api_endpoint',
-        'crawl_delay_seconds',
-        'version',
     ];
 
     #[Override]

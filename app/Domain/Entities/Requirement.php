@@ -20,7 +20,7 @@ final class Requirement
     ) {
     }
 
-    public static function create(
+    public static function createRequirement(
         RequirementId $id,
         string $title,
         ?string $description = null,
@@ -49,8 +49,11 @@ final class Requirement
         return new self($id, $title, $description, $category, $createdAt, $updatedAt);
     }
 
-    public function update(?string $title = null, ?string $description = null, ?string $category = null): void
-    {
+    public function updateRequirement(
+        ?string $title = null,
+        ?string $description = null,
+        ?string $category = null
+    ): void {
         if ($title !== null && trim($title) === '') {
             throw new RequirementTitleEmptyException();
         }
@@ -59,6 +62,16 @@ final class Requirement
         $this->description = $description ?? $this->description;
         $this->category = $category ?? $this->category;
         $this->updatedAt = new DateTimeImmutable();
+    }
+
+    /**
+     * Deletes the Requirement dictionary entry (5.1.3): the row is removed by the
+     * repository, so the entity carries no state to change.
+     *
+     * @psalm-suppress PossiblyUnusedMethod
+     */
+    public function deleteRequirement(): void
+    {
     }
 
     public function id(): RequirementId

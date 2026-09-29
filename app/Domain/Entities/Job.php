@@ -34,7 +34,7 @@ final class Job
      * @phpcsSuppress SlevomatCodingStandard.Functions.UnusedParameter
      * @psalm-suppress UnusedParam
      */
-    public static function create(
+    public static function createJob(
         JobId $id,
         string $title,
         string $category,
@@ -97,7 +97,27 @@ final class Job
         return $job;
     }
 
-    public function addRequirement(RequirementId $requirementId): void
+    public function updateJob(
+        ?string $title = null,
+        ?string $category = null,
+        ?string $subCategory = null,
+        ?string $description = null,
+        ?JobId $parentJobId = null
+    ): void {
+        if ($title !== null && trim($title) === '') {
+            throw new JobTitleEmptyException();
+        }
+
+        $this->title = $title !== null ? trim($title) : $this->title;
+        $this->category = $category ?? $this->category;
+        $this->subCategory = $subCategory ?? $this->subCategory;
+        $this->description = $description ?? $this->description;
+        $this->parentJobId = $parentJobId ?? $this->parentJobId;
+        $this->updatedAt = new DateTimeImmutable();
+        $this->version++;
+    }
+
+    public function assignRequirement(RequirementId $requirementId): void
     {
         foreach ($this->requirementIds as $existing) {
             if ($existing->equals($requirementId)) {
@@ -110,28 +130,36 @@ final class Job
         $this->version++;
     }
 
-    public function removeRequirement(RequirementId $requirementId): void
+    public function unassignRequirement(RequirementId $requirementId): void
     {
-        foreach ($this->requirementIds as $key => $existing) {
-            if ($existing->equals($requirementId)) {
-                unset($this->requirementIds[$key]);
-                $this->requirementIds = array_values($this->requirementIds);
-                $this->updatedAt = new DateTimeImmutable();
-                $this->version++;
+        $remaining = [];
+        $removed = false;
 
-                return;
+        foreach ($this->requirementIds as $existing) {
+            if ($existing->equals($requirementId)) {
+                $removed = true;
+
+                continue;
             }
+
+            $remaining[] = $existing;
         }
 
-        throw new RequirementNotAssignedException($requirementId->value());
+        if (! $removed) {
+            throw new RequirementNotAssignedException($requirementId->value());
+        }
+
+        $this->requirementIds = $remaining;
+        $this->updatedAt = new DateTimeImmutable();
+        $this->version++;
     }
 
     /**
-     * Soft delete the Job.
+     * Soft deletes the Job: sets `deleted_at` and creates a new version.
      *
      * Active Vacancy assignments must be validated by the application layer before calling.
      */
-    public function softDelete(): void
+    public function deleteJob(): void
     {
         $this->deletedAt = new DateTimeImmutable();
         $this->version++;

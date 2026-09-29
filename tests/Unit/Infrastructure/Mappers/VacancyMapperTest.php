@@ -114,7 +114,7 @@ final class VacancyMapperTest extends TestCase
 
     private function source(VacancyId $vacancyId): Source
     {
-        return new Source(
+        return Source::reconstitute(
             SourceId::fromString('77777777-7777-7777-7777-777777777777'),
             $vacancyId,
             PortalId::fromString('88888888-8888-8888-8888-888888888888'),
@@ -125,7 +125,7 @@ final class VacancyMapperTest extends TestCase
             new DateTimeImmutable('2025-01-01 10:00:00'),
             new DateTimeImmutable('2025-01-02 10:00:00'),
             [
-                new Content(
+                Content::createContent(
                     ContentId::fromString('99999999-9999-9999-9999-999999999999'),
                     SourceId::fromString('77777777-7777-7777-7777-777777777777'),
                     ContentTypeEnum::DESCRIPTION,

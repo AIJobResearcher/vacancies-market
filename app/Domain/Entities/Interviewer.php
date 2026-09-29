@@ -28,7 +28,7 @@ final class Interviewer
      * @phpcsSuppress SlevomatCodingStandard.Functions.UnusedParameter
      * @psalm-suppress UnusedParam
      */
-    public static function create(
+    public static function createInterviewer(
         InterviewerId $id,
         string $fullName,
         ?string $position = null,
@@ -81,7 +81,7 @@ final class Interviewer
         );
     }
 
-    public function updateProfile(
+    public function updateInterviewer(
         ?string $fullName = null,
         ?string $position = null,
         ?InterviewerContacts $contacts = null,

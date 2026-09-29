@@ -17,7 +17,7 @@ final class Source
     /**
      * @param list<Content> $contents
      */
-    public function __construct(
+    private function __construct(
         private readonly SourceId $id,
         private readonly VacancyId $vacancyId,
         private PortalId $portalId,
@@ -29,9 +29,70 @@ final class Source
         private DateTimeImmutable $updatedAt,
         private array $contents = [],
     ) {
+    }
+
+    /**
+     * @param list<Content> $contents
+     */
+    public static function createSource(
+        SourceId $id,
+        VacancyId $vacancyId,
+        PortalId $portalId,
+        ?string $externalVacancyId,
+        string $externalUrl,
+        string $title,
+        DateTimeImmutable $postedAt,
+        array $contents = [],
+    ): self {
         if (trim($externalUrl) === '') {
             throw new ExternalUrlInvalidException($externalUrl);
         }
+
+        $now = new DateTimeImmutable();
+
+        return new self(
+            $id,
+            $vacancyId,
+            $portalId,
+            $externalVacancyId,
+            $externalUrl,
+            $title,
+            $postedAt,
+            $now,
+            $now,
+            $contents,
+        );
+    }
+
+    /**
+     * Restores a Source from persisted state without validation or events.
+     *
+     * @param list<Content> $contents
+     */
+    public static function reconstitute(
+        SourceId $id,
+        VacancyId $vacancyId,
+        PortalId $portalId,
+        ?string $externalVacancyId,
+        string $externalUrl,
+        string $title,
+        DateTimeImmutable $postedAt,
+        DateTimeImmutable $createdAt,
+        DateTimeImmutable $updatedAt,
+        array $contents = [],
+    ): self {
+        return new self(
+            $id,
+            $vacancyId,
+            $portalId,
+            $externalVacancyId,
+            $externalUrl,
+            $title,
+            $postedAt,
+            $createdAt,
+            $updatedAt,
+            $contents,
+        );
     }
 
     public function addContent(Content $content): void
@@ -62,17 +123,25 @@ final class Source
 
     public function removeContent(ContentId $contentId): void
     {
-        foreach ($this->contents as $key => $existing) {
-            if ($existing->id()->equals($contentId)) {
-                unset($this->contents[$key]);
-                $this->contents = array_values($this->contents);
-                $this->touch();
+        $remaining = [];
+        $removed = false;
 
-                return;
+        foreach ($this->contents as $existing) {
+            if ($existing->id()->equals($contentId)) {
+                $removed = true;
+
+                continue;
             }
+
+            $remaining[] = $existing;
         }
 
-        throw new ContentNotAssignedException($contentId->value());
+        if (! $removed) {
+            throw new ContentNotAssignedException($contentId->value());
+        }
+
+        $this->contents = $remaining;
+        $this->touch();
     }
 
     public function refresh(PortalId $portalId, string $title, DateTimeImmutable $postedAt): void

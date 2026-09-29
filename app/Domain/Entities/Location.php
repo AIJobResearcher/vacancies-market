@@ -16,16 +16,16 @@ final class Location
 {
     private function __construct(
         private readonly int $id,
-        private readonly string $name,
-        private readonly ?string $isoName,
-        private readonly ?int $parentId,
-        private readonly LocationTypeEnum $type,
+        private string $name,
+        private ?string $isoName,
+        private ?int $parentId,
+        private LocationTypeEnum $type,
         private readonly DateTimeImmutable $createdAt,
-        private readonly DateTimeImmutable $updatedAt,
+        private DateTimeImmutable $updatedAt,
     ) {
     }
 
-    public static function create(
+    public static function createLocation(
         int $id,
         string $name,
         LocationTypeEnum $type,
@@ -54,6 +54,33 @@ final class Location
         DateTimeImmutable $updatedAt,
     ): self {
         return new self($id, $name, $isoName, $parentId, $type, $createdAt, $updatedAt);
+    }
+
+    public function updateLocation(
+        ?string $name = null,
+        ?string $isoName = null,
+        ?int $parentId = null,
+        ?LocationTypeEnum $type = null
+    ): void {
+        if ($name !== null && trim($name) === '') {
+            throw new LocationNameEmptyException();
+        }
+
+        $this->name = $name !== null ? trim($name) : $this->name;
+        $this->isoName = $isoName ?? $this->isoName;
+        $this->parentId = $parentId ?? $this->parentId;
+        $this->type = $type ?? $this->type;
+        $this->updatedAt = new DateTimeImmutable();
+    }
+
+    /**
+     * Deletes the Location dictionary entry (5.8.3): the row is removed by the
+     * repository, so the entity carries no state to change.
+     *
+     * @psalm-suppress PossiblyUnusedMethod
+     */
+    public function deleteLocation(): void
+    {
     }
 
     public function createdAt(): DateTimeImmutable

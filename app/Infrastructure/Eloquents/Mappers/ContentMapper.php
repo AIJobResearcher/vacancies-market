@@ -22,7 +22,7 @@ final class ContentMapper extends AbstractMapper
             throw new InvalidArgumentException(sprintf('Expected %s, got %s.', ContentModel::class, $model::class));
         }
 
-        return new Content(
+        return Content::reconstitute(
             ContentId::fromString($model->id),
             SourceId::fromString($model->source_id),
             ContentTypeEnum::from($model->type),
@@ -47,6 +47,7 @@ final class ContentMapper extends AbstractMapper
     }
 
     /**
+     * @psalm-suppress PossiblyUnusedMethod
      * @return array{
      *     id: string,
      *     source_id: string,

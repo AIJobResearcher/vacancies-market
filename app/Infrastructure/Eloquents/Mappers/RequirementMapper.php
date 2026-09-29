@@ -46,6 +46,7 @@ final class RequirementMapper extends AbstractMapper
     }
 
     /**
+     * @psalm-suppress PossiblyUnusedMethod
      * @return array{
      *     id: string,
      *     title: string,

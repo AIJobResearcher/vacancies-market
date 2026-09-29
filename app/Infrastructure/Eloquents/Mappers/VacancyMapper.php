@@ -89,6 +89,7 @@ final class VacancyMapper extends AbstractMapper
     }
 
     /**
+     * @psalm-suppress PossiblyUnusedMethod
      * @return array{
      *     id: string,
      *     employer_id: string,

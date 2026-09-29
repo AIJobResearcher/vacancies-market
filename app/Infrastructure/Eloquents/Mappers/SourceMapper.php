@@ -35,7 +35,7 @@ final class SourceMapper extends AbstractMapper
             }
         }
 
-        return new Source(
+        return Source::reconstitute(
             SourceId::fromString($model->id),
             VacancyId::fromString($model->vacancy_id),
             PortalId::fromString($model->portal_id),
@@ -69,6 +69,7 @@ final class SourceMapper extends AbstractMapper
     }
 
     /**
+     * @psalm-suppress PossiblyUnusedMethod
      * @return array{
      *     id: string,
      *     vacancy_id: string,

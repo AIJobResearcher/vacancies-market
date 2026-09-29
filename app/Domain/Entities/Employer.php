@@ -32,7 +32,7 @@ final class Employer
     /**
      * @param list<int> $locationIds
      */
-    public static function create(
+    public static function createEmployer(
         EmployerId $id,
         string $title,
         ?string $description = null,

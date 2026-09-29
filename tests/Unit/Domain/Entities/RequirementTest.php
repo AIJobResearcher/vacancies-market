@@ -7,6 +7,7 @@ namespace Tests\Unit\Domain\Entities;
 use App\Domain\Entities\Requirement;
 use App\Domain\Exceptions\ValidationException\RequirementTitleEmptyException;
 use App\Domain\ValueObjects\EntityIds\RequirementId;
+use DateTimeImmutable;
 use Override;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -36,39 +37,83 @@ final class RequirementTest extends TestCase
 
     public function testCreateValid(): void
     {
-        $req = Requirement::create($this->id, 'PHP', 'Programming language', 'technical');
+        $req = Requirement::createRequirement($this->id, 'PHP', 'Programming language', 'technical');
+        $this->assertSame($this->id, $req->id());
         $this->assertEquals('PHP', $req->title());
         $this->assertEquals('Programming language', $req->description());
         $this->assertEquals('technical', $req->category());
+        $this->assertSame($req->createdAt(), $req->updatedAt());
+    }
+
+    public function testCreateWithoutOptionalFieldsDefaultsToNull(): void
+    {
+        $req = Requirement::createRequirement($this->id, 'PHP');
+
+        $this->assertNull($req->description());
+        $this->assertNull($req->category());
+    }
+
+    public function testCreateTrimsTitle(): void
+    {
+        $req = Requirement::createRequirement($this->id, '  PHP  ');
+
+        $this->assertEquals('PHP', $req->title());
     }
 
     public function testCreateEmptyTitleThrows(): void
     {
         $this->expectException(RequirementTitleEmptyException::class);
-        Requirement::create($this->id, '');
+        Requirement::createRequirement($this->id, '');
     }
 
     #[DataProvider('updateProvider')]
-    public function testUpdate(?string $title, ?string $desc, ?string $category): void
+    public function testUpdateRequirement(?string $title, ?string $desc, ?string $category): void
     {
-        $req = Requirement::create($this->id, 'PHP', 'Old desc', 'tech');
-        $req->update($title, $desc, $category);
+        $req = Requirement::createRequirement($this->id, 'PHP', 'Old desc', 'tech');
+        $req->updateRequirement($title, $desc, $category);
 
-        if ($title !== null) {
-            $this->assertEquals($title, $req->title());
-        }
-        if ($desc !== null) {
-            $this->assertEquals($desc, $req->description());
-        }
-        if ($category !== null) {
-            $this->assertEquals($category, $req->category());
-        }
+        $this->assertEquals($title ?? 'PHP', $req->title());
+        $this->assertEquals($desc ?? 'Old desc', $req->description());
+        $this->assertEquals($category ?? 'tech', $req->category());
     }
 
-    public function testUpdateWithEmptyTitleThrows(): void
+    public function testUpdateRequirementTrimsTitle(): void
     {
-        $req = Requirement::create($this->id, 'PHP');
+        $req = Requirement::createRequirement($this->id, 'PHP');
+        $req->updateRequirement('  Python  ');
+
+        $this->assertEquals('Python', $req->title());
+    }
+
+    public function testUpdateRequirementRefreshesUpdatedAt(): void
+    {
+        $req = Requirement::createRequirement($this->id, 'PHP');
+        $updatedAt = $req->updatedAt();
+
+        $req->updateRequirement('Python');
+
+        $this->assertNotSame($updatedAt, $req->updatedAt());
+    }
+
+    public function testUpdateRequirementWithEmptyTitleThrows(): void
+    {
+        $req = Requirement::createRequirement($this->id, 'PHP');
         $this->expectException(RequirementTitleEmptyException::class);
-        $req->update('');
+        $req->updateRequirement('');
+    }
+
+    public function testReconstituteRestoresState(): void
+    {
+        $createdAt = new DateTimeImmutable('2025-01-01 10:00:00');
+        $updatedAt = new DateTimeImmutable('2025-02-01 10:00:00');
+
+        $req = Requirement::reconstitute($this->id, 'PHP', 'Desc', 'tech', $createdAt, $updatedAt);
+
+        $this->assertSame($this->id, $req->id());
+        $this->assertEquals('PHP', $req->title());
+        $this->assertEquals('Desc', $req->description());
+        $this->assertEquals('tech', $req->category());
+        $this->assertSame($createdAt, $req->createdAt());
+        $this->assertSame($updatedAt, $req->updatedAt());
     }
 }

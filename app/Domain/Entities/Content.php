@@ -11,15 +11,37 @@ use App\Domain\ValueObjects\EntityIds\SourceId;
 
 final class Content
 {
-    public function __construct(
+    private function __construct(
         private readonly ContentId $id,
         private readonly SourceId $sourceId,
         private readonly ContentTypeEnum $type,
         private readonly string $value,
     ) {
+    }
+
+    public static function createContent(
+        ContentId $id,
+        SourceId $sourceId,
+        ContentTypeEnum $type,
+        string $value,
+    ): self {
         if (trim($value) === '') {
             throw new ContentValueEmptyException();
         }
+
+        return new self($id, $sourceId, $type, $value);
+    }
+
+    /**
+     * Restores a Content from persisted state without validation or events.
+     */
+    public static function reconstitute(
+        ContentId $id,
+        SourceId $sourceId,
+        ContentTypeEnum $type,
+        string $value,
+    ): self {
+        return new self($id, $sourceId, $type, $value);
     }
 
     public function id(): ContentId

@@ -46,6 +46,7 @@ final class PortalMapper extends AbstractMapper
     }
 
     /**
+     * @psalm-suppress PossiblyUnusedMethod
      * @return array{
      *     id: string,
      *     code: string,

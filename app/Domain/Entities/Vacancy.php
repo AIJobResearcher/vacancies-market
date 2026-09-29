@@ -17,6 +17,7 @@ use App\Domain\Exceptions\StateConflictException\VacancyAlreadyOpenException;
 use App\Domain\Exceptions\ValidationException\SalaryMaxLessThanMinException;
 use App\Domain\Exceptions\ValidationException\SalaryMaxNegativeException;
 use App\Domain\Exceptions\ValidationException\SalaryMinNegativeException;
+use App\Domain\Exceptions\ValidationException\VacancyRequiresJobException;
 use App\Domain\Exceptions\ValidationException\VacancyRequiresSourceException;
 use App\Domain\Exceptions\ValidationException\VacancyTitleEmptyException;
 use App\Domain\ValueObjects\EntityIds\EmployerId;
@@ -110,8 +111,10 @@ final class Vacancy
      * @param list<EmploymentTypeEnum> $employmentTypes
      * @param list<WorkplaceEnum> $workplaces
      * @param list<int> $researcherLocationIds
+     * @param list<JobId> $jobIds
+     * @param list<Source> $sources
      */
-    public static function create(
+    public static function createVacancy(
         VacancyId $id,
         EmployerId $employerId,
         string $title,
@@ -120,12 +123,22 @@ final class Vacancy
         array $employmentTypes = [],
         array $workplaces = [],
         array $researcherLocationIds = [],
+        array $jobIds = [],
+        array $sources = [],
     ): self {
         if (trim($title) === '') {
             throw new VacancyTitleEmptyException();
         }
 
         self::assertSalary($minSalary, $maxSalary);
+
+        if ($jobIds === []) {
+            throw new VacancyRequiresJobException($id->value());
+        }
+
+        if ($sources === []) {
+            throw new VacancyRequiresSourceException($id->value());
+        }
 
         $now = new DateTimeImmutable();
 
@@ -142,7 +155,10 @@ final class Vacancy
             $now,
             $now,
             null,
-            1
+            1,
+            [],
+            $jobIds,
+            $sources
         );
     }
 
@@ -151,7 +167,7 @@ final class Vacancy
      * @param list<WorkplaceEnum>|null $workplaces
      * @param list<int>|null $researcherLocationIds
      */
-    public function updateDetails(
+    public function updateVacancy(
         ?string $title = null,
         ?int $minSalary = null,
         ?int $maxSalary = null,
@@ -178,7 +194,21 @@ final class Vacancy
         $this->version++;
     }
 
-    public function close(): void
+    /**
+     * Clears the upper salary bound; a vacancy without a maximum stays valid (4.3.1).
+     */
+    public function clearMaxSalary(): void
+    {
+        if ($this->maxSalary === null) {
+            return;
+        }
+
+        $this->maxSalary = null;
+        $this->updatedAt = new DateTimeImmutable();
+        $this->version++;
+    }
+
+    public function closeVacancy(): void
     {
         if ($this->status === VacancyStatusEnum::CLOSED) {
             throw new VacancyAlreadyClosedException($this->id->value());
@@ -193,7 +223,7 @@ final class Vacancy
      * Reopens a closed vacancy. Only an approved external change may
      * trigger this; it is never invoked by a local command of this context.
      */
-    public function reopen(): void
+    public function reopenVacancy(): void
     {
         if ($this->status === VacancyStatusEnum::OPEN) {
             throw new VacancyAlreadyOpenException($this->id->value());
@@ -224,7 +254,7 @@ final class Vacancy
         $this->version++;
     }
 
-    public function addRequirement(RequirementId $requirementId): void
+    public function assignRequirement(RequirementId $requirementId): void
     {
         if ($this->hasRequirement($requirementId)) {
             throw new RequirementAlreadyAssignedException($requirementId->value());
@@ -235,20 +265,72 @@ final class Vacancy
         $this->version++;
     }
 
-    public function removeRequirement(RequirementId $requirementId): void
+    public function unassignRequirement(RequirementId $requirementId): void
     {
-        foreach ($this->requirementIds as $key => $assignedId) {
-            if ($assignedId->equals($requirementId)) {
-                unset($this->requirementIds[$key]);
-                $this->requirementIds = array_values($this->requirementIds);
-                $this->updatedAt = new DateTimeImmutable();
-                $this->version++;
+        $remaining = [];
+        $removed = false;
 
-                return;
+        foreach ($this->requirementIds as $assignedId) {
+            if ($assignedId->equals($requirementId)) {
+                $removed = true;
+
+                continue;
+            }
+
+            $remaining[] = $assignedId;
+        }
+
+        if (! $removed) {
+            throw new RequirementNotAssignedException($requirementId->value());
+        }
+
+        $this->requirementIds = $remaining;
+        $this->updatedAt = new DateTimeImmutable();
+        $this->version++;
+    }
+
+    /**
+     * Replaces the assigned requirement set: an absent Requirement is removed,
+     * a missing one is added, and a duplicate inside one call is skipped (4.2.4).
+     *
+     * @param list<RequirementId> $requirementIds
+     */
+    public function syncRequirements(array $requirementIds): void
+    {
+        $targetIds = [];
+        foreach ($requirementIds as $requirementId) {
+            $targetIds[$requirementId->value()] = $requirementId;
+        }
+
+        $keptIds = [];
+        foreach ($this->requirementIds as $assignedId) {
+            if (isset($targetIds[$assignedId->value()])) {
+                $keptIds[$assignedId->value()] = $assignedId;
             }
         }
 
-        throw new RequirementNotAssignedException($requirementId->value());
+        $addedIds = [];
+        foreach ($targetIds as $requirementId) {
+            if (! isset($keptIds[$requirementId->value()])) {
+                $addedIds[$requirementId->value()] = $requirementId;
+            }
+        }
+
+        if ($addedIds === [] && count($keptIds) === count($this->requirementIds)) {
+            return;
+        }
+
+        $syncedIds = [];
+        foreach ($keptIds as $requirementId) {
+            $syncedIds[] = $requirementId;
+        }
+        foreach ($addedIds as $requirementId) {
+            $syncedIds[] = $requirementId;
+        }
+
+        $this->requirementIds = $syncedIds;
+        $this->updatedAt = new DateTimeImmutable();
+        $this->version++;
     }
 
     public function assignToJob(JobId $jobId): void
@@ -264,18 +346,30 @@ final class Vacancy
 
     public function unassignFromJob(JobId $jobId): void
     {
-        foreach ($this->jobIds as $key => $assignedId) {
-            if ($assignedId->equals($jobId)) {
-                unset($this->jobIds[$key]);
-                $this->jobIds = array_values($this->jobIds);
-                $this->updatedAt = new DateTimeImmutable();
-                $this->version++;
-
-                return;
-            }
+        if (count($this->jobIds) === 1 && $this->hasJob($jobId)) {
+            throw new VacancyRequiresJobException($this->id->value());
         }
 
-        throw new JobNotAssignedException($jobId->value());
+        $remaining = [];
+        $removed = false;
+
+        foreach ($this->jobIds as $assignedId) {
+            if ($assignedId->equals($jobId)) {
+                $removed = true;
+
+                continue;
+            }
+
+            $remaining[] = $assignedId;
+        }
+
+        if (! $removed) {
+            throw new JobNotAssignedException($jobId->value());
+        }
+
+        $this->jobIds = $remaining;
+        $this->updatedAt = new DateTimeImmutable();
+        $this->version++;
     }
 
     public function addSource(Source $source): void
@@ -311,21 +405,30 @@ final class Vacancy
 
     public function removeSource(SourceId $sourceId): void
     {
-        foreach ($this->sources as $key => $existing) {
+        $remaining = [];
+        $removed = false;
+
+        foreach ($this->sources as $existing) {
             if ($existing->id()->equals($sourceId)) {
                 if (count($this->sources) === 1) {
                     throw new VacancyRequiresSourceException($this->id->value());
                 }
-                unset($this->sources[$key]);
-                $this->sources = array_values($this->sources);
-                $this->updatedAt = new DateTimeImmutable();
-                $this->version++;
 
-                return;
+                $removed = true;
+
+                continue;
             }
+
+            $remaining[] = $existing;
         }
 
-        throw new SourceNotAssignedException($sourceId->value());
+        if (! $removed) {
+            throw new SourceNotAssignedException($sourceId->value());
+        }
+
+        $this->sources = $remaining;
+        $this->updatedAt = new DateTimeImmutable();
+        $this->version++;
     }
 
     public function id(): VacancyId

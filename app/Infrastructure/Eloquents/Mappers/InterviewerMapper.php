@@ -55,6 +55,7 @@ final class InterviewerMapper extends AbstractMapper
     }
 
     /**
+     * @psalm-suppress PossiblyUnusedMethod
      * @return array{
      *     id: string,
      *     full_name: string,

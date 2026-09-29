@@ -12,9 +12,7 @@ section 6 and stay in force until those land.
 
 ## 1. Domain boundaries
 
-- **1.1** `Employer`, `Job`, `Interviewer` are separate root aggregates; the
-  `Vacancy` aggregate nests only their ids, never their objects — 2026-09-21.
-- **1.2** A read response needing data owned by another aggregate gets a new
+- **1.1** A read response needing data owned by another aggregate gets a new
   repository method; an aggregate never traverses foreign relations
   — 2026-09-21.
 

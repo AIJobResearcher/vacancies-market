@@ -20,26 +20,19 @@ final class Portal
         private DateTimeImmutable $createdAt,
         private DateTimeImmutable $updatedAt,
     ) {
-        if ($code === '') {
-            throw new PortalCodeEmptyException();
-        }
-
-        if ($name === '') {
-            throw new PortalNameEmptyException();
-        }
-
-        if ($baseUrl === '') {
-            throw new PortalBaseUrlEmptyException();
-        }
     }
 
     /** @psalm-suppress PossiblyUnusedMethod */
-    public static function create(
+    public static function createPortal(
         PortalId $id,
         string $code,
         string $name,
         ?string $baseUrl = null,
     ): self {
+        self::assertCode($code);
+        self::assertName($name);
+        self::assertBaseUrl($baseUrl);
+
         $now = new DateTimeImmutable();
 
         return new self($id, $code, $name, $baseUrl, $now, $now);
@@ -60,27 +53,37 @@ final class Portal
     }
 
     /** @psalm-suppress PossiblyUnusedMethod */
-    public function update(
+    public function updatePortal(
         ?string $code = null,
         ?string $name = null,
         ?string $baseUrl = null,
     ): void {
-        if ($code !== null && $code === '') {
-            throw new PortalCodeEmptyException();
+        if ($code !== null) {
+            self::assertCode($code);
         }
 
-        if ($name !== null && $name === '') {
-            throw new PortalNameEmptyException();
+        if ($name !== null) {
+            self::assertName($name);
         }
 
-        if ($baseUrl !== null && $baseUrl === '') {
-            throw new PortalBaseUrlEmptyException();
+        if ($baseUrl !== null) {
+            self::assertBaseUrl($baseUrl);
         }
 
         $this->code = $code ?? $this->code;
         $this->name = $name ?? $this->name;
         $this->baseUrl = $baseUrl ?? $this->baseUrl;
         $this->updatedAt = new DateTimeImmutable();
+    }
+
+    /**
+     * Deletes the Portal (5.6.3): the row is removed by the repository, so the
+     * entity carries no state to change.
+     *
+     * @psalm-suppress PossiblyUnusedMethod
+     */
+    public function deletePortal(): void
+    {
     }
 
     public function id(): PortalId
@@ -113,5 +116,26 @@ final class Portal
     public function updatedAt(): DateTimeImmutable
     {
         return $this->updatedAt;
+    }
+
+    private static function assertCode(string $code): void
+    {
+        if ($code === '') {
+            throw new PortalCodeEmptyException();
+        }
+    }
+
+    private static function assertName(string $name): void
+    {
+        if ($name === '') {
+            throw new PortalNameEmptyException();
+        }
+    }
+
+    private static function assertBaseUrl(?string $baseUrl): void
+    {
+        if ($baseUrl === '') {
+            throw new PortalBaseUrlEmptyException();
+        }
     }
 }

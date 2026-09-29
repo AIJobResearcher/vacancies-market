@@ -48,6 +48,7 @@ final class LocationMapper extends AbstractMapper
     }
 
     /**
+     * @psalm-suppress PossiblyUnusedMethod
      * @return array{
      *     id: int,
      *     name: string,

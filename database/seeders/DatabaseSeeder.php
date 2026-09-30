@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             PortalSeeder::class,
             JobSeeder::class,
             VacancySeeder::class,
+            ContentSeeder::class,
             InterviewerSeeder::class,
         ]);
     }

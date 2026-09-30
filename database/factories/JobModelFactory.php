@@ -26,8 +26,8 @@ final class JobModelFactory extends Factory
             'title' => fake()->jobTitle(),
             'category' => fake()->word() . " Job Category",
             'sub_category' => fake()->word() . " Job Sub-Category",
-            'parent_job_id' => fake()->optional(0.1)->uuid(),
-            'description' => fake()->optional()->paragraph(),
+            'parent_job_id' => null,
+            'description' => fake()->optional()->paragraph(random_int(3, 7)),
             'version' => 1,
             'deleted_at' => null,
         ];

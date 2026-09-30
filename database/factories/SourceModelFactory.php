@@ -27,7 +27,7 @@ final class SourceModelFactory extends Factory
             'id' => (string) Str::uuid(),
             'vacancy_id' => VacancyModel::factory(),
             'portal_id' => PortalModel::factory(),
-            'external_vacancy_id' => fake()->unique()->numerify('###'),
+            'external_vacancy_id' => (string) Str::uuid(),
             'external_url' => fake()->unique()->url(),
             'title' => fake()->jobTitle(),
             'posted_at' => fake()->dateTime(),

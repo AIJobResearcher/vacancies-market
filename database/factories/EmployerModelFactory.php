@@ -24,7 +24,7 @@ final class EmployerModelFactory extends Factory
         return [
             'id' => (string) Str::uuid(),
             'title' => fake()->company(),
-            'description' => fake()->paragraph(random_int(1, 3)),
+            'description' => fake()->paragraph(random_int(2, 5)),
             'contacts' => [
                 ['type' => 'website', 'value' => fake()->url()],
                 ['type' => 'email', 'value' => fake()->companyEmail()],

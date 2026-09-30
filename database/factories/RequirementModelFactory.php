@@ -24,7 +24,7 @@ final class RequirementModelFactory extends Factory
         return [
             'id' => (string) Str::uuid(),
             'title' => fake()->unique()->words(3, true),
-            'description' => fake()->paragraph(20),
+            'description' => fake()->paragraph(random_int(10, 20)),
             'category' => fake()->word(),
         ];
     }

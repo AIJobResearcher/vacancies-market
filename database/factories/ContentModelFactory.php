@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Domain\Enums\ContentTypeEnum;
 use App\Infrastructure\Eloquents\Models\ContentModel;
 use App\Infrastructure\Eloquents\Models\SourceModel;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -25,8 +26,8 @@ final class ContentModelFactory extends Factory
         return [
             'id' => (string) Str::uuid(),
             'source_id' => SourceModel::factory(),
-            'type' => 'description',
-            'value' => fake()->paragraph(random_int(1, 3)),
+            'type' => ContentTypeEnum::DESCRIPTION->value,
+            'value' => fake()->paragraph(random_int(6, 13)),
         ];
     }
 }

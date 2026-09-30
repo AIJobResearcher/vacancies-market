@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Infrastructure\Eloquents\Models\JobModel;
+use App\Infrastructure\Eloquents\Models\LocationModel;
 use App\Presentation\Http\Controllers\GetJobsByIdsController;
 use App\Presentation\Http\Controllers\GetLocationsController;
 use App\Presentation\Http\Controllers\GetVacanciesByJobIdController;
@@ -15,9 +16,13 @@ Route::prefix('v1')->group(function (): void {
         return ['status' => 'ok'];
     });
 
-    Route::post('/vacancies', GetVacanciesByJobIdController::class);
+    // TEMPORARY HACK: POST is kept alongside QUERY until clients migrate.
+    // Must be removed once every consumer sends QUERY (OpenAPI documents QUERY only).
+    Route::match(['QUERY', 'POST'], '/vacancies', GetVacanciesByJobIdController::class);
 
-    Route::post('/jobs', GetJobsByIdsController::class);
+    // TEMPORARY HACK: POST is kept alongside QUERY until clients migrate.
+    // Must be removed once every consumer sends QUERY (OpenAPI documents QUERY only).
+    Route::match(['QUERY', 'POST'], '/jobs', GetJobsByIdsController::class);
 
     Route::get('/vacancy/{id}', GetVacancyByIdController::class);
 
@@ -33,10 +38,18 @@ Route::prefix('v1')->group(function (): void {
             ->limit(3)
             ->pluck('job_id');
 
+        $locations = LocationModel::query()
+            ->where('iso_name', '=', 'UA')
+            ->orWhere('iso_name', '=', 'RU')
+            ->get()
+            ->pluck('id');
+
         $jobs = JobModel::query()->whereIn('id', $jobIds)
             ->select(['id'])
             ->get()
-            ->pluck('id');
+            ->map(function ($id) use ($locations) {
+                return ['id' => $id->id, 'locations' => $locations];
+            });
 
         return [
             'data' => [

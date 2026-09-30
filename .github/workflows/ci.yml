@@ -32,9 +32,9 @@ jobs:
 
       - name: Wait for services to be ready
         run: |
-          docker-compose exec -T postgres pg_isready -U vacancies_user
-          docker-compose exec -T redis redis-cli ping
-          docker-compose exec -T rabbitmq rabbitmq-diagnostics ping
+          docker compose exec -T postgres pg_isready -U vacancies_user
+          docker compose exec -T redis redis-cli ping
+          docker compose exec -T rabbitmq rabbitmq-diagnostics ping
 
       - name: Prepare test database
         run: make db-test-prepare

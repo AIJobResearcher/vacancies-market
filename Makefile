@@ -10,16 +10,16 @@ build:
 	./deploy/deploy.sh
 
 up:
-	docker-compose up -d
+	docker compose up -d
 
 down:
-	docker-compose down
+	docker compose down
 
 exec:
-	docker-compose exec app sh
+	docker compose exec app sh
 
 logs:
-	docker-compose logs -f
+	docker compose logs -f
 
 # ===== Main testing command (runs everything) =====
 
@@ -33,49 +33,49 @@ test: test-unit test-feature test-phpstan test-psalm test-phpcs test-deptrac
 # ===== Individual Test Suites =====
 
 test-unit:
-	docker-compose exec app php artisan test --testsuite=Unit
+	docker compose exec app php artisan test --testsuite=Unit
 
 test-feature:
-	docker-compose exec app php artisan test --testsuite=Feature
+	docker compose exec app php artisan test --testsuite=Feature
 
 test-integration:
-	docker-compose exec -e DB_CONNECTION=pgsql -e DB_DATABASE=vacancies_market_test app \
+	docker compose exec -e DB_CONNECTION=pgsql -e DB_DATABASE=vacancies_market_test app \
 		php vendor/bin/phpunit --configuration=phpunit.integration.xml
 
 # ===== Code Coverage (optional) =====
 
 test-coverage:
-	docker-compose exec app php artisan test --coverage-html=coverage
+	docker compose exec app php artisan test --coverage-html=coverage
 
 test-coverage-integration:
-	docker-compose exec -e DB_CONNECTION=pgsql -e DB_DATABASE=vacancies_market_test app \
+	docker compose exec -e DB_CONNECTION=pgsql -e DB_DATABASE=vacancies_market_test app \
 		php vendor/bin/phpunit --configuration=phpunit.integration.xml --coverage-html=coverage-integration
 
 # ===== Test Database Preparation =====
 
 db-test-prepare:
 	@echo "Creating test database..."
-	docker-compose exec postgres psql -U vacancies_user -c "CREATE DATABASE vacancies_market_test;" 2>/dev/null || true
+	docker compose exec postgres psql -U vacancies_user -c "CREATE DATABASE vacancies_market_test;" 2>/dev/null || true
 	@echo "Running migrations on test database..."
-	docker-compose exec -e DB_CONNECTION=pgsql -e DB_DATABASE=vacancies_market_test app \
+	docker compose exec -e DB_CONNECTION=pgsql -e DB_DATABASE=vacancies_market_test app \
 		php artisan migrate --force
 
 # ===== Static Analysis Tools (prefix test-*) =====
 
 test-phpstan:
-	docker-compose exec app vendor/bin/phpstan analyse --memory-limit=2G
+	docker compose exec app vendor/bin/phpstan analyse --memory-limit=2G
 
 test-psalm:
-	docker-compose exec app vendor/bin/psalm --no-progress
+	docker compose exec app vendor/bin/psalm --no-progress
 
 test-phpcs:
-	docker-compose exec app vendor/bin/phpcs --standard=phpcs.xml.dist
+	docker compose exec app vendor/bin/phpcs --standard=phpcs.xml.dist
 
 test-phpcs-fix:
-	docker-compose exec app vendor/bin/phpcbf --standard=phpcs.xml.dist
+	docker compose exec app vendor/bin/phpcbf --standard=phpcs.xml.dist
 
 test-deptrac:
-	docker-compose exec app vendor/bin/deptrac analyse
+	docker compose exec app vendor/bin/deptrac analyse
 
 # Run all static analysis tools together (optional convenience)
 test-static: test-phpstan test-psalm test-phpcs test-deptrac test-md
